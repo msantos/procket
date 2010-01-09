@@ -1,0 +1,88 @@
+
+procket is an Erlang interface for requesting socket features that
+usually require superuser privileges.
+
+procket uses the experimental NIF interface first introduced in Erlang
+R13B03.
+
+
+EXPORTS
+
+listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, Reason, Description}
+
+    Types   Port = 0..65535
+            Options = [Opts]
+            Opts = {pipe, Path} | {protocol, Protocol} | {ip, IPAddress} |
+                    {progname, string()}
+            Protocol = tcp | udp
+            IPAddress = string() | tuple()
+
+
+SETUID vs SUDO
+
+The procket executable needs root privileges. Either allow your user to
+run procket using sudo or copy procket to somewhere owned by root and
+make it setuid.
+
+* for sudo
+
+    sudo visudo
+    youruser ALL=NOPASSWD: /path/to/procket/priv/procket
+
+* to make it setuid
+
+    sudo cp priv/procket /usr/local/bin
+    sudo chown root:yourgroup /usr/local/bin/procket
+    sudo chmod 750 /usr/local/bin/procket
+    sudo chmod u+s /usr/local/bin/procket
+
+
+USING IT
+
+$ erl -pa ebin
+Erlang R13B03 (erts-5.7.4) [source] [rq:1] [async-threads:0] [hipe] [kernel-poll:false]
+
+Eshell V5.7.4  (abort with ^G)
+1> {ok, FD} = procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp}]).
+{ok,9}
+2> {ok, S} = gen_udp:open(53, [{fd,FD}]).
+{ok,#Port<0.929>}
+3> receive M -> M end.
+{udp,#Port<0.929>,{127,0,0,1},47483,"hello\n"}
+4> 
+
+$ nc -u localhost 53
+hello
+^C
+
+
+EXAMPLE
+
+echo is a sample client using procket.
+
+$ erl -pa ebin
+1> echo:start(53, [{progname, "sudo priv/procket"}, {protocol, tcp}]).
+
+
+HOW IT WORKS
+
+procket creates a local domain socket and spawns a small setuid binary
+(or runs it under sudo). The executable opens a socket, drops privs and
+passes the file descriptor back to Erlang over the Unix socket.
+
+procket uses libanciallary for passing file descriptors between processes:
+
+    http://www.normalesup.org/~george/comp/libancillary/
+
+
+TODO
+
+* add an interface for setsockopt(2)
+
+* does Erlang close the passed in fd? add an interface to close() it
+
+* allow procket to manage more than one fd
+
+* experiment with providing an interface for supporting for raw sockets
+
+
