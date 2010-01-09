@@ -54,6 +54,7 @@ load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
     if (data == NULL)
         return (-1);
 
+    (void)memset(data, '\0', sizeof(PRIVDATA));
     *priv = data;
 
     return (0);

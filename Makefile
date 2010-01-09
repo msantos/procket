@@ -4,11 +4,15 @@ APP=procket
 
 CC=gcc
 
-#ERL_LIB=/usr/local/lib/erlang
-ERL_ROOT=/media/opt/local/lib/erlang
+#Mac OS X: use "-m64" for a 64-bit erlang
 ARCH=-m32
+FLAGS=$(ARCH) -O3 -fPIC -bundle -flat_namespace -undefined suppress -fno-common
+
+# Linux
+#FLAGS=-fPIC -shared
+
+ERL_ROOT=/usr/local/lib/erlang
 CFLAGS=-g -Wall
-FLAGS=-fPIC -shared
 
 
 all: dir erl ancillary nif cmd
@@ -24,11 +28,13 @@ ancillary:
 	(cd c_src && $(MAKE) -f Makefile.ancillary)
 
 nif:
-	$(CC) -g -Wall $(FLAGS) -o priv/procket.so -L c_src \
-		c_src/procket.c -lancillary -I $(ERL_ROOT)/usr/include/
+	(cd c_src && \
+	$(CC) -g -Wall $(FLAGS) -o ../priv/procket.so -L.  \
+		procket.c -l ancillary -I $(ERL_ROOT)/usr/include/ )
 
 cmd:
-	$(CC) -g -Wall -o priv/procket -L c_src c_src/procket_cmd.c -lancillary
+	(cd c_src && \
+	$(CC) $(ARCH) -g -Wall -o ../priv/procket -L. procket_cmd.c -l ancillary )
 
 clean:  
 	@rm -fv ebin/*.beam priv/$(APP) priv/$(APP).so c_src/*.a c_src/*.o

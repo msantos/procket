@@ -59,7 +59,7 @@ main(int argc, char *argv[])
     ps->open = &procket_open_tcp;
     ps->ipaddr = INADDR_ANY;
 
-    while ( (ch = getopt(argc, argv, "p:P:v")) != -1) {
+    while ( (ch = getopt(argc, argv, "hp:P:v")) != -1) {
         switch (ch) {
             case 'p':   /* path to pipe */
                 IS_NULL(ps->path = strdup(optarg));
