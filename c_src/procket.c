@@ -177,6 +177,18 @@ error_message(ErlNifEnv *env, char *atom, char *err, char *msg)
 
 /* from:
  * http://d.hatena.ne.jp/vostok92/20091201/1259680319
+ *
+ * Copies at most one less than buflen from buf and null
+ * terminates the string.
+ *
+ * Should probably indicate that a truncation has taken place, but
+ * the convention of the enif_get_* interfaces seems to be to return
+ * true/false.
+ *
+ * The alternative is to return failure if a string is too large
+ * for the buffer. This seems to allow for more predictable 
+ * behaviour.
+ *
  */
     static int
 my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen)
@@ -186,9 +198,12 @@ my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen)
     int n = 1;
 
 
-    while ((n++ < buflen) && (enif_get_list_cell(env, list, &head, &tail))) {
+    while (enif_get_list_cell(env, list, &head, &tail)) {
         if (!enif_get_int(env, head, &val))
-            return 0;
+            return (0);
+
+        if (n++ >= buflen)
+            return (0);
 
         *buf = (char)val;
         buf++;
@@ -196,7 +211,7 @@ my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen)
     }
     *buf = '\0';
 
-    return 1;
+    return (1);
 }
 
 static ErlNifFunc nif_funcs[] = {
