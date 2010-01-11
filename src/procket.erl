@@ -30,7 +30,7 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(procket).
 
--export([init/0,open/2,poll/0,close/0,listen/1,listen/2]).
+-export([init/0,open/1,poll/1,close/2,listen/1,listen/2]).
 -export([make_args/2]).
 
 -define(PROGNAME, "priv/procket").
@@ -44,13 +44,13 @@ on_load() ->
     ok = erlang:load_nif("priv/procket", []),
     true.
 
-open(_,_) ->
+open(_) ->
     erlang:error(not_implemented).
 
-poll() ->
+poll(_) ->
     erlang:error(not_implemented).
 
-close() ->
+close(_,_) ->
     erlang:error(not_implemented).
 
 listen(Port) ->
@@ -60,13 +60,15 @@ listen(Port, Options) when is_integer(Port), is_list(Options) ->
         none -> Options ++ [{pipe, mktmp:dir() ++ "/sock"}];
         _ -> Options
     end,
-    ok = open(proplists:get_value(pipe, Opt), Port),
+    {ok, Sockfd} = open(proplists:get_value(pipe, Opt)),
     Cmd = make_args(Port, Opt),
     case os:cmd(Cmd) of
         [] ->
-            poll();
+            FD = poll(Sockfd),
+            close(proplists:get_value(pipe, Opt), Sockfd),
+            FD;
         Error ->
-            {error, procket_cmd, Error}
+            {error, {procket_cmd, Error}}
     end.
 
 make_args(Port, Options) ->

@@ -33,30 +33,16 @@
 #include "ancillary.h"
 #include "procket.h"
 
-typedef struct {
-    int fd;
-    char *path;
-} PRIVDATA;
+#define BACKLOG     5
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, char *atom, char *err);
 static int my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen);
 static ERL_NIF_TERM error_message(ErlNifEnv *env, char *atom, char *err, char *msg);
-static ERL_NIF_TERM sock_close(ErlNifEnv *env);
 
 
     static int
 load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 {
-    PRIVDATA *data = NULL;
-
-
-    data = (PRIVDATA *)enif_alloc(env, sizeof(PRIVDATA));
-    if (data == NULL)
-        return (-1);
-
-    (void)memset(data, '\0', sizeof(PRIVDATA));
-    *priv = data;
-
     return (0);
 }   
 
@@ -64,93 +50,82 @@ load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
     static int
 reload(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 {
-    (void)sock_close(env);
-    enif_free(env, ((PRIVDATA *)*priv)->path);
-    enif_free(env, *priv);
-
     return load(env, priv, load_info);
 }
 
 
     static ERL_NIF_TERM
-sock_open(ErlNifEnv *env, ERL_NIF_TERM path, ERL_NIF_TERM protocol)
+sock_open(ErlNifEnv *env, ERL_NIF_TERM path)
 {
-    PRIVDATA *data = NULL;
-    int proto = 0;
+    char *sock_path = NULL;
+    int sock_fd = -1;
+
     struct sockaddr_un sa = { 0 };
     int flags = 0;
 
 
-    data = (PRIVDATA *)enif_get_data(env);
-
-    if (data->path != NULL)
-        return error_tuple(env, "error", "socket_already_open");
-
-    data->path = (char *)enif_alloc(env, UNIX_PATH_MAX);
-    if (data->path == NULL)
+    sock_path = (char *)enif_alloc(env, UNIX_PATH_MAX);
+    if (sock_path == NULL)
         return error_tuple(env, "error", "memory_allocation_failure");
 
-    if (!my_enif_get_string(env, path, data->path, UNIX_PATH_MAX))
+    if (!my_enif_get_string(env, path, sock_path, UNIX_PATH_MAX))
         return enif_make_badarg(env);
 
-    if (strlen(data->path) == 0)
-        return enif_make_badarg(env);
-
-    if (!enif_get_int(env, protocol, &proto))
+    if (strlen(sock_path) == 0)
         return enif_make_badarg(env);
 
     sa.sun_family = PF_LOCAL;
-    (void)memcpy(sa.sun_path, data->path, sizeof(sa.sun_path)-1);
+    (void)memcpy(sa.sun_path, sock_path, sizeof(sa.sun_path)-1);
 
     errno = 0;
-    data->fd = socket(PF_LOCAL, SOCK_STREAM, 0);
-    if (data->fd < 0)
+    sock_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
+    if (sock_fd < 0)
         return error_message(env, "error", "socket", strerror(errno));
 
-    flags = fcntl(data->fd, F_GETFL, 0);
+    flags = fcntl(sock_fd, F_GETFL, 0);
     flags |= O_NONBLOCK;
-    (void)fcntl(data->fd, F_SETFL, flags);
+    (void)fcntl(sock_fd, F_SETFL, flags);
 
     errno = 0;
-    if (bind(data->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
+    if (bind(sock_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
         return error_message(env, "error", "bind", strerror(errno));
 
     errno = 0;
-    if (listen(data->fd, 5) < 0)
+    if (listen(sock_fd, BACKLOG) < 0)
         return error_message(env, "error", "listen", strerror(errno));
 
-    return enif_make_atom(env, "ok");
+    enif_free(env, sock_path);
+    return enif_make_tuple(env, 2,
+           enif_make_atom(env, "ok"),
+           enif_make_int(env, sock_fd));
 }
 
 
     static ERL_NIF_TERM
-poll(ErlNifEnv *env)
+poll(ErlNifEnv *env, ERL_NIF_TERM socket)
 {
-    PRIVDATA *data = NULL;
-    int s= 0;
-    int pipefd = 0;
+    int sock_fd = -1;        /* listening socket */
+    int fd = -1;             /* connected socket */
+    int s = -1;              /* socket received from pipe */
     struct sockaddr_un sa = { 0 };
     socklen_t socklen = 0;
 
 
-    data = (PRIVDATA *)enif_get_data(env);
-
-    if (data->path == NULL)
-        return error_tuple(env, "error", "no_socket");
+    if (!enif_get_int(env, socket, &sock_fd))
+        return enif_make_badarg(env);
 
     errno = 0;
-    pipefd = accept(data->fd, (struct sockaddr *)&sa, &socklen);
-    if (pipefd < 0)
+    fd = accept(sock_fd, (struct sockaddr *)&sa, &socklen);
+    if (fd < 0)
         return error_message(env, "error", "accept", strerror(errno));
 
     errno = 0;
-    if (ancil_recv_fd(pipefd, &s) < 0) {
-        (void)close (pipefd);
+    if (ancil_recv_fd(fd, &s) < 0) {
+        (void)close (fd);
         return error_message(env, "error", "recvmsg", strerror(errno));
     }
 
-    (void)close (pipefd);
-    (void)sock_close(env);
+    (void)close (fd);
 
     return enif_make_tuple(env, 2,
             enif_make_atom(env, "ok"),
@@ -159,28 +134,29 @@ poll(ErlNifEnv *env)
 
 
     static ERL_NIF_TERM
-sock_close(ErlNifEnv *env)
+sock_close(ErlNifEnv *env, ERL_NIF_TERM path, ERL_NIF_TERM fd)
 {
-    PRIVDATA *data = NULL;
+    char *sock_path = NULL;
+    int sockfd = -1;
 
 
-    data = (PRIVDATA *)enif_get_data(env);
+    sock_path = (char *)enif_alloc(env, UNIX_PATH_MAX);
+    if (sock_path == NULL)
+        return error_tuple(env, "error", "memory_allocation_failure");
 
-    if (data->path == NULL)
-        return error_tuple(env, "error", "no_socket");
+    if (!my_enif_get_string(env, path, sock_path, UNIX_PATH_MAX))
+        return enif_make_badarg(env);
 
-    (void)close(data->fd);
+    if (!enif_get_int(env, fd, &sockfd))
+        return enif_make_badarg(env);
 
-    errno = 0;
-    if (unlink(data->path) < 0)
-        return error_message(env, "error", "unlink", strerror(errno));
-
-    if (data->path) {
-        enif_free(env, data->path);
-        data->path = NULL;
+    if (strlen(sock_path) != 0) {
+        errno = 0;
+        if (unlink(sock_path) < 0)
+            return error_message(env, "error", "unlink", strerror(errno));
     }
 
-    data->fd = -1;
+    (void)close(sockfd);
 
     return enif_make_atom(env, "ok");
 }
@@ -231,9 +207,9 @@ my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen)
 }
 
 static ErlNifFunc nif_funcs[] = {
-    {"open", 2, sock_open},
-    {"poll", 0, poll},
-    {"close", 0, sock_close}
+    {"open", 1, sock_open},
+    {"poll", 1, poll},
+    {"close", 2, sock_close}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, reload, NULL, NULL)

@@ -203,7 +203,7 @@ procket_pipe(PROCKET_STATE *ps)
 
     (void)memcpy(sa.sun_path, ps->path, sizeof(sa.sun_path)-1);
 
-    sa.sun_family = AF_UNIX;
+    sa.sun_family = PF_LOCAL;
 
     IS_LTZERO(s = socket(PF_LOCAL, SOCK_STREAM, 0));
     if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0)
