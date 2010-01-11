@@ -198,10 +198,11 @@ error_tuple(ErlNifEnv *env, char *atom, char *err)
     static ERL_NIF_TERM
 error_message(ErlNifEnv *env, char *atom, char *err, char *msg)
 {
-    return enif_make_tuple(env, 3,
+    return enif_make_tuple(env, 2,
             enif_make_atom(env, atom),
+            enif_make_tuple(env, 2,
             enif_make_atom(env, err),
-            enif_make_string(env, msg));
+            enif_make_string(env, msg)));
 }
 
 

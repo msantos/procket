@@ -8,7 +8,7 @@ R13B03.
 
 EXPORTS
 
-listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, Reason, Description}
+listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Description}}
 
     Types   Port = 0..65535
             Options = [Opts]
@@ -16,6 +16,8 @@ listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, Reason, Descriptio
                     {progname, string()}
             Protocol = tcp | udp
             IPAddress = string() | tuple()
+            Reason = atom()
+            Description = string()
 
 
 COMPILING
