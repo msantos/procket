@@ -57,18 +57,15 @@ reload(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
     static ERL_NIF_TERM
 sock_open(ErlNifEnv *env, ERL_NIF_TERM path)
 {
-    char *sock_path = NULL;
+    char sock_path[UNIX_PATH_MAX];
     int sock_fd = -1;
 
     struct sockaddr_un sa = { 0 };
     int flags = 0;
 
 
-    sock_path = (char *)enif_alloc(env, UNIX_PATH_MAX);
-    if (sock_path == NULL)
-        return error_tuple(env, "error", "memory_allocation_failure");
-
-    if (!my_enif_get_string(env, path, sock_path, UNIX_PATH_MAX))
+    (void)memset(&sock_path, '\0', sizeof(sock_path));
+    if (!my_enif_get_string(env, path, sock_path, sizeof(sock_path)))
         return enif_make_badarg(env);
 
     if (strlen(sock_path) == 0)
@@ -94,7 +91,6 @@ sock_open(ErlNifEnv *env, ERL_NIF_TERM path)
     if (listen(sock_fd, BACKLOG) < 0)
         return error_message(env, "error", "listen", strerror(errno));
 
-    enif_free(env, sock_path);
     return enif_make_tuple(env, 2,
            enif_make_atom(env, "ok"),
            enif_make_int(env, sock_fd));
@@ -136,15 +132,12 @@ poll(ErlNifEnv *env, ERL_NIF_TERM socket)
     static ERL_NIF_TERM
 sock_close(ErlNifEnv *env, ERL_NIF_TERM path, ERL_NIF_TERM fd)
 {
-    char *sock_path = NULL;
+    char sock_path[UNIX_PATH_MAX];
     int sockfd = -1;
 
 
-    sock_path = (char *)enif_alloc(env, UNIX_PATH_MAX);
-    if (sock_path == NULL)
-        return error_tuple(env, "error", "memory_allocation_failure");
-
-    if (!my_enif_get_string(env, path, sock_path, UNIX_PATH_MAX))
+    (void)memset(&sock_path, '\0', sizeof(sock_path));
+    if (!my_enif_get_string(env, path, sock_path, sizeof(sock_path)))
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, fd, &sockfd))
