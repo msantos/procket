@@ -131,10 +131,9 @@ main(int argc, char *argv[])
 procket_open_tcp(void *state)
 {
     PROCKET_STATE *ps = (PROCKET_STATE *)state;
-    int r = 0;
 
 
-    if ( (r = procket_open_socket(state, PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+    if (procket_open_socket(state, PF_INET, SOCK_STREAM, IPPROTO_TCP) < 0)
         return (-1);
 
     if (listen(ps->s, BACKLOG) < 0)
@@ -211,7 +210,8 @@ procket_pipe(PROCKET_STATE *ps)
 
     if (ancil_send_fd(s, ps->s) < 0)
         err(EXIT_FAILURE, "ancil_send_fd");
-    close (s);
+
+    (void)close (s);
 
     return (0);
 }
