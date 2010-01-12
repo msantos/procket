@@ -45,7 +45,7 @@ start(Port, Options) ->
     listen(Protocol, Fd, Port).
 
 listen(tcp, Fd, Port) ->
-    {ok, S} = gen_tcp:listen(Port, [binary, {packet, 0}, {fd, Fd}]),
+    {ok, S} = gen_tcp:listen(Port, [binary, {fd, Fd}]),
     accept(S);
 listen(udp, Fd, Port) ->
     {ok, S} = gen_udp:open(Port, [binary, {fd, Fd}]),
@@ -57,7 +57,6 @@ accept(LS) ->
     recv(S).
 
 recv(S) ->
-    inet:setopts(S, [{active, once}]),
     receive
         {tcp, S, Data} ->
             gen_tcp:send(S, Data),
