@@ -223,7 +223,7 @@ usage(PROCKET_STATE *ps)
     (void)fprintf(stderr, "%s, %s\n", __progname, PROCKET_VERSION);
     (void)fprintf(stderr,
             "usage: %s <options> <port|ipaddress:port>\n"
-            "              -p <pipe>        path to pipe file\n"
+            "              -p <path>        path to Unix socket\n"
             "              -P <protocol>    protocol number [tcp:6,udp:17]\n"
             "              -v               verbose mode\n",
             __progname
