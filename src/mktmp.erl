@@ -49,7 +49,7 @@
 
 -module(mktmp).
 
--export([dir/0,dir/1]).
+-export([dir/0,dir/1,close/1]).
 
 -define(TEMPLATELEN, 6).
 -define(TEMPNAME, "erlang.").
@@ -68,8 +68,14 @@ dir(TMP) ->
     ),
     Path = TMP ++ "/" ++ ?TEMPNAME ++ TmpDir,
     case file:make_dir(Path) of
-        ok -> Path;
-        Error -> Error
+        ok ->
+            [] = os:cmd("chmod 700 " ++ Path),
+            Path;
+        Error ->
+            Error
     end.
+
+close(Path) ->
+    file:del_dir(Path).
 
 
