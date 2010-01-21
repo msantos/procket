@@ -37,9 +37,6 @@
 %% Maybe this is better to do in C, inside an NIF.
 %%
 %% Problems:
-%% * Aside from calling umask before running the VM, there
-%%   doesn't appear to be a way of setting our permission
-%%   mask. Generally, this will default to 022.
 %% * On some platforms, Unix sockets will be created with
 %%   modes 777.
 %% * The module does not test if the directory exists before
@@ -51,8 +48,12 @@
 
 -export([dir/0,dir/1,close/1]).
 
+-include_lib("kernel/include/file.hrl").
+
 -define(TEMPLATELEN, 6).
 -define(TEMPNAME, "erlang.").
+
+-define(S_IRWXU, 8#00400 bor 8#00200 bor 8#00100).
 
 dir() ->
     TMP = case os:getenv("TMPDIR") of
@@ -69,7 +70,7 @@ dir(TMP) ->
     Path = TMP ++ "/" ++ ?TEMPNAME ++ TmpDir,
     case file:make_dir(Path) of
         ok ->
-            [] = os:cmd("chmod 700 " ++ Path),
+            ok = file:write_file_info(Path, #file_info{mode = ?S_IRWXU}),
             Path;
         Error ->
             Error
