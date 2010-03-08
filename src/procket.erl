@@ -41,8 +41,7 @@ init() ->
     on_load().
 
 on_load() ->
-    ok = erlang:load_nif("priv/procket", []),
-    true.
+    ok = erlang:load_nif("priv/procket", []).
 
 open(_) ->
     erlang:error(not_implemented).

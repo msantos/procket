@@ -49,11 +49,6 @@
 
 
 #define PROCKET_VERSION   "0.01"
-
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX  sizeof(((struct sockaddr_un *)0)->sun_path)
-#endif
-
 #define MAXBUFLEN           4096    /* Largest message accepted on stdin */
 
 #define IS_ERR(x) do { \

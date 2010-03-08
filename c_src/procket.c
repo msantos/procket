@@ -36,43 +36,21 @@
 #define BACKLOG     5
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, char *atom, char *err);
-static int my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen);
 static ERL_NIF_TERM error_message(ErlNifEnv *env, char *atom, char *err, char *msg);
 
 
-    static int
-load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
-{
-    return (0);
-}   
-
-
-    static int
-reload(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
-{
-    return load(env, priv, load_info);
-}
-
-
     static ERL_NIF_TERM
-sock_open(ErlNifEnv *env, ERL_NIF_TERM path)
+sock_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    char sock_path[UNIX_PATH_MAX];
     int sock_fd = -1;
-
     struct sockaddr_un sa = { 0 };
     int flags = 0;
 
 
-    (void)memset(&sock_path, '\0', sizeof(sock_path));
-    if (!my_enif_get_string(env, path, sock_path, sizeof(sock_path)))
-        return enif_make_badarg(env);
-
-    if (strlen(sock_path) == 0)
+    if (enif_get_string(env, argv[0], sa.sun_path, sizeof(sa.sun_path), ERL_NIF_LATIN1) < 1)
         return enif_make_badarg(env);
 
     sa.sun_family = PF_LOCAL;
-    (void)memcpy(sa.sun_path, sock_path, sizeof(sa.sun_path)-1);
 
     errno = 0;
     sock_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
@@ -98,7 +76,7 @@ sock_open(ErlNifEnv *env, ERL_NIF_TERM path)
 
 
     static ERL_NIF_TERM
-poll(ErlNifEnv *env, ERL_NIF_TERM socket)
+poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sock_fd = -1;        /* listening socket */
     int fd = -1;             /* connected socket */
@@ -107,7 +85,7 @@ poll(ErlNifEnv *env, ERL_NIF_TERM socket)
     socklen_t socklen = 0;
 
 
-    if (!enif_get_int(env, socket, &sock_fd))
+    if (!enif_get_int(env, argv[0], &sock_fd))
         return enif_make_badarg(env);
 
     errno = 0;
@@ -129,25 +107,25 @@ poll(ErlNifEnv *env, ERL_NIF_TERM socket)
 }
 
 
+/* 0: path to socket
+ * 1: file descriptor
+ */
     static ERL_NIF_TERM
-sock_close(ErlNifEnv *env, ERL_NIF_TERM path, ERL_NIF_TERM fd)
+sock_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    char sock_path[UNIX_PATH_MAX];
+    struct sockaddr_un sa = { 0 };
     int sockfd = -1;
 
 
-    (void)memset(&sock_path, '\0', sizeof(sock_path));
-    if (!my_enif_get_string(env, path, sock_path, sizeof(sock_path)))
+    if (enif_get_string(env, argv[0], sa.sun_path, sizeof(sa.sun_path), ERL_NIF_LATIN1) < 1)
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, fd, &sockfd))
+    if (!enif_get_int(env, argv[1], &sockfd))
         return enif_make_badarg(env);
 
-    if (strlen(sock_path) != 0) {
-        errno = 0;
-        if (unlink(sock_path) < 0)
-            return error_message(env, "error", "unlink", strerror(errno));
-    }
+    errno = 0;
+    if (unlink(sa.sun_path) < 0)
+        return error_message(env, "error", "unlink", strerror(errno));
 
     (void)close(sockfd);
 
@@ -171,48 +149,9 @@ error_message(ErlNifEnv *env, char *atom, char *err, char *msg)
             enif_make_atom(env, atom),
             enif_make_tuple(env, 2,
             enif_make_atom(env, err),
-            enif_make_string(env, msg)));
+            enif_make_string(env, msg, ERL_NIF_LATIN1)));
 }
 
-
-/* from:
- * http://d.hatena.ne.jp/vostok92/20091201/1259680319
- *
- * Copies at most one less than buflen from buf and null
- * terminates the string.
- *
- * Should probably indicate that a truncation has taken place, but
- * the convention of the enif_get_* interfaces seems to be to return
- * true/false.
- *
- * The alternative is to return failure if a string is too large
- * for the buffer. This seems to allow for more predictable 
- * behaviour.
- *
- */
-    static int
-my_enif_get_string(ErlNifEnv *env, ERL_NIF_TERM list, char *buf, size_t buflen)
-{
-    ERL_NIF_TERM head, tail;
-    int val;
-    int n = 1;
-
-
-    while (enif_get_list_cell(env, list, &head, &tail)) {
-        if (!enif_get_int(env, head, &val))
-            return (0);
-
-        if (n++ >= buflen)
-            return (0);
-
-        *buf = (char)val;
-        buf++;
-        list = tail; 
-    }
-    *buf = '\0';
-
-    return (1);
-}
 
 static ErlNifFunc nif_funcs[] = {
     {"open", 1, sock_open},
@@ -220,6 +159,6 @@ static ErlNifFunc nif_funcs[] = {
     {"close", 2, sock_close}
 };
 
-ERL_NIF_INIT(procket, nif_funcs, load, reload, NULL, NULL)
+ERL_NIF_INIT(procket, nif_funcs, NULL, NULL, NULL, NULL)
 
 
