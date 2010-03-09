@@ -31,9 +31,7 @@
 -module(procket).
 
 -export([init/0,open/1,poll/1,close/2,listen/1,listen/2]).
--export([make_args/2]).
-
--define(PROGNAME, "priv/procket").
+-export([make_args/2,progname/0]).
 
 -on_load(on_load/0).
 
@@ -42,13 +40,7 @@ init() ->
     on_load().
 
 on_load() ->
-    Lib = filename:join([
-        filename:dirname(code:which(?MODULE)),
-        "..",
-        "priv",
-        ?MODULE
-    ]),
-    erlang:load_nif(Lib, []).
+    erlang:load_nif(progname(), []).
 
 open(_) ->
     erlang:error(not_implemented).
@@ -84,7 +76,7 @@ make_args(Port, Options) ->
         IP ->
             get_switch(IP) ++ ":" ++ integer_to_list(Port)
     end,
-    proplists:get_value(progname, Options, ?PROGNAME) ++ " " ++
+    proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
     string:join([ get_switch(proplists:lookup(Arg, Options)) || Arg <- [
                 pipe,
                 protocol
@@ -98,5 +90,13 @@ get_switch({protocol, tcp})     -> "-P 6";
 get_switch({protocol, udp})     -> "-P 17";
 get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 get_switch({ip, Arg}) when is_list(Arg) -> Arg.
+
+progname() ->
+    filename:join([
+        filename:dirname(code:which(?MODULE)),
+        "..",
+        "priv",
+        ?MODULE
+    ]).
 
 
