@@ -37,11 +37,18 @@
 
 -on_load(on_load/0).
 
+
 init() ->
     on_load().
 
 on_load() ->
-    ok = erlang:load_nif("priv/procket", []).
+    Lib = filename:join([
+        filename:dirname(code:which(?MODULE)),
+        "..",
+        "priv",
+        ?MODULE
+    ]),
+    erlang:load_nif(Lib, []).
 
 open(_) ->
     erlang:error(not_implemented).
