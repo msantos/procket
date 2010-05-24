@@ -119,7 +119,7 @@ compl(N,S) -> compl(N+S).
 
 icmp(<<?ICMP_ECHO_REPLY:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
     {#icmp{
-            type = ?ICMP_ECHO_REPLY, code = Code, checksum = Checksum, id = Id,
+            type = ?ICMP_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
             sequence = Sequence
         }, Payload}.
 
