@@ -49,6 +49,7 @@
     }).
 
 -define(ICMP_ECHO_REPLY, 0).
+-define(ICMP_ECHO, 8).
 
 ping(IP) ->
     ping(IP, 1).
@@ -83,7 +84,7 @@ loop(#state{s = S, id = Id, seq = Seq, ip = IP} = State) ->
                 ]),
             timer:sleep(1000)
     after
-        10000 ->
+        5000 ->
             error_logger:error_report([{noresponse, Packet}])
     end,
     loop(State#state{seq = Seq + 1}).
@@ -94,7 +95,7 @@ make_packet(Id, Seq) ->
     % Pad packet to 64 bytes
     Payload = list_to_binary(lists:seq(32, 75)),
 
-    CS = makesum(<<8:8, 0:8, 0:16, Id:16, Seq:16, Mega:32, Sec:32, USec:32, Payload/binary>>),
+    CS = makesum(<<?ICMP_ECHO:8, 0:8, 0:16, Id:16, Seq:16, Mega:32, Sec:32, USec:32, Payload/binary>>),
     <<
     8:8,    % Type
     0:8,    % Code
@@ -116,7 +117,7 @@ compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
 
-icmp(<<?ICMP_ECHO_REPLY:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
+icmp(<<?ICMP_ECHO_REPLY:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
     {#icmp{
             type = ?ICMP_ECHO_REPLY, code = Code, checksum = Checksum, id = Id,
             sequence = Sequence
