@@ -40,7 +40,7 @@ static ERL_NIF_TERM error_message(ErlNifEnv *env, char *atom, char *err, char *m
 
 
     static ERL_NIF_TERM
-sock_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+nif_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sock_fd = -1;
     struct sockaddr_un sa = { 0 };
@@ -52,7 +52,6 @@ sock_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     sa.sun_family = PF_LOCAL;
 
-    errno = 0;
     sock_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
     if (sock_fd < 0)
         return error_message(env, "error", "socket", strerror(errno));
@@ -61,11 +60,9 @@ sock_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     flags |= O_NONBLOCK;
     (void)fcntl(sock_fd, F_SETFL, flags);
 
-    errno = 0;
     if (bind(sock_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
         return error_message(env, "error", "bind", strerror(errno));
 
-    errno = 0;
     if (listen(sock_fd, BACKLOG) < 0)
         return error_message(env, "error", "listen", strerror(errno));
 
@@ -76,7 +73,7 @@ sock_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 
     static ERL_NIF_TERM
-poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+nif_poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sock_fd = -1;        /* listening socket */
     int fd = -1;             /* connected socket */
@@ -88,12 +85,10 @@ poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[0], &sock_fd))
         return enif_make_badarg(env);
 
-    errno = 0;
     fd = accept(sock_fd, (struct sockaddr *)&sa, &socklen);
     if (fd < 0)
         return error_message(env, "error", "accept", strerror(errno));
 
-    errno = 0;
     if (ancil_recv_fd(fd, &s) < 0) {
         (void)close (fd);
         return error_message(env, "error", "recvmsg", strerror(errno));
@@ -111,7 +106,7 @@ poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
  * 1: file descriptor
  */
     static ERL_NIF_TERM
-sock_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     struct sockaddr_un sa = { 0 };
     int sockfd = -1;
@@ -123,7 +118,6 @@ sock_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[1], &sockfd))
         return enif_make_badarg(env);
 
-    errno = 0;
     if (unlink(sa.sun_path) < 0)
         return error_message(env, "error", "unlink", strerror(errno));
 
@@ -154,9 +148,9 @@ error_message(ErlNifEnv *env, char *atom, char *err, char *msg)
 
 
 static ErlNifFunc nif_funcs[] = {
-    {"open", 1, sock_open},
-    {"poll", 1, poll},
-    {"close", 2, sock_close}
+    {"open", 1, nif_open},
+    {"poll", 1, nif_poll},
+    {"close", 2, nif_close}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, NULL, NULL, NULL, NULL)
