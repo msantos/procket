@@ -166,9 +166,6 @@ procket_open_raw(void *state)
     if (procket_open_socket(state, PF_INET, SOCK_RAW, IPPROTO_TCP) < 0)
         return (-1);
 
-    if (setsockopt(ps->s, IPPROTO_IP, IP_HDRINCL, &on, sizeof(on)) < 0)
-        return (-1);
-
     return (0);
 }
 
