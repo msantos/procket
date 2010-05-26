@@ -91,17 +91,17 @@ get_switch({protocol, raw})     -> "-P 0";
 get_switch({protocol, icmp})    -> "-P 1";
 get_switch({protocol, tcp})     -> "-P 6";
 get_switch({protocol, udp})     -> "-P 17";
-get_switch({protocol, Proto}) when is_integer(Proto) -> "-P " ++ list_to_integer(Proto);
+get_switch({protocol, Proto}) when is_integer(Proto) -> "-P " ++ integer_to_list(Proto);
 
 get_switch({type, stream})      -> "-T 1";
 get_switch({type, dgram})       -> "-T 2";
 get_switch({type, raw})         -> "-T 3";
-get_switch({type, Type}) when is_integer(Type) -> "-T " ++ list_to_integer(Type);
+get_switch({type, Type}) when is_integer(Type) -> "-T " ++ integer_to_list(Type);
 
 get_switch({family, unspec})    -> "-F 0";
 get_switch({family, inet})      -> "-F 2";
 get_switch({family, packet})    -> "-F 17";
-get_switch({family, Family}) when is_integer(Family) -> "-F " ++ list_to_integer(Family);
+get_switch({family, Family}) when is_integer(Family) -> "-F " ++ integer_to_list(Family);
 
 get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 get_switch({ip, Arg}) when is_list(Arg) -> Arg.
