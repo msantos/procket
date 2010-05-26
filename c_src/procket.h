@@ -87,13 +87,17 @@ extern char *__progname;
 
 typedef struct {
     char *path;             /* path to pipe file */
-    char *bind;             /* <port> or <ipaddr:port> */
-    int s;                  /* socket fd */
-    in_addr_t ipaddr;       /* IP Address */
-    in_port_t port;         /* Port */
+    char *address;           /* <port> or <ipaddr:port> */
     int verbose;            /* Debug messages */
 
-    int (*open)(void *state);
+    in_addr_t ip;           /* IP Address */
+    in_port_t port;         /* Port */
+
+    int s;                  /* socket fd */
+    int family;             /* socket family: PF_INET */
+    int type;               /* socket type: SOCK_STREAM */
+    int protocol;           /* socket protocol: IPPROTO_TCP */
+    int backlog;            /* Listen backlog */
 } PROCKET_STATE;
 
 

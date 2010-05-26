@@ -56,7 +56,7 @@ ping(IP) ->
 ping(IP, N) ->
     crypto:start(),
     Id = crypto:rand_uniform(0, 16#FFFF),
-    {ok, FD} = procket:listen(0, [{protocol, icmp}]),
+    {ok, FD} = procket:listen(0, [{protocol, icmp}, {type, raw}, {family, inet}]),
     {ok, S} = gen_udp:open(0, [binary, {fd, FD}]),
     loop(#state{
             s = S,
@@ -67,7 +67,7 @@ ping(IP, N) ->
 
 loop(#state{n = N, seq = Seq}) when Seq >= N ->
     ok;
-loop(#state{s = S, id = Id, seq = Seq, ip = IP} = State) ->
+loop(#state{s = S, id = Id, seq = Seq, ip = IP, n = N} = State) ->
     Packet = make_packet(Id, Seq),
     ok = gen_udp:send(S, IP, 0, Packet),
     receive
@@ -82,7 +82,7 @@ loop(#state{s = S, id = Id, seq = Seq, ip = IP} = State) ->
                     {payload, Payload},
                     {time, timer:now_diff(erlang:now(), {Mega, Sec, Micro})}
                 ]),
-            timer:sleep(1000)
+            sleep(N, Seq)
     after
         5000 ->
             error_logger:error_report([{noresponse, Packet}])
@@ -123,4 +123,6 @@ icmp(<<?ICMP_ECHO_REPLY:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>
             sequence = Sequence
         }, Payload}.
 
+sleep(N,S) when N =:= S + 1 -> ok;
+sleep(_,_) -> timer:sleep(1000).
 

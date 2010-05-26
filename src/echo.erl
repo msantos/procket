@@ -32,12 +32,16 @@
 %% procket test client
 -module(echo).
 
--export([start/0,start/2]).
+-export([start/0,start/1,start/2]).
 
--define(PORT, 9990).
+-define(PORT, 54).
 
 start() ->
-    start(?PORT, [{protocol, tcp}]).
+    start(tcp).
+start(tcp) ->
+    start(?PORT, [{protocol, tcp}, {family, inet}, {type, stream}]);
+start(udp) ->
+    start(?PORT, [{protocol, udp}, {family, inet}, {type, dgram}]).
 start(Port, Options) ->
     Protocol = proplists:get_value(protocol, Options, tcp),
     {ok, Fd} = procket:listen(Port, Options),

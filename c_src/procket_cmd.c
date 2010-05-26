@@ -35,14 +35,9 @@
 
 #define BACKLOG     50  /* default backlog for TCP connections */
 
+void procket_parse_address(PROCKET_STATE *ps);
 int procket_pipe(PROCKET_STATE *ps);
-
-int procket_open_tcp(void *state);
-int procket_open_udp(void *state);
-int procket_open_icmp(void *state);
-int procket_open_raw(void *state);
-
-int procket_open_socket(void *state, int domain, int type, int protocol);
+int procket_open_socket(PROCKET_STATE *ps);
 void usage(PROCKET_STATE *ep);
 
 
@@ -51,39 +46,35 @@ main(int argc, char *argv[])
 {
     PROCKET_STATE *ps = NULL;
     int ch = 0;
-    char *p = NULL;
 
 
     IS_NULL(ps = (PROCKET_STATE *)calloc(1, sizeof(PROCKET_STATE)));
 
-    ps->open = &procket_open_tcp;
-    ps->ipaddr = INADDR_ANY;
+    ps->ip = INADDR_ANY;
+    ps->backlog = BACKLOG;
 
-    while ( (ch = getopt(argc, argv, "hp:P:v")) != -1) {
+    ps->family = PF_INET;
+    ps->type = SOCK_STREAM;
+    ps->protocol = IPPROTO_TCP;
+
+    while ( (ch = getopt(argc, argv, "b:F:hp:P:T:v")) != -1) {
         switch (ch) {
+            case 'b':   /* listen backlog */
+                ps->backlog = atoi(optarg);
+                break;
+            case 'F':   /* socket family/domain */
+                ps->family = atoi(optarg);
+                break;
             case 'p':   /* path to pipe */
                 IS_NULL(ps->path = strdup(optarg));
                 if (strlen(ps->path) >= UNIX_PATH_MAX)
                     usage(ps);
                 break;
-            case 'P':   /* type of socket */
-                switch (atoi(optarg)) {
-                    case IPPROTO_ICMP:
-                        ps->open = &procket_open_icmp;
-                        break;
-                    case IPPROTO_IP:    /* raw socket */
-                        ps->open = &procket_open_raw;
-                        break;
-                    case IPPROTO_TCP:
-                        ps->open = &procket_open_tcp;
-                        break;
-                    case IPPROTO_UDP:
-                        ps->open = &procket_open_udp;
-                        break;
-                    default:
-                        usage(ps);
-                        break;
-                }
+            case 'P':   /* socket protocol */
+                ps->protocol = atoi(optarg);
+                break;
+            case 'T':   /* socket type */
+                ps->type = atoi(optarg);
                 break;
             case 'v':
                 ps->verbose++;
@@ -97,24 +88,20 @@ main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if ( (argc == 0) || (ps->path == NULL))
+    if (ps->path == NULL)
         usage(ps);
 
-    IS_NULL(ps->bind = strdup(argv[0]));
-
-    if ( (p = strchr(ps->bind, ':')) == NULL) {
-        ps->port = (in_port_t)atoi(ps->bind);
-    }
-    else {
-        struct in_addr in;
-
-        *p++ = '\0';
-        ps->port = (in_port_t)atoi(p);
-        IS_LTZERO(inet_aton(ps->bind, &in));
-        ps->ipaddr = in.s_addr;
+    if (ps->protocol == IPPROTO_TCP || ps->protocol == IPPROTO_UDP) {
+        if (argc == 0)
+            usage(ps);
+        IS_NULL(ps->address = strdup(argv[0]));
+        procket_parse_address(ps);
     }
 
-    IS_LTZERO(ps->open(ps));
+    if (procket_open_socket(ps) != 0) {
+        (void)fprintf(stderr, "%s", strerror(errno));
+        exit (-errno);
+    }
 
     if (setgid(getgid()) == -1)
         err(EXIT_FAILURE, "setgid");
@@ -127,64 +114,42 @@ main(int argc, char *argv[])
 }
 
 
-    int
-procket_open_tcp(void *state)
+    void
+procket_parse_address(PROCKET_STATE *ps)
 {
-    PROCKET_STATE *ps = (PROCKET_STATE *)state;
+    struct in_addr in;
+    char *p = NULL;
 
 
-    if (procket_open_socket(state, PF_INET, SOCK_STREAM, IPPROTO_TCP) < 0)
-        return (-1);
+    if ( (p = strchr(ps->address, ':')) == NULL) {
+        ps->port = (in_port_t)atoi(ps->address);
+        return;
+    }
 
-    if (listen(ps->s, BACKLOG) < 0)
-        err(EXIT_FAILURE, "listen");
-
-    return (0);
+    *p++ = '\0';
+    ps->port = (in_port_t)atoi(p);
+    IS_LTZERO(inet_aton(ps->address, &in));
+    ps->ip = in.s_addr;
 }
 
 
     int
-procket_open_udp(void *state)
+procket_open_socket(PROCKET_STATE *ps)
 {
-    return procket_open_socket(state, PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-}
-
-
-    int
-procket_open_icmp(void *state)
-{
-    return procket_open_socket(state, PF_INET, SOCK_RAW, IPPROTO_ICMP);
-}
-
-
-    int
-procket_open_raw(void *state)
-{
-    PROCKET_STATE *ps = (PROCKET_STATE *)state;
-    const int on = 1;
-
-    if (procket_open_socket(state, PF_INET, SOCK_RAW, IPPROTO_TCP) < 0)
-        return (-1);
-
-    return (0);
-}
-
-
-    int
-procket_open_socket(void *state, int domain, int type, int protocol)
-{
-    PROCKET_STATE *ps = (PROCKET_STATE *)state;
     struct sockaddr_in sa = { 0 };
 
 
-    sa.sin_family = domain;
-    sa.sin_port = htons(ps->port);
-    sa.sin_addr.s_addr = ps->ipaddr;
-
-    if ( (ps->s = socket(domain, type, protocol)) < 0)
+    if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
         return (-1);
 
-    IS_ERR(bind(ps->s, (struct sockaddr *)&sa, sizeof(sa)));
+    /* Erlang assumes the socket has already been bound */
+    if ( (ps->protocol == IPPROTO_TCP) || (ps->protocol == IPPROTO_UDP)) {
+        sa.sin_family = ps->family;
+        sa.sin_port = htons(ps->port);
+        sa.sin_addr.s_addr = ps->ip;
+
+        IS_ERR(bind(ps->s, (struct sockaddr *)&sa, sizeof(sa)));
+    }
 
     return (0);
 }
@@ -221,7 +186,9 @@ usage(PROCKET_STATE *ps)
     (void)fprintf(stderr,
             "usage: %s <options> <port|ipaddress:port>\n"
             "              -p <path>        path to Unix socket\n"
-            "              -P <protocol>    protocol number [tcp:6,udp:17]\n"
+            "              -F <family>      family [default: PF_INET]\n"
+            "              -P <protocol>    protocol [default: IPPROTO_TCP]\n"
+            "              -T <type>        type [default: SOCK_STREAM]\n"
             "              -v               verbose mode\n",
             __progname
             );
