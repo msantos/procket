@@ -82,6 +82,19 @@ echo is a sample client using procket.
 $ erl -pa ebin
 1> echo:start(53, [{progname, "sudo priv/procket"}, {protocol, tcp}]).
 
+ICMP Ping:
+
+1> icmp:ping("www.yahoo.com").
+
+Sniff the network:
+
+1> {ok, S} = procket:listen(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
+{ok,12}
+2> procket:recvfrom(S, 2048).   
+{ok,<<0,21,175,89,8,38,0,3,82,3,39,36,8,0,69,0,0,52,242,
+          0,0,0,52,6,188,81,209,...>>}
+3> {ok, S1} = gen_udp:open(0, [binary, {fd, S}, {active, false}]).
+4> gen_udp:recv(S1, 2048).
 
 HOW IT WORKS
 
@@ -95,13 +108,4 @@ procket uses libanciallary for passing file descriptors between processes:
 
 
 TODO
-
-* add an interface for setsockopt(2)
-
-* does Erlang close the passed in fd? add an interface to close() it
-
-* allow procket to manage more than one fd
-
-* experiment with providing an interface for supporting for raw sockets
-
 
