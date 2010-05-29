@@ -148,6 +148,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
     int len = 0;
+    ssize_t bufsz = 0;
     ErlNifBinary buf;
 
     if (!enif_get_int(env, argv[0], &sockfd))
@@ -158,7 +159,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_alloc_binary(env, len, &buf))
         return error_tuple(env, "out_of_memory");
 
-    if (recvfrom(sockfd, buf.data, buf.size, 0, NULL, NULL) == -1) {
+    if ( (bufsz = recvfrom(sockfd, buf.data, buf.size, 0, NULL, NULL)) == -1) {
         switch (errno) {
             case EAGAIN:
             case EINTR:
@@ -167,6 +168,9 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
                 return error_tuple(env, strerror(errno));
         }
     }
+
+    if (bufsz != buf.size)
+        enif_realloc_binary(env, &buf, bufsz);
 
     return enif_make_tuple(env, 2,
             atom_ok,
