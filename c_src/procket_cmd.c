@@ -137,10 +137,15 @@ procket_parse_address(PROCKET_STATE *ps)
 procket_open_socket(PROCKET_STATE *ps)
 {
     struct sockaddr_in sa = { 0 };
+    int flags = 0;
 
 
     if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
         return (-1);
+
+    flags = fcntl(ps->s, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    (void)fcntl(ps->s, F_SETFL, flags);
 
     /* Erlang assumes the socket has already been bound */
     if ( (ps->protocol == IPPROTO_TCP) || (ps->protocol == IPPROTO_UDP)) {

@@ -30,7 +30,10 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(procket).
 
--export([init/0,open/1,poll/1,close/2,listen/1,listen/2]).
+-export([
+        init/0,open/1,poll/1,close/2,listen/1,listen/2,
+        recvfrom/2,sendto/6
+    ]).
 -export([make_args/2,progname/0]).
 
 -on_load(on_load/0).
@@ -49,6 +52,12 @@ poll(_) ->
     erlang:error(not_implemented).
 
 close(_,_) ->
+    erlang:error(not_implemented).
+
+recvfrom(_,_) ->
+    erlang:error(not_implemented).
+
+sendto(_,_,_,_,_,_) ->
     erlang:error(not_implemented).
 
 listen(Port) ->
