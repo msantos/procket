@@ -47,6 +47,8 @@
 
 #include <sys/errno.h>
 
+#include <sys/ioctl.h>
+
 
 #define PROCKET_VERSION   "0.01"
 #define MAXBUFLEN           4096    /* Largest message accepted on stdin */

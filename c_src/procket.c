@@ -232,6 +232,39 @@ nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return atom_ok;
 }
 
+/* 0: (int)socket descriptor, 1: (int)device dependent request,
+ * 2: (char *)argp, pointer to structure
+ */
+    static ERL_NIF_TERM
+nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    int req = 0;
+    ErlNifBinary ifr;
+
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &req))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[2], &ifr))
+        return enif_make_badarg(env);
+
+    if (!enif_realloc_binary(env, &ifr, ifr.size))
+        return enif_make_badarg(env);
+
+    (void)fprintf(stderr, "interface = %s\n", ifr.data);
+
+    if (ioctl(s, req, ifr.data) < 0)
+        return error_tuple(env, strerror(errno));
+
+    return enif_make_tuple(env, 2,
+            atom_ok,
+            enif_make_binary(env, &ifr));
+}
+
 
     static ERL_NIF_TERM
 error_tuple(ErlNifEnv *env, char *err)
@@ -259,6 +292,7 @@ static ErlNifFunc nif_funcs[] = {
     {"close", 2, nif_close},
     {"bind", 2, nif_bind},
     {"recvfrom", 2, nif_recvfrom},
+    {"ioctl", 3, nif_ioctl},
     {"sendto", 4, nif_sendto}
 };
 
