@@ -178,53 +178,56 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
-/* 0: socket, 1: buffer, 2: flags, 3: address
- * 4: port, 5: family
- */
+/* 0: socket, 1: buffer, 2: flags, 3: struct sockaddr */
     static ERL_NIF_TERM
 nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
     int flags = 0;
-    char address[1024];    /* XXX IPv4 */
-    struct in_addr in;
-    struct sockaddr_in sa = {0};
-    in_port_t port = 0;
-    int family = 0;
 
     ErlNifBinary buf;
+    ErlNifBinary sa;
+
 
     if (!enif_get_int(env, argv[0], &sockfd))
         return enif_make_badarg(env);
 
-    if (!enif_inspect_iolist_as_binary(env, argv[1], &buf))
+    if (!enif_inspect_binary(env, argv[1], &buf))
         return enif_make_badarg(env);
     
     if (!enif_get_int(env, argv[2], &flags))
         return enif_make_badarg(env);
 
-    if (enif_get_string(env, argv[3], address, sizeof(address), ERL_NIF_LATIN1) < 1)
+    if (!enif_inspect_binary(env, argv[3], &sa))
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[4], (int *)&port))
-        return enif_make_badarg(env);
-
-    if (!enif_get_int(env, argv[5], &family))
-        return enif_make_badarg(env);
-
-    if (inet_aton(address, &in) < 0)
-        return enif_make_badarg(env);
-
-    sa.sin_family = family;
-    sa.sin_port = htons(port);
-    sa.sin_addr.s_addr = in.s_addr;
-
-    if (sendto(sockfd, buf.data, buf.size, flags, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+    if (sendto(sockfd, buf.data, buf.size, flags, (struct sockaddr *)sa.data, sa.size) == -1)
         return enif_make_tuple(env, 2,
             atom_error,
             enif_make_tuple(env, 2,
             enif_make_int(env, errno),
             enif_make_string(env, strerror(errno), ERL_NIF_LATIN1)));
+
+    return atom_ok;
+}
+
+
+/* 0: socket descriptor, 1: struct sockaddr */
+    static ERL_NIF_TERM
+nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    ErlNifBinary sa;
+
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &sa))
+        return enif_make_badarg(env);
+
+    if (bind(s, (struct sockaddr *)sa.data, sa.size) < 0)
+        return error_tuple(env, strerror(errno));
 
     return atom_ok;
 }
@@ -254,10 +257,9 @@ static ErlNifFunc nif_funcs[] = {
     {"open", 1, nif_open},
     {"poll", 1, nif_poll},
     {"close", 2, nif_close},
-    /*
-    {"sendto", 6, nif_sendto},
-    */
-    {"recvfrom", 2, nif_recvfrom}
+    {"bind", 2, nif_bind},
+    {"recvfrom", 2, nif_recvfrom},
+    {"sendto", 4, nif_sendto}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, NULL, NULL, NULL)

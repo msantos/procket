@@ -32,7 +32,7 @@
 
 -export([
         init/0,open/1,poll/1,close/2,listen/1,listen/2,
-        recvfrom/2,sendto/6
+        recvfrom/2,sendto/4,bind/2
     ]).
 -export([make_args/2,progname/0]).
 
@@ -54,10 +54,13 @@ poll(_) ->
 close(_,_) ->
     erlang:error(not_implemented).
 
+bind(_,_) ->
+    erlang:error(not_implemented).
+
 recvfrom(_,_) ->
     erlang:error(not_implemented).
 
-sendto(_,_,_,_,_,_) ->
+sendto(_,_,_,_) ->
     erlang:error(not_implemented).
 
 listen(Port) ->
