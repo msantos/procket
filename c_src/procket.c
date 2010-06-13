@@ -255,8 +255,6 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_realloc_binary(env, &ifr, ifr.size))
         return enif_make_badarg(env);
 
-    (void)fprintf(stderr, "interface = %s\n", ifr.data);
-
     if (ioctl(s, req, ifr.data) < 0)
         return error_tuple(env, strerror(errno));
 
