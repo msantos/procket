@@ -93,7 +93,7 @@ make_packet(Id, Seq) ->
     {Mega,Sec,USec} = erlang:now(),
 
     % Pad packet to 64 bytes
-    Payload = list_to_binary(lists:seq(32, 75)),
+    Payload = list_to_binary(lists:seq($\s, $K)),
 
     CS = makesum(<<?ICMP_ECHO:8, 0:8, 0:16, Id:16, Seq:16, Mega:32, Sec:32, USec:32, Payload/binary>>),
     <<
