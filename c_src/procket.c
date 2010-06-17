@@ -156,7 +156,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[1], &len))
         return enif_make_badarg(env);
 
-    if (!enif_alloc_binary(env, len, &buf))
+    if (!enif_alloc_binary(len, &buf))
         return error_tuple(env, "out_of_memory");
 
     if ( (bufsz = recvfrom(sockfd, buf.data, buf.size, 0, NULL, NULL)) == -1) {
@@ -170,7 +170,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     }
 
     if (bufsz != buf.size)
-        enif_realloc_binary(env, &buf, bufsz);
+        enif_realloc_binary(&buf, bufsz);
 
     return enif_make_tuple(env, 2,
             atom_ok,
@@ -252,7 +252,7 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[2], &ifr))
         return enif_make_badarg(env);
 
-    if (!enif_realloc_binary(env, &ifr, ifr.size))
+    if (!enif_realloc_binary(&ifr, ifr.size))
         return enif_make_badarg(env);
 
     if (ioctl(s, req, ifr.data) < 0)
