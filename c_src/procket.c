@@ -163,8 +163,10 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         switch (errno) {
             case EAGAIN:
             case EINTR:
+                enif_release_binary(&buf);
                 return atom_nodata;
             default:
+                enif_release_binary(&buf);
                 return error_tuple(env, strerror(errno));
         }
     }
