@@ -266,6 +266,36 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
+/* 0: int socket descriptor, 1: int level,
+ * 2: int optname, 3: void *optval
+ */
+    static ERL_NIF_TERM
+nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    int level = 0;
+    int name = 0;
+    ErlNifBinary val;
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &level))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[2], &name))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[3], &val))
+        return enif_make_badarg(env);
+
+    if (setsockopt(s, level, name, (void *)val.data, val.size) < 0)
+        return error_tuple(env, strerror(errno));
+
+    return atom_ok;
+}
+
+
     static ERL_NIF_TERM
 error_tuple(ErlNifEnv *env, char *err)
 {
@@ -293,7 +323,8 @@ static ErlNifFunc nif_funcs[] = {
     {"bind", 2, nif_bind},
     {"recvfrom", 2, nif_recvfrom},
     {"ioctl", 3, nif_ioctl},
-    {"sendto", 4, nif_sendto}
+    {"sendto", 4, nif_sendto},
+    {"setsockopt", 4, nif_setsockopt}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, NULL, NULL, NULL)

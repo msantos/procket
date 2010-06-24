@@ -33,7 +33,7 @@
 -export([
         init/0,open/1,poll/1,close/2,listen/1,listen/2,
         recvfrom/2,sendto/4,bind/2,
-        ioctl/3
+        ioctl/3,setsockopt/4
     ]).
 -export([make_args/2,progname/0]).
 
@@ -65,6 +65,9 @@ ioctl(_,_,_) ->
     erlang:error(not_implemented).
 
 sendto(_,_,_,_) ->
+    erlang:error(not_implemented).
+
+setsockopt(_,_,_,_) ->
     erlang:error(not_implemented).
 
 listen(Port) ->

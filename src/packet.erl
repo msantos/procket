@@ -33,11 +33,18 @@
         socket/0,
         makesum/1,
         ifindex/2,
+        promiscuous/2,
         send/3
     ]).
 
 -define(SIOCGIFINDEX, 16#8933).
 -define(PF_PACKET, 17).
+
+% Options for promiscuous mode
+-define(SOL_PACKET, 263).
+-define(PACKET_ADD_MEMBERSHIP, 1).
+-define(PACKET_DROP_MEMBERSHIP, 2).
+-define(PACKET_MR_PROMISC, 1).
 
 socket() ->
     procket:listen(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
@@ -50,12 +57,12 @@ ifindex(Socket, Dev) ->
             ])),
     Ifr.
 
-send(S, Interface, Packet) ->
+send(S, Ifindex, Packet) ->
     procket:sendto(S, Packet, 0,
         <<
         ?PF_PACKET:16/native,   % sll_family: PF_PACKET
         0:16,                   % sll_protocol: Physical layer protocol
-        Interface:32/native,  	% sll_ifindex: Interface number
+        Ifindex:32/native,  	% sll_ifindex: Interface number
         0:16,		    		% sll_hatype: Header type
         0:8,		    		% sll_pkttype: Packet type
         0:8,		    		% sll_halen: address length
@@ -67,6 +74,15 @@ send(S, Interface, Packet) ->
         0:8,		    		% sll_addr[8]: physical layer address
         0:8,		    		% sll_addr[8]: physical layer address
         0:8			     	    % sll_addr[8]: physical layer address
+        >>).
+
+promiscuous(Socket, Ifindex) ->
+    % struct packet_mreq
+    procket:setsockopt(Socket, ?SOL_PACKET, ?PACKET_ADD_MEMBERSHIP, <<
+        Ifindex:32/native,              % mr_ifindex: interface index
+        ?PACKET_MR_PROMISC:16/native,   % mr_type: action
+        0:16,                           % mr_alen: address length
+        0:64                            % mr_address[8]:  physical layer address
         >>).
 
 makesum(Hdr) -> 16#FFFF - checksum(Hdr).
