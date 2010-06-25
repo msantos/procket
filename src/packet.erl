@@ -33,6 +33,7 @@
         socket/0,
         makesum/1,
         ifindex/2,
+        ipv4address/2,
         promiscuous/2,
         send/3
     ]).
@@ -40,11 +41,16 @@
 -define(SIOCGIFINDEX, 16#8933).
 -define(PF_PACKET, 17).
 
+% Options for retrieving device IP
+-define(SIOCGIFADDR, 16#8915).
+-define(PF_INET, 2).
+
 % Options for promiscuous mode
 -define(SOL_PACKET, 263).
 -define(PACKET_ADD_MEMBERSHIP, 1).
 -define(PACKET_DROP_MEMBERSHIP, 2).
 -define(PACKET_MR_PROMISC, 1).
+
 
 socket() ->
     procket:listen(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
@@ -56,6 +62,22 @@ ifindex(Socket, Dev) ->
                 Dev, <<0:((16*8) - (length(Dev)*8)), 0:128>>
             ])),
     Ifr.
+
+ipv4address(Socket, Dev) ->
+    % struct ifreq, struct sockaddr
+    {ok, <<_Ifname:16/bytes,
+        ?PF_INET:16/native, % sin_family
+        _:16,               % sin_port
+        SA1,SA2,SA3,SA4,    % sin_addr
+        _/binary>>} = procket:ioctl(Socket,
+        ?SIOCGIFADDR,
+        list_to_binary([
+                Dev, <<0:((16*8) - (length(Dev)*8))>>,
+                % struct sockaddr
+                <<?PF_INET:16/native,       % family
+                0:112>>
+            ])),
+    {SA1,SA2,SA3,SA4}.
 
 send(S, Ifindex, Packet) ->
     procket:sendto(S, Packet, 0,
