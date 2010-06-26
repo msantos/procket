@@ -31,6 +31,7 @@
 -module(packet).
 -export([
         socket/0,
+        iflist/0,
         makesum/1,
         arplookup/3,
         ifindex/2,
@@ -69,7 +70,7 @@ socket() ->
 % way of traversing the ARP cache appears to be by checking the output
 % of /proc/net/arp.
 arplookup(_Socket, _Dev, {SA1,SA2,SA3,SA4}) ->
-    {ok, FD} = file:open("/proc/net/arp", [read]),
+    {ok, FD} = file:open("/proc/net/arp", [read,raw]),
     arploop(FD, inet_parse:ntoa({SA1,SA2,SA3,SA4})).
 
 arploop(FD, Address) ->
@@ -86,7 +87,27 @@ arploop(FD, Address) ->
                     list_to_tuple([ erlang:list_to_integer(E, 16) || E <- M ]);
                 _ -> arploop(FD, Address)
             end
-        end.
+    end.
+
+iflist() ->
+    {ok, FD} = file:open("/proc/net/dev", [raw, read]),
+    iflistloop(FD, []).
+
+iflistloop(FD, Ifs) ->
+    case file:read_line(FD) of
+        eof ->
+            file:close(FD),
+            Ifs;
+        {ok, Line} ->
+            iflistloop(FD, iflistmatch(Line, Ifs))
+    end.
+
+iflistmatch(Data, Ifs) ->
+    case re:run(Data, "^\\s*([a-z]+[0-9]+):", [{capture, [1], list}]) of
+        nomatch -> Ifs;
+        {match, [If]} -> [If|Ifs]
+    end.
+
 
 ifindex(Socket, Dev) ->
     {ok, <<_Ifname:16/bytes, Ifr:8, _/binary>>} = procket:ioctl(Socket,
