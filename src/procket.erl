@@ -31,7 +31,7 @@
 -module(procket).
 
 -export([
-        init/0,open/1,poll/1,close/2,listen/1,listen/2,
+        init/0,open/1,poll/1,close/1,close/2,listen/1,listen/2,
         recvfrom/2,sendto/4,bind/2,
         ioctl/3,setsockopt/4
     ]).
@@ -47,6 +47,9 @@ on_load() ->
     erlang:load_nif(progname(), []).
 
 open(_) ->
+    erlang:error(not_implemented).
+
+close(_) ->
     erlang:error(not_implemented).
 
 poll(_) ->
@@ -82,7 +85,7 @@ listen(Port, Options) when is_integer(Port), is_list(Options) ->
     case os:cmd(Cmd) of
         [] ->
             FD = poll(Sockfd),
-            close(proplists:get_value(pipe, Opt), Sockfd),
+            close(Sockfd, proplists:get_value(pipe, Opt)),
             FD;
         Error ->
             {error, {procket_cmd, Error}}

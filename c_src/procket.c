@@ -117,24 +117,29 @@ nif_poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
-/* 0: path to socket
- * 1: file descriptor
+/* 0: file descriptor
+ * 1: path to socket
  */
     static ERL_NIF_TERM
 nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    struct sockaddr_un sa = { 0 };
     int sockfd = -1;
+    struct sockaddr_un sa = { 0 };
 
 
-    if (enif_get_string(env, argv[0], sa.sun_path, sizeof(sa.sun_path), ERL_NIF_LATIN1) < 1)
-        return enif_make_badarg(env);
+    switch (argc) {
+        case 2:
+            if (enif_get_string(env, argv[1], sa.sun_path, sizeof(sa.sun_path),
+                        ERL_NIF_LATIN1) < 1)
+                return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[1], &sockfd))
-        return enif_make_badarg(env);
+            if (unlink(sa.sun_path) < 0)
+                return error_message(env, "unlink", strerror(errno));
 
-    if (unlink(sa.sun_path) < 0)
-        return error_message(env, "unlink", strerror(errno));
+        case 1:
+            if (!enif_get_int(env, argv[0], &sockfd))
+                return enif_make_badarg(env);
+    }
 
     (void)close(sockfd);
 
@@ -319,6 +324,7 @@ error_message(ErlNifEnv *env, char *err, char *msg)
 static ErlNifFunc nif_funcs[] = {
     {"open", 1, nif_open},
     {"poll", 1, nif_poll},
+    {"close", 1, nif_close},
     {"close", 2, nif_close},
     {"bind", 2, nif_bind},
     {"recvfrom", 2, nif_recvfrom},
