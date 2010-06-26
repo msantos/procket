@@ -32,8 +32,10 @@
 -export([
         socket/0,
         makesum/1,
+        arplookup/3,
         ifindex/2,
         ipv4address/2,
+        macaddress/2,
         promiscuous/2,
         send/3
     ]).
@@ -45,15 +47,46 @@
 -define(SIOCGIFADDR, 16#8915).
 -define(PF_INET, 2).
 
+% Options for retrieving dev MAC address
+-define(SIOCGIFHWADDR, 16#8927).
+
 % Options for promiscuous mode
 -define(SOL_PACKET, 263).
 -define(PACKET_ADD_MEMBERSHIP, 1).
 -define(PACKET_DROP_MEMBERSHIP, 2).
 -define(PACKET_MR_PROMISC, 1).
 
+% Options for doing ARP cache lookups
+-define(SIOCGARP, 16#8954).
+-define(ARPHRD_ETHER, 1).
+-define(HWADDR_OFF, 4).
+
 
 socket() ->
     procket:listen(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
+
+% On Linux, using ioctl(SIOCGARP) doesn't work for me. The standard
+% way of traversing the ARP cache appears to be by checking the output
+% of /proc/net/arp.
+arplookup(_Socket, _Dev, {SA1,SA2,SA3,SA4}) ->
+    {ok, FD} = file:open("/proc/net/arp", [read]),
+    arploop(FD, inet_parse:ntoa({SA1,SA2,SA3,SA4})).
+
+arploop(FD, Address) ->
+    case file:read_line(FD) of
+        eof ->
+            file:close(FD),
+            not_found;
+        {ok, Line} ->
+            case string:str(Line, Address) of
+                1 ->
+                    file:close(FD),
+                    M = string:tokens(
+                        lists:nth(?HWADDR_OFF, string:tokens(Line, " \n")), ":"),
+                    list_to_tuple([ erlang:list_to_integer(E, 16) || E <- M ]);
+                _ -> arploop(FD, Address)
+            end
+        end.
 
 ifindex(Socket, Dev) ->
     {ok, <<_Ifname:16/bytes, Ifr:8, _/binary>>} = procket:ioctl(Socket,
@@ -64,7 +97,7 @@ ifindex(Socket, Dev) ->
     Ifr.
 
 ipv4address(Socket, Dev) ->
-    % struct ifreq, struct sockaddr
+    % struct ifreq, struct sockaddr_in
     {ok, <<_Ifname:16/bytes,
         ?PF_INET:16/native, % sin_family
         _:16,               % sin_port
@@ -78,6 +111,18 @@ ipv4address(Socket, Dev) ->
                 0:112>>
             ])),
     {SA1,SA2,SA3,SA4}.
+
+macaddress(Socket, Dev) ->
+    {ok, <<_Ifname:16/bytes,
+        _:16,                       % family
+        SM1,SM2,SM3,SM4,SM5,SM6,    % mac address
+        _/binary>>} = procket:ioctl(Socket,
+        ?SIOCGIFHWADDR,
+        list_to_binary([
+                Dev, <<0:((16*8) - (length(Dev)*8)), 0:128>>
+            ])),
+    {SM1,SM2,SM3,SM4,SM5,SM6}.
+
 
 send(S, Ifindex, Packet) ->
     procket:sendto(S, Packet, 0,
