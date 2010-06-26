@@ -92,7 +92,7 @@ ifindex(Socket, Dev) ->
     {ok, <<_Ifname:16/bytes, Ifr:8, _/binary>>} = procket:ioctl(Socket,
         ?SIOCGIFINDEX,
         list_to_binary([
-                Dev, <<0:((16*8) - (length(Dev)*8)), 0:128>>
+                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
             ])),
     Ifr.
 
@@ -105,7 +105,7 @@ ipv4address(Socket, Dev) ->
         _/binary>>} = procket:ioctl(Socket,
         ?SIOCGIFADDR,
         list_to_binary([
-                Dev, <<0:((16*8) - (length(Dev)*8))>>,
+                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8>>,
                 % struct sockaddr
                 <<?PF_INET:16/native,       % family
                 0:112>>
@@ -119,7 +119,7 @@ macaddress(Socket, Dev) ->
         _/binary>>} = procket:ioctl(Socket,
         ?SIOCGIFHWADDR,
         list_to_binary([
-                Dev, <<0:((16*8) - (length(Dev)*8)), 0:128>>
+                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
             ])),
     {SM1,SM2,SM3,SM4,SM5,SM6}.
 
