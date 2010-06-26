@@ -242,7 +242,7 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
     int req = 0;
-    ErlNifBinary ifr;
+    ErlNifBinary arg;
 
 
     if (!enif_get_int(env, argv[0], &s))
@@ -251,18 +251,18 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[1], &req))
         return enif_make_badarg(env);
 
-    if (!enif_inspect_binary(env, argv[2], &ifr))
+    if (!enif_inspect_binary(env, argv[2], &arg))
         return enif_make_badarg(env);
 
-    if (!enif_realloc_binary(&ifr, ifr.size))
+    if (!enif_realloc_binary(&arg, arg.size))
         return enif_make_badarg(env);
 
-    if (ioctl(s, req, ifr.data) < 0)
+    if (ioctl(s, req, arg.data) < 0)
         return error_tuple(env, strerror(errno));
 
     return enif_make_tuple(env, 2,
             atom_ok,
-            enif_make_binary(env, &ifr));
+            enif_make_binary(env, &arg));
 }
 
 
