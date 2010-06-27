@@ -33,7 +33,7 @@
         socket/0,
         iflist/0,
         makesum/1,
-        arplookup/3,
+        arplookup/1,
         ifindex/2,
         ipv4address/2,
         macaddress/2,
@@ -69,7 +69,7 @@ socket() ->
 % On Linux, using ioctl(SIOCGARP) doesn't work for me. The standard
 % way of traversing the ARP cache appears to be by checking the output
 % of /proc/net/arp.
-arplookup(_Socket, _Dev, {SA1,SA2,SA3,SA4}) ->
+arplookup({SA1,SA2,SA3,SA4}) ->
     {ok, FD} = file:open("/proc/net/arp", [read,raw]),
     arploop(FD, inet_parse:ntoa({SA1,SA2,SA3,SA4})).
 
