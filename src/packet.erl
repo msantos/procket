@@ -79,13 +79,13 @@ arploop(FD, Address) ->
             file:close(FD),
             not_found;
         {ok, Line} ->
-            case string:str(Line, Address) of
-                1 ->
+            case lists:prefix(Address, Line) of
+                true ->
                     file:close(FD),
                     M = string:tokens(
                         lists:nth(?HWADDR_OFF, string:tokens(Line, " \n")), ":"),
                     list_to_tuple([ erlang:list_to_integer(E, 16) || E <- M ]);
-                _ -> arploop(FD, Address)
+                false -> arploop(FD, Address)
             end
     end.
 
