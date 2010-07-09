@@ -4,12 +4,14 @@ APP=procket
 
 CC=gcc
 
-#Mac OS X: use "-m64" for a 64-bit erlang
+# Use "-m64" for 64-bit Erlang installs
 ARCH=-m32
-FLAGS=$(ARCH) -O3 -fPIC -bundle -flat_namespace -undefined suppress -fno-common
+
+# Mac OS X
+#FLAGS=$(ARCH) -O3 -fPIC -bundle -flat_namespace -undefined suppress -fno-common
 
 # Linux
-#FLAGS=-fPIC -shared
+FLAGS=-fPIC -shared
 
 ERL_ROOT=/usr/local/lib/erlang
 CFLAGS=-g -Wall
@@ -25,11 +27,11 @@ erl:
 		-eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
 
 ancillary:
-	(cd c_src && $(MAKE) -f Makefile.ancillary)
+	(cd c_src && $(MAKE) ARCH=$(ARCH) -f Makefile.ancillary)
 
 nif:
 	(cd c_src && \
-	$(CC) -g -Wall $(FLAGS) -o ../priv/procket.so -L.  \
+	$(CC) $(ARCH) -g -Wall $(FLAGS) -o ../priv/procket.so -L.  \
 		procket.c -l ancillary -I $(ERL_ROOT)/usr/include/ )
 
 cmd:
