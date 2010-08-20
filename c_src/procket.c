@@ -36,7 +36,7 @@
 #define BACKLOG     5
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, char *err);
-static ERL_NIF_TERM error_message(ErlNifEnv *env, char *err, char *msg);
+static ERL_NIF_TERM error_message(ErlNifEnv *env, char *err, int errnum);
 
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
@@ -69,17 +69,17 @@ nif_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     sock_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
     if (sock_fd < 0)
-        return error_message(env, "socket", strerror(errno));
+        return error_message(env, "socket", errno);
 
     flags = fcntl(sock_fd, F_GETFL, 0);
     flags |= O_NONBLOCK;
     (void)fcntl(sock_fd, F_SETFL, flags);
 
     if (bind(sock_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-        return error_message(env, "bind", strerror(errno));
+        return error_message(env, "bind", errno);
 
     if (listen(sock_fd, BACKLOG) < 0)
-        return error_message(env, "listen", strerror(errno));
+        return error_message(env, "listen", errno);
 
     return enif_make_tuple(env, 2,
            atom_ok,
@@ -102,11 +102,11 @@ nif_poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     fd = accept(sock_fd, (struct sockaddr *)&sa, &socklen);
     if (fd < 0)
-        return error_message(env, "accept", strerror(errno));
+        return error_message(env, "accept", errno);
 
     if (ancil_recv_fd(fd, &s) < 0) {
         (void)close (fd);
-        return error_message(env, "recvmsg", strerror(errno));
+        return error_message(env, "recvmsg", errno);
     }
 
     (void)close (fd);
@@ -134,14 +134,15 @@ nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
                 return enif_make_badarg(env);
 
             if (unlink(sa.sun_path) < 0)
-                return error_message(env, "unlink", strerror(errno));
+                return error_message(env, "unlink", errno);
 
         case 1:
             if (!enif_get_int(env, argv[0], &sockfd))
                 return enif_make_badarg(env);
     }
 
-    (void)close(sockfd);
+    if (close(sockfd) < 0)
+        return error_message(env, "close", errno);
 
     return atom_ok;
 }
@@ -172,7 +173,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
                 return atom_nodata;
             default:
                 enif_release_binary(&buf);
-                return error_tuple(env, strerror(errno));
+                return error_message(env, "recvfrom", errno);
         }
     }
 
@@ -209,11 +210,7 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (sendto(sockfd, buf.data, buf.size, flags, (struct sockaddr *)sa.data, sa.size) == -1)
-        return enif_make_tuple(env, 2,
-            atom_error,
-            enif_make_tuple(env, 2,
-            enif_make_int(env, errno),
-            enif_make_string(env, strerror(errno), ERL_NIF_LATIN1)));
+        return error_message(env, "sendto", errno);
 
     return atom_ok;
 }
@@ -234,7 +231,7 @@ nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (bind(s, (struct sockaddr *)sa.data, sa.size) < 0)
-        return error_tuple(env, strerror(errno));
+        return error_message(env, "bind", errno);
 
     return atom_ok;
 }
@@ -263,7 +260,7 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (ioctl(s, req, arg.data) < 0)
-        return error_tuple(env, strerror(errno));
+        return error_message(env, "ioctl", errno);
 
     return enif_make_tuple(env, 2,
             atom_ok,
@@ -295,7 +292,7 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (setsockopt(s, level, name, (void *)val.data, val.size) < 0)
-        return error_tuple(env, strerror(errno));
+        return error_message(env, "setsockopt", errno);
 
     return atom_ok;
 }
@@ -311,13 +308,14 @@ error_tuple(ErlNifEnv *env, char *err)
 
 
     static ERL_NIF_TERM
-error_message(ErlNifEnv *env, char *err, char *msg)
+error_message(ErlNifEnv *env, char *err, int errnum)
 {
-    return enif_make_tuple(env, 2,
+        return enif_make_tuple(env, 2,
             atom_error,
-            enif_make_tuple(env, 2,
+            enif_make_tuple(env, 3,
             enif_make_atom(env, err),
-            enif_make_string(env, msg, ERL_NIF_LATIN1)));
+            enif_make_int(env, errnum),
+            enif_make_string(env, strerror(errno), ERL_NIF_LATIN1)));
 }
 
 
