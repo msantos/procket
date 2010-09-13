@@ -26,15 +26,14 @@ Well, try running: make
 
 Maybe it'll work. If not:
 
-1. In the Makefile, adjust ERL_ROOT to point to your Erlang install if
-   it isn't in the default location.
+1. You may need to adjust the "-m" parameter passed to GCC for compiling
+   libancillary if, e.g., you are using a 32-bit Erlang built on a 64-bit
+   platform, like Mac OS X. To do so, edit rebar.config and uncomment:
 
-2. In the Makefile, check the proper flags are uncommented for your
-   platform (tested on Mac OS X and Linux).
+{port_pre_script, {"make ARCH=-m64 -C c_src -f Makefile.ancillary -f Makefile.cmd", ""}}.
 
-3. For Mac OS X, the Makefile is set up for a 32-bit Erlang. If
-   you're running a 64-bit Erlang, change ARCH=-m64 in Makefile and
-   c_src/Makefile.ancillary.
+   Comment out the existing port_pre_script, save the file and re-run
+   make.
 
 
 SETUID vs SUDO
