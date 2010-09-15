@@ -1,7 +1,5 @@
 
 REBAR=./rebar
-TEMPLATE=rebar.config.tmpl
-CONFIG=rebar.config
 
 all: compile
 
