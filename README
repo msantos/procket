@@ -22,18 +22,7 @@ listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Descripti
 
 COMPILING
 
-Well, try running: make
-
-Maybe it'll work. If not:
-
-1. You may need to adjust the "-m" parameter passed to GCC for compiling
-   libancillary if, e.g., you are using a 32-bit Erlang built on a 64-bit
-   platform, like Mac OS X. To do so, edit rebar.config and uncomment:
-
-{port_pre_script, {"make ARCH=-m64 -C c_src -f Makefile.ancillary -f Makefile.cmd", ""}}.
-
-   Comment out the existing port_pre_script, save the file and re-run
-   make.
+Try running: make
 
 
 SETUID vs SUDO
@@ -107,4 +96,9 @@ procket uses libanciallary for passing file descriptors between processes:
 
 
 TODO
+
+1. Support BPF on BSD for sending/receiving packets
+
+2. Examples/changes to support sending TCP/UDP packets using the raw
+   socket interface, using epcap to receive packets
 

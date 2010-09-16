@@ -1,6 +1,6 @@
 {application, procket,
     [
-    {description, "Raw socket support"},
+    {description, "Low level socket operations"},
     {vsn, "0.01"},
     {modules, [
         procket,
