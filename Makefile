@@ -1,7 +1,10 @@
 
 REBAR=./rebar
 
-all: compile
+all: dirs compile
+
+dirs:
+	@mkdir -p priv/tmp
 
 compile:
 	@$(REBAR) compile
