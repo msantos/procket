@@ -90,24 +90,8 @@ arploop(FD, Address) ->
     end.
 
 iflist() ->
-    {ok, FD} = file:open("/proc/net/dev", [raw, read]),
-    iflistloop(FD, []).
-
-iflistloop(FD, Ifs) ->
-    case file:read_line(FD) of
-        eof ->
-            file:close(FD),
-            Ifs;
-        {ok, Line} ->
-            iflistloop(FD, iflistmatch(Line, Ifs))
-    end.
-
-iflistmatch(Data, Ifs) ->
-    case re:run(Data, "^\\s*([a-z]+[0-9]+):", [{capture, [1], list}]) of
-        nomatch -> Ifs;
-        {match, [If]} -> [If|Ifs]
-    end.
-
+    {ok, Ifs} = inet:getiflist(),
+    Ifs.
 
 ifindex(Socket, Dev) ->
     {ok, <<_Ifname:16/bytes, Ifr:8, _/binary>>} = procket:ioctl(Socket,
