@@ -16,7 +16,7 @@ listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Descripti
                     {progname, string()}
             Protocol = tcp | udp
             IPAddress = string() | tuple()
-            Reason = atom()
+            Reason = posix()
             Description = string()
 
 
