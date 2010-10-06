@@ -44,6 +44,7 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <net/if.h>
 
 #include <sys/errno.h>
 
@@ -89,7 +90,8 @@ extern char *__progname;
 
 typedef struct {
     char *path;             /* path to pipe file */
-    char *address;           /* <port> or <ipaddr:port> */
+    char *address;          /* <port> or <ipaddr:port> */
+    char *ifname;           /* network interface name */
     int verbose;            /* Debug messages */
 
     in_addr_t ip;           /* IP Address */

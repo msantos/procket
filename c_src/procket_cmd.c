@@ -57,7 +57,7 @@ main(int argc, char *argv[])
     ps->type = SOCK_STREAM;
     ps->protocol = IPPROTO_TCP;
 
-    while ( (ch = getopt(argc, argv, "b:F:hp:P:T:v")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:F:hp:P:T:v:I:")) != -1) {
         switch (ch) {
             case 'b':   /* listen backlog */
                 ps->backlog = atoi(optarg);
@@ -75,6 +75,9 @@ main(int argc, char *argv[])
                 break;
             case 'T':   /* socket type */
                 ps->type = atoi(optarg);
+                break;
+            case 'I': /* Interface name */
+                IS_NULL(ps->ifname = strdup(optarg));
                 break;
             case 'v':
                 ps->verbose++;
@@ -138,14 +141,26 @@ procket_open_socket(PROCKET_STATE *ps)
 {
     struct sockaddr_in sa = { 0 };
     int flags = 0;
-
+    struct ifreq ifr;
+    int r;
 
     if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
         return (-1);
 
+    /* Is this the right place to do this? */
+    if(ps->ifname) {
+        strncpy(ifr.ifr_name, ps->ifname, IFNAMSIZ);
+        r = setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr));
+        if(r) {
+            return (-1);
+        }
+    }
+
+
     flags = fcntl(ps->s, F_GETFL, 0);
     flags |= O_NONBLOCK;
     (void)fcntl(ps->s, F_SETFL, flags);
+
 
     /* Erlang assumes the socket has already been bound */
     if ( (ps->protocol == IPPROTO_TCP) || (ps->protocol == IPPROTO_UDP)) {
@@ -155,6 +170,7 @@ procket_open_socket(PROCKET_STATE *ps)
 
         IS_ERR(bind(ps->s, (struct sockaddr *)&sa, sizeof(sa)));
     }
+
 
     return (0);
 }
@@ -194,6 +210,7 @@ usage(PROCKET_STATE *ps)
             "              -F <family>      family [default: PF_INET]\n"
             "              -P <protocol>    protocol [default: IPPROTO_TCP]\n"
             "              -T <type>        type [default: SOCK_STREAM]\n"
+            "              -I <name>        interface [default: ANY]\n"
             "              -v               verbose mode\n",
             __progname
             );

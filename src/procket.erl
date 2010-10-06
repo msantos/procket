@@ -103,7 +103,8 @@ make_args(Port, Options) ->
                 pipe,
                 protocol,
                 family,
-                type
+                type,
+                interface
             ], proplists:lookup(Arg, Options) /= none ],
         " ") ++ Bind.
 
@@ -126,7 +127,9 @@ get_switch({family, packet})    -> "-F 17";
 get_switch({family, Family}) when is_integer(Family) -> "-F " ++ integer_to_list(Family);
 
 get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
-get_switch({ip, Arg}) when is_list(Arg) -> Arg.
+get_switch({ip, Arg}) when is_list(Arg) -> Arg;
+
+get_switch({interface, Name}) when is_list(Name) -> "-I " ++ Name.
 
 progname() ->
     filename:join([
