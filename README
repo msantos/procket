@@ -13,7 +13,7 @@ listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Descripti
     Types   Port = 0..65535
             Options = [Opts]
             Opts = {pipe, Path} | {protocol, Protocol} | {ip, IPAddress} |
-                    {progname, string()}
+                    {progname, string()} | {interface, string()}
             Protocol = tcp | udp
             IPAddress = string() | tuple()
             Reason = posix()
@@ -83,6 +83,12 @@ Sniff the network:
           0,0,0,52,6,188,81,209,...>>}
 3> {ok, S1} = gen_udp:open(0, [binary, {fd, S}, {active, false}]).
 4> gen_udp:recv(S1, 2048).
+
+Bind to one or more interfaces:
+1> procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br0"}]).
+{ok,9}
+2> procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br1"}]).
+{ok,10}
 
 HOW IT WORKS
 
