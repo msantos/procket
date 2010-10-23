@@ -30,16 +30,19 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(packet).
 -export([
-        socket/0,
+        socket/0, socket/1,
         iflist/0,
         makesum/1,
         arplookup/1,
+        gateway/0, gateway/1, gateway_addr/1,
+        default_interface/0,
         ifindex/2,
         ipv4address/2,
         macaddress/2,
         promiscuous/2,
         send/3
     ]).
+
 
 -define(SIOCGIFINDEX, 16#8933).
 -define(PF_PACKET, 17).
@@ -57,42 +60,108 @@
 -define(PACKET_DROP_MEMBERSHIP, 2).
 -define(PACKET_MR_PROMISC, 1).
 
-% Options for doing ARP cache lookups
--define(SIOCGARP, 16#8954).
--define(ARPHRD_ETHER, 1).
--define(HWADDR_OFF, 4).
+-define(ETH_P_IP, 16#0800).
 
 
+%%-------------------------------------------------------------------------
+%% Convenience function to return a raw socket
+%%-------------------------------------------------------------------------
 socket() ->
-    procket:listen(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
+    socket(?ETH_P_IP).
+socket(EthType) when is_integer(EthType) ->
+    <<Protocol:16>> = <<EthType:16/native>>,
+    procket:listen(0, [{protocol, Protocol}, {type, raw}, {family, packet}]).
 
-% On Linux, using ioctl(SIOCGARP) doesn't work for me. The standard
-% way of traversing the ARP cache appears to be by checking the output
-% of /proc/net/arp.
-arplookup({SA1,SA2,SA3,SA4}) ->
-    {ok, FD} = file:open("/proc/net/arp", [read,raw]),
-    arploop(FD, inet_parse:ntoa({SA1,SA2,SA3,SA4})).
 
-arploop(FD, Address) ->
-    case file:read_line(FD) of
-        eof ->
-            file:close(FD),
-            not_found;
-        {ok, Line} ->
-            case lists:prefix(Address, Line) of
-                true ->
-                    file:close(FD),
-                    M = string:tokens(
-                        lists:nth(?HWADDR_OFF, string:tokens(Line, " \n")), ":"),
-                    list_to_tuple([ erlang:list_to_integer(E, 16) || E <- M ]);
-                false -> arploop(FD, Address)
-            end
-    end.
+%%-------------------------------------------------------------------------
+%% Lookup the MAC address of an IP
+%%-------------------------------------------------------------------------
+arplookup({A1,A2,A3,A4}) ->
+    arplookup(inet_parse:ntoa({A1,A2,A3,A4}));
+arplookup(IPaddr) when is_list(IPaddr) ->
+    {ok, FH} = file:open("/proc/net/arp", [read,raw]),
+    MAC = arplookup_iter(FH, IPaddr),
+    file:close(FH),
+    MAC.
 
+arplookup_iter(FH, IPaddr) ->
+    arplookup_iter1(FH, IPaddr, file:read_line(FH)).
+
+arplookup_iter1(FH, IPaddr, {ok, Line}) ->
+    case string:tokens(Line, "\s\n") of
+        [IPaddr, _HWType, _Flags, MAC|_] ->
+            list_to_tuple([ list_to_integer(E, 16) ||
+                E <- string:tokens(MAC, ":") ]);
+        _ ->
+            arplookup_iter(FH, IPaddr)
+    end;
+arplookup_iter1(_FH, _IPaddr, eof) ->
+    false.
+
+
+%%-------------------------------------------------------------------------
+%% Return the MAC and IP address of the gateway for an interface. If an
+%% interface is not specified, the first gateway found is returned.
+%%-------------------------------------------------------------------------
+gateway() ->
+    gateway([]).
+gateway(Dev) ->
+    gateway_res(gateway_addr(Dev)).
+
+gateway_res(false) -> false;
+gateway_res(IP) -> gateway_res1(arplookup(IP), IP).
+gateway_res1(false, _) -> false;
+gateway_res1(MAC, IP) -> {ok, MAC, IP}.
+
+gateway_addr(Dev) ->
+    {ok, FH} = file:open("/proc/net/route", [read,raw]),
+    IP = gateway_addr_iter(FH, Dev),
+    file:close(FH),
+    IP.
+
+gateway_addr_iter(FH, Dev) ->
+    gateway_addr_iter1(FH, Dev, file:read_line(FH)).
+
+gateway_addr_iter1(FH, Dev, {ok, Line}) ->
+    case string:tokens(Line, "\t") of
+        [Dev, "00000000", IP, "0003"|_] ->
+            gateway_addr_res(IP);
+        [_, "00000000", IP, "0003"|_] when Dev == [] ->
+            gateway_addr_res(IP);
+        _ ->
+            gateway_addr_iter(FH, Dev)
+    end;
+gateway_addr_iter1(_FH, _Dev, eof) ->
+    false.
+
+gateway_addr_res(IPHex) ->
+    {ok,[Addr],[]} = io_lib:fread("~16u", IPHex),
+    <<A1,A2,A3,A4>> = <<Addr:32/native>>,
+    {A1,A2,A3,A4}.
+
+
+%%-------------------------------------------------------------------------
+%% Return the default network interface as a list. For most systems,
+%% a single element list will be returned. On systems without a default
+%% gateway or with multiple defaults, an empty list or a list with more
+%% than 1 element will be returned.
+%%-------------------------------------------------------------------------
+default_interface() ->
+    [ If || If <- iflist(), gateway(If) /= false ].
+
+
+%%-------------------------------------------------------------------------
+%% List of network interfaces.
+%%-------------------------------------------------------------------------
 iflist() ->
     {ok, Ifs} = inet:getiflist(),
     Ifs.
 
+
+%%-------------------------------------------------------------------------
+%% The interface index associated with the network device. Required
+%% for packet:send/3.
+%%-------------------------------------------------------------------------
 ifindex(Socket, Dev) ->
     {ok, <<_Ifname:16/bytes, Ifr:8, _/binary>>} = procket:ioctl(Socket,
         ?SIOCGIFINDEX,
@@ -101,34 +170,10 @@ ifindex(Socket, Dev) ->
             ])),
     Ifr.
 
-ipv4address(Socket, Dev) ->
-    % struct ifreq, struct sockaddr_in
-    {ok, <<_Ifname:16/bytes,
-        ?PF_INET:16/native, % sin_family
-        _:16,               % sin_port
-        SA1,SA2,SA3,SA4,    % sin_addr
-        _/binary>>} = procket:ioctl(Socket,
-        ?SIOCGIFADDR,
-        list_to_binary([
-                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8>>,
-                % struct sockaddr
-                <<?PF_INET:16/native,       % family
-                0:112>>
-            ])),
-    {SA1,SA2,SA3,SA4}.
 
-macaddress(Socket, Dev) ->
-    {ok, <<_Ifname:16/bytes,
-        _:16,                       % family
-        SM1,SM2,SM3,SM4,SM5,SM6,    % mac address
-        _/binary>>} = procket:ioctl(Socket,
-        ?SIOCGIFHWADDR,
-        list_to_binary([
-                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
-            ])),
-    {SM1,SM2,SM3,SM4,SM5,SM6}.
-
-
+%%-------------------------------------------------------------------------
+%% procket:sendto/4 with defaults set
+%%-------------------------------------------------------------------------
 send(S, Ifindex, Packet) ->
     procket:sendto(S, Packet, 0,
         <<
@@ -148,6 +193,10 @@ send(S, Ifindex, Packet) ->
         0:8			     	    % sll_addr[8]: physical layer address
         >>).
 
+
+%%-------------------------------------------------------------------------
+%% Enable promiscuous mode on a socket
+%%-------------------------------------------------------------------------
 promiscuous(Socket, Ifindex) ->
     % struct packet_mreq
     procket:setsockopt(Socket, ?SOL_PACKET, ?PACKET_ADD_MEMBERSHIP, <<
@@ -157,6 +206,47 @@ promiscuous(Socket, Ifindex) ->
         0:64                            % mr_address[8]:  physical layer address
         >>).
 
+
+%%-------------------------------------------------------------------------
+%% Retrieve the IPv4 address of the interface.  Equivalent to
+%% inet:ifget(Dev, [addr]).
+%%-------------------------------------------------------------------------
+ipv4address(Socket, Dev) ->
+    % struct ifreq, struct sockaddr_in
+    {ok, <<_Ifname:16/bytes,
+        ?PF_INET:16/native, % sin_family
+        _:16,               % sin_port
+        SA1,SA2,SA3,SA4,    % sin_addr
+        _/binary>>} = procket:ioctl(Socket,
+        ?SIOCGIFADDR,
+        list_to_binary([
+                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8>>,
+                % struct sockaddr
+                <<?PF_INET:16/native,       % family
+                0:112>>
+            ])),
+    {SA1,SA2,SA3,SA4}.
+
+
+%%-------------------------------------------------------------------------
+%% Retrieve the MAC address of the interface.  Equivalent to
+%% inet:ifget(Dev, [hwaddr]).
+%%-------------------------------------------------------------------------
+macaddress(Socket, Dev) ->
+    {ok, <<_Ifname:16/bytes,
+        _:16,                       % family
+        SM1,SM2,SM3,SM4,SM5,SM6,    % mac address
+        _/binary>>} = procket:ioctl(Socket,
+        ?SIOCGIFHWADDR,
+        list_to_binary([
+                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
+            ])),
+    {SM1,SM2,SM3,SM4,SM5,SM6}.
+
+
+%%-------------------------------------------------------------------------
+%% Utility functions, copied from epcap
+%%-------------------------------------------------------------------------
 makesum(Hdr) -> 16#FFFF - checksum(Hdr).
 
 checksum(Hdr) ->
@@ -165,5 +255,4 @@ checksum(Hdr) ->
 compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
-
 
