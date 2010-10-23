@@ -1,7 +1,7 @@
 
 REBAR=$(shell which rebar || echo ./rebar)
 
-all: $(REBAR) dirs compile
+all: dirs compile
 
 ./rebar:
 	erl -noshell -s inets start \
@@ -12,12 +12,12 @@ all: $(REBAR) dirs compile
 dirs:
 	@mkdir -p priv/tmp
 
-compile:
+compile: $(REBAR)
 	@$(REBAR) compile
 
-clean:  
+clean: $(REBAR)
 	@$(REBAR) clean
 
-deps:
+deps: $(REBAR)
 	@$(REBAR) get-deps
 
