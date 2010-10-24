@@ -50,7 +50,7 @@ $ erl -pa ebin
 Erlang R13B03 (erts-5.7.4) [source] [rq:1] [async-threads:0] [hipe] [kernel-poll:false]
 
 Eshell V5.7.4  (abort with ^G)
-1> {ok, FD} = procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp}]).
+1> {ok, FD} = procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp},{type, dgram}]).
 {ok,9}
 2> {ok, S} = gen_udp:open(53, [{fd,FD}]).
 {ok,#Port<0.929>}
@@ -97,8 +97,26 @@ procket uses libanciallary for passing file descriptors between processes:
 
 TODO
 
-1. Support BPF on BSD for sending/receiving packets
+* Support BPF on BSD for sending/receiving packets
 
-2. Examples/changes to support sending TCP/UDP packets using the raw
-   socket interface, using epcap to receive packets
+* Examples/changes to support sending TCP/UDP packets using the raw
+  socket interface, using epcap to receive packets
+
+* Make a gen_icmp module, with an interface similar to gen_udp,
+  to simplify ICMP packet creation, e.g., ping'ing from an Erlang process
+
+* Docs and type specs
+
+* Try to re-use the Unix socket when requesting more fd's from the procket
+  executable
+
+* Clean up the procket turds in /tmp
+
+* Make a procket gen_server (gen_raw(?)). Support passive and active
+  modes, using recvfrom/2. Experiment with erlang:open_port/2 and the
+  fd option for active mode.
+
+  Hold state for the socket, so the caller does not need to, e.g.,
+  use ifindex/2.
+
 
