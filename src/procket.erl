@@ -88,6 +88,7 @@ listen(Port, Options) when is_integer(Port), is_list(Options) ->
             close(Sockfd, proplists:get_value(pipe, Opt)),
             FD;
         Error ->
+            close(Sockfd, proplists:get_value(pipe, Opt)),
             {error, {procket_cmd, Error}}
     end.
 
