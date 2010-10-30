@@ -126,3 +126,9 @@ TODO
   use ifindex/2.
 
 
+CONTRIBUTORS
+
+Magnus Klaar:
+* support for binding a socket to an interface
+* Makefile fixes
+
