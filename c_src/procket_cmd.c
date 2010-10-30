@@ -141,19 +141,22 @@ procket_open_socket(PROCKET_STATE *ps)
 {
     struct sockaddr_in sa = { 0 };
     int flags = 0;
-    struct ifreq ifr;
-    int r;
 
     if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
         return (-1);
 
+#ifdef SO_BINDTODEVICE
     if(ps->ifname) {
+        struct ifreq ifr;
+        int r;
+
         (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
         r = setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr));
         if(r) {
             return (-1);
         }
     }
+#endif
 
 
     flags = fcntl(ps->s, F_GETFL, 0);
@@ -209,7 +212,9 @@ usage(PROCKET_STATE *ps)
             "              -F <family>      family [default: PF_INET]\n"
             "              -P <protocol>    protocol [default: IPPROTO_TCP]\n"
             "              -T <type>        type [default: SOCK_STREAM]\n"
+#ifdef SO_BINDTODEVICE
             "              -I <name>        interface [default: ANY]\n"
+#endif
             "              -v               verbose mode\n",
             __progname
             );

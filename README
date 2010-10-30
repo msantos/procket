@@ -96,7 +96,7 @@ procket creates a local domain socket and spawns a small setuid binary
 (or runs it under sudo). The executable opens a socket, drops privs and
 passes the file descriptor back to Erlang over the Unix socket.
 
-procket uses libanciallary for passing file descriptors between processes:
+procket uses libancillary for passing file descriptors between processes:
 
     http://www.normalesup.org/~george/comp/libancillary/
 
