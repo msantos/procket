@@ -103,7 +103,8 @@ make_args(Port, Options) ->
                 pipe,
                 protocol,
                 family,
-                type
+                type,
+                interface
             ], proplists:lookup(Arg, Options) /= none ],
         " ") ++ Bind.
 
@@ -126,7 +127,14 @@ get_switch({family, packet})    -> "-F 17";
 get_switch({family, Family}) when is_integer(Family) -> "-F " ++ integer_to_list(Family);
 
 get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
-get_switch({ip, Arg}) when is_list(Arg) -> Arg.
+get_switch({ip, Arg}) when is_list(Arg) -> Arg;
+
+get_switch({interface, Name}) when is_list(Name) ->
+    % An interface name is expected to consist of a reasonable
+    % subset of all charactes, use a whitelist and extend it if needed
+    SName = [C || C <- Name, ((C >= $a) and (C =< $z)) or ((C >= $A) and (C =< $Z))
+                          or ((C >= $0) and (C =< $9)) or (C == $.)],
+    "-I " ++ SName.
 
 progname() ->
     filename:join([
