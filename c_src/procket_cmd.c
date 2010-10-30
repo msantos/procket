@@ -147,9 +147,8 @@ procket_open_socket(PROCKET_STATE *ps)
     if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
         return (-1);
 
-    /* Is this the right place to do this? */
     if(ps->ifname) {
-        strncpy(ifr.ifr_name, ps->ifname, IFNAMSIZ);
+        (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
         r = setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr));
         if(r) {
             return (-1);
