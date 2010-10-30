@@ -58,9 +58,7 @@
 #endif
 
 #define IS_ERR(x) do { \
-        if ((x) == -1) { \
-                    err(EXIT_FAILURE, "%s", #x); \
-                } \
+        if ((x) == -1) return (-1); \
 } while (0)
 
 #define IS_NULL(x) do { \

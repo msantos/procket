@@ -142,19 +142,14 @@ procket_open_socket(PROCKET_STATE *ps)
     struct sockaddr_in sa = { 0 };
     int flags = 0;
 
-    if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
-        return (-1);
+    IS_ERR(ps->s = socket(ps->family, ps->type, ps->protocol));
 
 #ifdef SO_BINDTODEVICE
     if(ps->ifname) {
         struct ifreq ifr;
-        int r;
 
         (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
-        r = setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr));
-        if(r) {
-            return (-1);
-        }
+        IS_ERR(setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)));
     }
 #endif
 
