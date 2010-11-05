@@ -90,7 +90,7 @@ arplookup_iter(FH, IPaddr) ->
 arplookup_iter1(FH, IPaddr, {ok, Line}) ->
     case string:tokens(Line, "\s\n") of
         [IPaddr, _HWType, _Flags, MAC|_] ->
-            list_to_tuple([ list_to_integer(E, 16) ||
+            list_to_tuple([ erlang:list_to_integer(E, 16) ||
                 E <- string:tokens(MAC, ":") ]);
         _ ->
             arplookup_iter(FH, IPaddr)
