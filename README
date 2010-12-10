@@ -108,15 +108,10 @@ TODO
 * Examples/changes to support sending TCP/UDP packets using the raw
   socket interface, using epcap to receive packets
 
-* Make a gen_icmp module, with an interface similar to gen_udp,
-  to simplify ICMP packet creation, e.g., ping'ing from an Erlang process
-
 * Docs and type specs
 
 * Try to re-use the Unix socket when requesting more fd's from the procket
   executable
-
-* Clean up the procket turds in /tmp
 
 * Make a procket gen_server (gen_raw(?)). Support passive and active
   modes, using recvfrom/2. Experiment with erlang:open_port/2 and the

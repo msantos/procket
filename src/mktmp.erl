@@ -46,7 +46,7 @@
 
 -module(mktmp).
 
--export([dir/0,dir/1,close/1]).
+-export([dirname/0,dirname/1,make_dir/1,close/1]).
 
 -include_lib("kernel/include/file.hrl").
 
@@ -55,23 +55,24 @@
 
 -define(S_IRWXU, 8#00400 bor 8#00200 bor 8#00100).
 
-dir() ->
+dirname() ->
     TMP = case os:getenv("TMPDIR") of
         false -> "/tmp";
         Dir -> Dir
     end,
-    dir(TMP).
+    dirname(TMP).
 
-dir(TMP) ->
+dirname(TMP) ->
     crypto:start(),
     TmpDir = lists:flatten(
         [ io_lib:format("~.16B", [N]) || N <- binary_to_list(crypto:rand_bytes(?TEMPLATELEN)) ]
     ),
-    Path = TMP ++ "/" ++ ?TEMPNAME ++ TmpDir,
+    TMP ++ "/" ++ ?TEMPNAME ++ TmpDir.
+
+make_dir(Path) ->
     case file:make_dir(Path) of
         ok ->
-            ok = file:write_file_info(Path, #file_info{mode = ?S_IRWXU}),
-            Path;
+            file:write_file_info(Path, #file_info{mode = ?S_IRWXU});
         Error ->
             Error
     end.

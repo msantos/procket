@@ -76,20 +76,38 @@ setsockopt(_,_,_,_) ->
 listen(Port) ->
     listen(Port, []).
 listen(Port, Options) when is_integer(Port), is_list(Options) ->
-    Opt = case proplists:lookup(pipe, Options) of
-        none -> Options ++ [{pipe, mktmp:dir() ++ "/sock"}];
-        _ -> Options
+    Opt = case proplists:get_value(pipe, Options) of
+        undefined ->
+            Tmp = mktmp:dirname(),
+            ok = mktmp:make_dir(Tmp),
+            Path = Tmp ++ "/sock",
+            [{pipe, Path}, {tmpdir, Tmp}] ++ Options;
+        _ ->
+            [{tmpdir, false}] ++ Options
     end,
-    {ok, Sockfd} = open(proplists:get_value(pipe, Opt)),
-    Cmd = make_args(Port, Opt),
+    listen1(Port, Opt).
+
+listen1(Port, Options) ->
+    Pipe = proplists:get_value(pipe, Options),
+    {ok, Sockfd} = open(Pipe),
+    Cmd = make_args(Port, Options),
     case os:cmd(Cmd) of
         [] ->
             FD = poll(Sockfd),
-            close(Sockfd, proplists:get_value(pipe, Opt)),
+            cleanup(Sockfd, Pipe, Options),
             FD;
         Error ->
-            close(Sockfd, proplists:get_value(pipe, Opt)),
+            cleanup(Sockfd, Pipe, Options),
             {error, {procket_cmd, Error}}
+    end.
+
+cleanup(Sockfd, Pipe, Options) ->
+    close(Sockfd, Pipe),
+    case proplists:get_value(tmpdir, Options) of
+        false ->
+            ok;
+        Path ->
+            mktmp:close(Path)
     end.
 
 make_args(Port, Options) ->
