@@ -56,7 +56,7 @@ ping(IP) ->
 ping(IP, N) ->
     crypto:start(),
     Id = crypto:rand_uniform(0, 16#FFFF),
-    {ok, FD} = procket:listen(0, [{protocol, icmp}, {type, raw}, {family, inet}]),
+    {ok, FD} = procket:open(0, [{protocol, icmp}, {type, raw}, {family, inet}]),
     {ok, S} = gen_udp:open(0, [binary, {fd, FD}]),
     loop(#state{
             s = S,

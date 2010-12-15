@@ -54,62 +54,106 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
 }
 
 
+/* Retrieve the file descriptor from the forked privileged process */
+/* 0: connected Unix socket */
     static ERL_NIF_TERM
-nif_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+nif_fdrecv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    int sock_fd = -1;
-    struct sockaddr_un sa = { 0 };
-    int flags = 0;
+    int fd = -1;    /* connected socket */
+    int s = -1;     /* socket received from pipe */
 
 
-    if (enif_get_string(env, argv[0], sa.sun_path, sizeof(sa.sun_path), ERL_NIF_LATIN1) < 1)
+    if (!enif_get_int(env, argv[0], &fd))
         return enif_make_badarg(env);
-
-    sa.sun_family = PF_LOCAL;
-
-    sock_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
-    if (sock_fd < 0)
-        return error_tuple(env, errno);
-
-    flags = fcntl(sock_fd, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    (void)fcntl(sock_fd, F_SETFL, flags);
-
-    if (bind(sock_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-        return error_tuple(env, errno);
-
-    if (listen(sock_fd, BACKLOG) < 0)
-        return error_tuple(env, errno);
-
-    return enif_make_tuple(env, 2,
-           atom_ok,
-           enif_make_int(env, sock_fd));
-}
-
-
-    static ERL_NIF_TERM
-nif_poll(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{
-    int sock_fd = -1;        /* listening socket */
-    int fd = -1;             /* connected socket */
-    int s = -1;              /* socket received from pipe */
-    struct sockaddr_un sa = { 0 };
-    socklen_t socklen = 0;
-
-
-    if (!enif_get_int(env, argv[0], &sock_fd))
-        return enif_make_badarg(env);
-
-    fd = accept(sock_fd, (struct sockaddr *)&sa, &socklen);
-    if (fd < 0)
-        return error_tuple(env, errno);
 
     if (ancil_recv_fd(fd, &s) < 0) {
-        (void)close (fd);
+        (void)close(fd);
         return error_tuple(env, errno);
     }
 
-    (void)close (fd);
+    (void)close(fd);
+
+    return enif_make_tuple(env, 2,
+            atom_ok,
+            enif_make_int(env, s));
+}
+
+
+/*  0: domain, 1: type, 2: protocol */
+    static ERL_NIF_TERM
+nif_socket(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    int domain = 0;
+    int type = 0;
+    int protocol = 0;
+    int flags = 0;
+
+
+    if (!enif_get_int(env, argv[0], &domain))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &type))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[2], &protocol))
+        return enif_make_badarg(env);
+
+    s = socket(domain, type, protocol);
+    if (s < 0)
+        return error_tuple(env, errno);
+
+    flags = fcntl(s, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    (void)fcntl(s, F_SETFL, flags);
+
+    return enif_make_tuple(env, 2,
+           atom_ok,
+           enif_make_int(env, s));
+}
+
+
+/* 0: file descriptor, 1: backlog */
+    static ERL_NIF_TERM
+nif_listen(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    int backlog = 5;
+
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &backlog))
+        return enif_make_badarg(env);
+
+    if (listen(s, backlog) < 0)
+        return error_tuple(env, errno);
+
+    return atom_ok;
+}
+
+
+/* 0: socket, 1: struct sockaddr */
+    static ERL_NIF_TERM
+nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int l = -1;
+    int s = -1;
+    ErlNifBinary sa;
+    socklen_t salen = 0;
+
+
+    if (!enif_get_int(env, argv[0], &l))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &sa))
+        return enif_make_badarg(env);
+
+    salen = sa.size;
+    s = accept(l, (sa.size == 0 ? NULL : (struct sockaddr *)sa.data), &salen);
+    if (s < 0)
+        return error_tuple(env, errno);
 
     return enif_make_tuple(env, 2,
             atom_ok,
@@ -196,7 +240,6 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     ErlNifBinary buf;
     ErlNifBinary sa;
 
-
     if (!enif_get_int(env, argv[0], &sockfd))
         return enif_make_badarg(env);
 
@@ -209,7 +252,9 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[3], &sa))
         return enif_make_badarg(env);
 
-    if (sendto(sockfd, buf.data, buf.size, flags, (struct sockaddr *)sa.data, sa.size) == -1)
+    if (sendto(sockfd, buf.data, buf.size, flags,
+        (sa.size == 0 ? NULL : (struct sockaddr *)sa.data),
+        sa.size) == -1)
         return error_tuple(env, errno);
 
     return atom_ok;
@@ -230,11 +275,33 @@ nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[1], &sa))
         return enif_make_badarg(env);
 
-    if (bind(s, (struct sockaddr *)sa.data, sa.size) < 0)
+    if (bind(s, (sa.size == 0 ? NULL : (struct sockaddr *)sa.data), sa.size) < 0)
         return error_tuple(env, errno);
 
     return atom_ok;
 }
+
+
+/* 0: socket descriptor, 1: struct sockaddr */
+    static ERL_NIF_TERM
+nif_connect(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    ErlNifBinary sa;
+
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &sa))
+        return enif_make_badarg(env);
+
+    if (connect(s, (sa.size == 0 ? NULL : (struct sockaddr *)sa.data), sa.size) < 0)
+        return error_tuple(env, errno);
+
+    return atom_ok;
+}
+
 
 /* 0: (int)socket descriptor, 1: (int)device dependent request,
  * 2: (char *)argp, pointer to structure
@@ -308,13 +375,17 @@ error_tuple(ErlNifEnv *env, int errnum)
 
 
 static ErlNifFunc nif_funcs[] = {
-    {"open", 1, nif_open},
-    {"poll", 1, nif_poll},
+    {"fdrecv", 1, nif_fdrecv},
+
     {"close", 1, nif_close},
     {"close", 2, nif_close},
+    {"accept", 2, nif_accept},
     {"bind", 2, nif_bind},
+    {"connect", 2, nif_connect},
+    {"listen", 2, nif_listen},
     {"recvfrom", 2, nif_recvfrom},
     {"ioctl", 3, nif_ioctl},
+    {"socket", 3, nif_socket},
     {"sendto", 4, nif_sendto},
     {"setsockopt", 4, nif_setsockopt}
 };

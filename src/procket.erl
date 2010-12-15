@@ -29,9 +29,13 @@
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(procket).
+-include("procket.hrl").
 
 -export([
-        init/0,open/1,poll/1,close/1,close/2,listen/1,listen/2,
+        init/0,open/1,open/2,
+        socket/3, listen/2,connect/2,
+        accept/1,accept/2,
+        fdopen/1,fdrecv/1,close/1,close/2,
         recvfrom/2,sendto/4,bind/2,
         ioctl/3,setsockopt/4
     ]).
@@ -46,22 +50,34 @@ init() ->
 on_load() ->
     erlang:load_nif(progname(), []).
 
-open(_) ->
-    erlang:error(not_implemented).
 
 close(_) ->
     erlang:error(not_implemented).
 
-poll(_) ->
+fdrecv(_) ->
     erlang:error(not_implemented).
 
 close(_,_) ->
     erlang:error(not_implemented).
 
+accept(Socket) ->
+    accept(Socket, <<>>).
+accept(_,_) ->
+    erlang:error(not_implemented).
+
 bind(_,_) ->
     erlang:error(not_implemented).
 
+connect(_,_) ->
+    erlang:error(not_implemented).
+
+listen(_,_) ->
+    erlang:error(not_implemented).
+
 recvfrom(_,_) ->
+    erlang:error(not_implemented).
+
+socket(_,_,_) ->
     erlang:error(not_implemented).
 
 ioctl(_,_,_) ->
@@ -73,9 +89,10 @@ sendto(_,_,_,_) ->
 setsockopt(_,_,_,_) ->
     erlang:error(not_implemented).
 
-listen(Port) ->
-    listen(Port, []).
-listen(Port, Options) when is_integer(Port), is_list(Options) ->
+
+open(Port) ->
+    open(Port, []).
+open(Port, Options) when is_integer(Port), is_list(Options) ->
     Opt = case proplists:get_value(pipe, Options) of
         undefined ->
             Tmp = mktmp:dirname(),
@@ -85,15 +102,15 @@ listen(Port, Options) when is_integer(Port), is_list(Options) ->
         _ ->
             [{tmpdir, false}] ++ Options
     end,
-    listen1(Port, Opt).
+    open1(Port, Opt).
 
-listen1(Port, Options) ->
+open1(Port, Options) ->
     Pipe = proplists:get_value(pipe, Options),
-    {ok, Sockfd} = open(Pipe),
+    {ok, Sockfd} = fdopen(Pipe),
     Cmd = make_args(Port, Options),
     case os:cmd(Cmd) of
         [] ->
-            FD = poll(Sockfd),
+            FD = fdget(Sockfd),
             cleanup(Sockfd, Pipe, Options),
             FD;
         Error ->
@@ -109,6 +126,19 @@ cleanup(Sockfd, Pipe, Options) ->
         Path ->
             mktmp:close(Path)
     end.
+
+fdopen(Path) when is_list(Path) ->
+    fdopen(list_to_binary(Path));
+fdopen(Path) when is_binary(Path), byte_size(Path) < ?UNIX_PATH_MAX ->
+    {ok, Socket} = socket(?PF_LOCAL, ?SOCK_STREAM, 0),
+    Sun = <<?PF_LOCAL:16/native, Path/binary, 0:((?UNIX_PATH_MAX-byte_size(Path))*8)>>,
+    ok = bind(Socket, Sun),
+    ok = listen(Socket, ?BACKLOG),
+    {ok, Socket}.
+
+fdget(Socket) ->
+    {ok, S} = accept(Socket),
+    fdrecv(S).
 
 make_args(Port, Options) ->
     Bind = " " ++ case proplists:lookup(ip, Options) of

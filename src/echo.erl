@@ -44,7 +44,7 @@ start(udp) ->
     start(?PORT, [{protocol, udp}, {family, inet}, {type, dgram}]).
 start(Port, Options) ->
     Protocol = proplists:get_value(protocol, Options, tcp),
-    {ok, Fd} = procket:listen(Port, Options),
+    {ok, Fd} = procket:open(Port, Options),
     io:format("Listening on: ~p/~p~n", [Port, Protocol]),
     listen(Protocol, Fd, Port).
 

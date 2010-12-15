@@ -70,7 +70,7 @@ socket() ->
     socket(?ETH_P_IP).
 socket(EthType) when is_integer(EthType) ->
     <<Protocol:16>> = <<EthType:16/native>>,
-    procket:listen(0, [{protocol, Protocol}, {type, raw}, {family, packet}]).
+    procket:open(0, [{protocol, Protocol}, {type, raw}, {family, packet}]).
 
 
 %%-------------------------------------------------------------------------

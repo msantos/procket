@@ -1,14 +1,20 @@
 
-procket is an Erlang interface for requesting socket features that
-usually require superuser privileges.
+procket is an Erlang socket interface which can be used for requesting
+socket features that usually require superuser privileges.
 
 procket uses the experimental NIF interface first introduced in Erlang
 R13B03.
 
 
+CHANGES
+
+* procket:listen/1,2 has been renamed procket:open/1,2. procket:listen/2
+  is now a wrapper around listen(2)
+
+
 EXPORTS
 
-listen(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Description}}
+open(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Description}}
 
     Types   Port = 0..65535
             Options = [Opts]
@@ -50,7 +56,7 @@ $ erl -pa ebin
 Erlang R13B03 (erts-5.7.4) [source] [rq:1] [async-threads:0] [hipe] [kernel-poll:false]
 
 Eshell V5.7.4  (abort with ^G)
-1> {ok, FD} = procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp},{type, dgram}]).
+1> {ok, FD} = procket:open(53, [{progname, "sudo priv/procket"},{protocol, udp},{type, dgram}]).
 {ok,9}
 2> {ok, S} = gen_udp:open(53, [{fd,FD}]).
 {ok,#Port<0.929>}
@@ -76,7 +82,7 @@ ICMP Ping:
 
 Sniff the network:
 
-1> {ok, S} = procket:listen(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
+1> {ok, S} = procket:open(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
 {ok,12}
 2> procket:recvfrom(S, 2048).   
 {ok,<<0,21,175,89,8,38,0,3,82,3,39,36,8,0,69,0,0,52,242,
@@ -85,9 +91,9 @@ Sniff the network:
 4> gen_udp:recv(S1, 2048).
 
 Bind to one or more interfaces:
-1> procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br0"}]).
+1> procket:open(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br0"}]).
 {ok,9}
-2> procket:listen(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br1"}]).
+2> procket:open(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br1"}]).
 {ok,10}
 
 HOW IT WORKS
