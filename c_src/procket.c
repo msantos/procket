@@ -40,7 +40,7 @@ static ERL_NIF_TERM error_tuple(ErlNifEnv *env, int errnum);
 
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
-static ERL_NIF_TERM atom_nodata;
+static ERL_NIF_TERM atom_eagain;
 
 
     static int
@@ -48,7 +48,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
 {
     atom_ok = enif_make_atom(env, "ok");
     atom_error = enif_make_atom(env, "error");
-    atom_nodata = enif_make_atom(env, "nodata");
+    atom_eagain = enif_make_atom(env, "eagain");
 
     return (0);
 }
@@ -214,7 +214,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             case EAGAIN:
             case EINTR:
                 enif_release_binary(&buf);
-                return atom_nodata;
+                return atom_eagain;
             default:
                 enif_release_binary(&buf);
                 return error_tuple(env, errno);
