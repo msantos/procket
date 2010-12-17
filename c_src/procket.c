@@ -193,30 +193,49 @@ nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 
 /* 0: socket, 1: length */
+/* 0: socket, 1: length, 2: flags, 3: struct sockaddr length */
     static ERL_NIF_TERM
 nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
     int len = 0;
-    ssize_t bufsz = 0;
+    int salen = 0;
+    int flags = 0;
+
     ErlNifBinary buf;
+    ErlNifBinary sa;
+    ssize_t bufsz = 0;
+    socklen_t sasz = 0;
+
 
     if (!enif_get_int(env, argv[0], &sockfd))
         return enif_make_badarg(env);
     if (!enif_get_int(env, argv[1], &len))
         return enif_make_badarg(env);
+    if (!enif_get_int(env, argv[2], &flags))
+        return enif_make_badarg(env);
+    if (!enif_get_int(env, argv[3], &salen))
+        return enif_make_badarg(env);
 
     if (!enif_alloc_binary(len, &buf))
         return error_tuple(env, ENOMEM);
 
-    if ( (bufsz = recvfrom(sockfd, buf.data, buf.size, 0, NULL, NULL)) == -1) {
+    if (!enif_alloc_binary(salen, &sa))
+        return error_tuple(env, ENOMEM);
+
+    sasz = salen;
+    if ( (bufsz = recvfrom(sockfd, buf.data, buf.size, flags,
+        (sasz == 0 ? NULL : (struct sockaddr *)sa.data),
+        &sasz)) == -1) {
         switch (errno) {
             case EAGAIN:
             case EINTR:
                 enif_release_binary(&buf);
+                enif_release_binary(&sa);
                 return atom_eagain;
             default:
                 enif_release_binary(&buf);
+                enif_release_binary(&sa);
                 return error_tuple(env, errno);
         }
     }
@@ -224,9 +243,11 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (bufsz != buf.size)
         enif_realloc_binary(&buf, bufsz);
 
-    return enif_make_tuple(env, 2,
-            atom_ok,
-            enif_make_binary(env, &buf));
+    if (salen != sasz)
+        enif_realloc_binary(&sa, sasz);
+
+    return enif_make_tuple(env, 3, atom_ok, enif_make_binary(env, &buf),
+             enif_make_binary(env, &sa));
 }
 
 
@@ -383,9 +404,9 @@ static ErlNifFunc nif_funcs[] = {
     {"bind", 2, nif_bind},
     {"connect", 2, nif_connect},
     {"listen", 2, nif_listen},
-    {"recvfrom", 2, nif_recvfrom},
     {"ioctl", 3, nif_ioctl},
     {"socket", 3, nif_socket},
+    {"recvfrom", 4, nif_recvfrom},
     {"sendto", 4, nif_sendto},
     {"setsockopt", 4, nif_setsockopt}
 };

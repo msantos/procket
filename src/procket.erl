@@ -36,7 +36,8 @@
         socket/3, listen/2,connect/2,
         accept/1,accept/2,
         fdopen/1,fdrecv/1,close/1,close/2,
-        recvfrom/2,sendto/4,bind/2,
+        recv/2,recvfrom/2,recvfrom/4,
+        sendto/4,bind/2,
         ioctl/3,setsockopt/4
     ]).
 -export([make_args/2,progname/0]).
@@ -74,7 +75,14 @@ connect(_,_) ->
 listen(_,_) ->
     erlang:error(not_implemented).
 
-recvfrom(_,_) ->
+recv(Socket,Size) ->
+    recvfrom(Socket,Size).
+recvfrom(Socket,Size) ->
+    case recvfrom(Socket, Size, 0, 0) of
+        {ok, Buf, <<>>} -> {ok, Buf}; 
+        Error -> Error
+    end.
+recvfrom(_,_,_,_) ->
     erlang:error(not_implemented).
 
 socket(_,_,_) ->
