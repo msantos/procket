@@ -32,13 +32,19 @@
 -include("procket.hrl").
 
 -export([
-        init/0,open/1,open/2,
-        socket/3, listen/2,connect/2,
+        init/0,
+        open/1,open/2,
+        socket/3,
+        listen/1,listen/2,
+        connect/2,
         accept/1,accept/2,
-        fdopen/1,fdrecv/1,close/1,close/2,
+        fdopen/1,fdrecv/1,
+        close/1,
         recv/2,recvfrom/2,recvfrom/4,
-        sendto/4,bind/2,
-        ioctl/3,setsockopt/4
+        sendto/4,
+        bind/2,
+        ioctl/3,
+        setsockopt/4
     ]).
 -export([make_args/2,progname/0]).
 
@@ -58,9 +64,6 @@ close(_) ->
 fdrecv(_) ->
     erlang:error(not_implemented).
 
-close(_,_) ->
-    erlang:error(not_implemented).
-
 accept(Socket) ->
     accept(Socket, <<>>).
 accept(_,_) ->
@@ -72,6 +75,8 @@ bind(_,_) ->
 connect(_,_) ->
     erlang:error(not_implemented).
 
+listen(Socket) when is_integer(Socket) ->
+    listen(Socket, ?BACKLOG).
 listen(_,_) ->
     erlang:error(not_implemented).
 
@@ -127,7 +132,8 @@ open1(Port, Options) ->
     end.
 
 cleanup(Sockfd, Pipe, Options) ->
-    close(Sockfd, Pipe),
+    close(Sockfd),
+    ok = file:delete(Pipe),
     case proplists:get_value(tmpdir, Options) of
         false ->
             ok;
