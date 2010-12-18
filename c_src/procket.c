@@ -142,6 +142,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int s = -1;
     ErlNifBinary sa;
     socklen_t salen = 0;
+    int flags = 0;
 
 
     if (!enif_get_int(env, argv[0], &l))
@@ -154,6 +155,10 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     s = accept(l, (sa.size == 0 ? NULL : (struct sockaddr *)sa.data), &salen);
     if (s < 0)
         return error_tuple(env, errno);
+
+    flags = fcntl(s, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    (void)fcntl(s, F_SETFL, flags);
 
     return enif_make_tuple(env, 2,
             atom_ok,
