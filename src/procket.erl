@@ -65,7 +65,10 @@ fdrecv(_) ->
     erlang:error(not_implemented).
 
 accept(Socket) ->
-    accept(Socket, <<>>).
+    case accept(Socket, 0) of
+        {ok, FD, <<>>} -> {ok, FD};
+        Error -> Error
+    end.
 accept(_,_) ->
     erlang:error(not_implemented).
 

@@ -134,25 +134,27 @@ nif_listen(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
-/* 0: socket, 1: struct sockaddr */
+/* 0: socket, 1: struct sockaddr length */
     static ERL_NIF_TERM
 nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int l = -1;
     int s = -1;
+    int salen = 0;
     ErlNifBinary sa;
-    socklen_t salen = 0;
     int flags = 0;
 
 
     if (!enif_get_int(env, argv[0], &l))
         return enif_make_badarg(env);
 
-    if (!enif_inspect_binary(env, argv[1], &sa))
+    if (!enif_get_int(env, argv[1], &salen))
         return enif_make_badarg(env);
 
-    salen = sa.size;
-    s = accept(l, (sa.size == 0 ? NULL : (struct sockaddr *)sa.data), &salen);
+    if (!enif_alloc_binary(salen, &sa))
+        return error_tuple(env, ENOMEM);
+
+    s = accept(l, (sa.size == 0 ? NULL : (struct sockaddr *)sa.data), (socklen_t *)&salen);
     if (s < 0)
         return error_tuple(env, errno);
 
@@ -160,9 +162,13 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     flags |= O_NONBLOCK;
     (void)fcntl(s, F_SETFL, flags);
 
-    return enif_make_tuple(env, 2,
+    if (salen != sa.size)
+        enif_realloc_binary(&sa, salen);
+
+    return enif_make_tuple(env, 3,
             atom_ok,
-            enif_make_int(env, s));
+            enif_make_int(env, s),
+            enif_make_binary(env, &sa));
 }
 
 
