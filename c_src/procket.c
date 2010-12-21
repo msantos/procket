@@ -84,22 +84,22 @@ nif_fdrecv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 nif_socket(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
-    int protocol = 0;
-    int type = 0;
     int family = 0;
+    int type = 0;
+    int protocol = 0;
     int flags = 0;
 
 
-    if (!enif_get_int(env, argv[0], &protocol))
+    if (!enif_get_int(env, argv[0], &family))
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[1], &type))
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[2], &family))
+    if (!enif_get_int(env, argv[2], &protocol))
         return enif_make_badarg(env);
 
-    s = socket(protocol, type, family);
+    s = socket(family, type, protocol);
     if (s < 0)
         return error_tuple(env, errno);
 
