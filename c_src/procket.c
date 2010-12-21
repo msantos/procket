@@ -203,7 +203,6 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     ErlNifBinary buf;
     ErlNifBinary sa;
     ssize_t bufsz = 0;
-    socklen_t sasz = 0;
 
 
     if (!enif_get_int(env, argv[0], &sockfd))
@@ -221,19 +220,16 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_alloc_binary(salen, &sa))
         return error_tuple(env, ENOMEM);
 
-    sasz = salen;
     if ( (bufsz = recvfrom(sockfd, buf.data, buf.size, flags,
-        (sasz == 0 ? NULL : (struct sockaddr *)sa.data),
-        &sasz)) == -1) {
+        (sa.size == 0 ? NULL : (struct sockaddr *)sa.data),
+        (socklen_t *)&salen)) == -1) {
+        enif_release_binary(&buf);
+        enif_release_binary(&sa);
         switch (errno) {
             case EAGAIN:
             case EINTR:
-                enif_release_binary(&buf);
-                enif_release_binary(&sa);
                 return atom_eagain;
             default:
-                enif_release_binary(&buf);
-                enif_release_binary(&sa);
                 return error_tuple(env, errno);
         }
     }
@@ -241,8 +237,8 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (bufsz != buf.size)
         enif_realloc_binary(&buf, bufsz);
 
-    if (salen != sasz)
-        enif_realloc_binary(&sa, sasz);
+    if (salen != sa.size)
+        enif_realloc_binary(&sa, salen);
 
     return enif_make_tuple(env, 3, atom_ok, enif_make_binary(env, &buf),
              enif_make_binary(env, &sa));
