@@ -38,7 +38,6 @@
         listen/1,listen/2,
         connect/2,
         accept/1,accept/2,
-        fdopen/1,fdrecv/1,
         close/1,
         recv/2,recvfrom/2,recvfrom/4,
         sendto/4,
