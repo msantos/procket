@@ -8,8 +8,12 @@ R13B03.
 
 CHANGES
 
+V0.02:
 * procket:listen/1,2 has been renamed procket:open/1,2. procket:listen/2
   is now a wrapper around listen(2)
+
+* procket:recvfrom/2 returns {error,eagain} when data is not available
+  (previously return nodata)
 
 
 EXPORTS
