@@ -228,7 +228,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         switch (errno) {
             case EAGAIN:
             case EINTR:
-                return atom_eagain;
+                return enif_make_tuple(env, 2, atom_error, atom_eagain);
             default:
                 return error_tuple(env, errno);
         }
