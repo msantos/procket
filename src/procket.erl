@@ -92,6 +92,12 @@ recvfrom(Socket,Size) ->
 recvfrom(_,_,_,_) ->
     erlang:error(not_implemented).
 
+socket(Family, Type, Protocol) when is_atom(Family) ->
+    socket(family(Family), Type, Protocol);
+socket(Family, Type, Protocol) when is_atom(Type) ->
+    socket(Family, type(Type), Protocol);
+socket(Family, Type, Protocol) when is_atom(Protocol) ->
+    socket(Family, Type, protocol(Protocol));
 socket(_,_,_) ->
     erlang:error(not_implemented).
 
@@ -173,23 +179,23 @@ make_args(Port, Options) ->
             ], proplists:lookup(Arg, Options) /= none ],
         " ") ++ Bind.
 
-get_switch({pipe, Arg})         -> "-p " ++ Arg;
+get_switch({pipe, Arg}) ->
+    "-p " ++ Arg;
 
-get_switch({protocol, raw})     -> "-P 0";
-get_switch({protocol, icmp})    -> "-P 1";
-get_switch({protocol, tcp})     -> "-P 6";
-get_switch({protocol, udp})     -> "-P 17";
-get_switch({protocol, Proto}) when is_integer(Proto) -> "-P " ++ integer_to_list(Proto);
+get_switch({protocol, Proto}) when is_atom(Proto) ->
+    get_switch({protocol, protocol(Proto)});
+get_switch({protocol, Proto}) when is_integer(Proto) ->
+    "-P " ++ integer_to_list(Proto);
 
-get_switch({type, stream})      -> "-T 1";
-get_switch({type, dgram})       -> "-T 2";
-get_switch({type, raw})         -> "-T 3";
-get_switch({type, Type}) when is_integer(Type) -> "-T " ++ integer_to_list(Type);
+get_switch({type, Type}) when is_atom(Type) ->
+    get_switch({type, type(Type)});
+get_switch({type, Type}) when is_integer(Type) ->
+    "-T " ++ integer_to_list(Type);
 
-get_switch({family, unspec})    -> "-F 0";
-get_switch({family, inet})      -> "-F 2";
-get_switch({family, packet})    -> "-F 17";
-get_switch({family, Family}) when is_integer(Family) -> "-F " ++ integer_to_list(Family);
+get_switch({family, Family}) when is_atom(Family) ->
+    get_switch({family, family(Family)});
+get_switch({family, Family}) when is_integer(Family) ->
+    "-F " ++ integer_to_list(Family);
 
 get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 get_switch({ip, Arg}) when is_list(Arg) -> Arg;
@@ -208,5 +214,40 @@ progname() ->
         "priv",
         ?MODULE
     ]).
+
+
+%% Protocol family (aka domain)
+family(unspec) -> 0;
+family(inet) -> 2;
+family(packet) -> 17;
+family(Proto) when Proto == local; Proto == unix; Proto == file -> 1;
+
+family(0) -> unspec;
+family(1) -> unix;
+family(2) -> inet;
+family(17) -> packet.
+
+
+%% Socket type
+type(stream) -> 1;
+type(dgram) -> 2;
+type(raw) -> 3;
+
+type(1) -> stream;
+type(2) -> dgram;
+type(3) -> raw.
+
+
+% Select a protocol within the family (0 means use the default
+% protocol in the family)
+protocol(raw) -> 0;
+protocol(icmp) -> 1;
+protocol(tcp) -> 6;
+protocol(udp) -> 17;
+
+protocol(0) -> raw;
+protocol(1) -> icmp;
+protocol(6) -> tcp;
+protocol(17) -> udp.
 
 
