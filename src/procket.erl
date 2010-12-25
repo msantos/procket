@@ -45,6 +45,7 @@
         ioctl/3,
         setsockopt/4
     ]).
+-export([unix_path_max/0, sockaddr_common/2]).
 -export([make_args/2,progname/0]).
 
 -on_load(on_load/0).
@@ -160,7 +161,11 @@ fdopen(Path) when is_list(Path) ->
     fdopen(list_to_binary(Path));
 fdopen(Path) when is_binary(Path), byte_size(Path) < ?UNIX_PATH_MAX ->
     {ok, Socket} = socket(?PF_LOCAL, ?SOCK_STREAM, 0),
-    Sun = <<?PF_LOCAL:16/native, Path/binary, 0:((?UNIX_PATH_MAX-byte_size(Path))*8)>>,
+    Len = byte_size(Path),
+    Sun = <<(sockaddr_common(?PF_LOCAL, Len))/binary,
+        Path/binary,
+        0:((unix_path_max()-Len)*8)
+        >>,
     ok = bind(Socket, Sun),
     ok = listen(Socket, ?BACKLOG),
     {ok, Socket}.
@@ -257,4 +262,30 @@ protocol(1) -> icmp;
 protocol(6) -> tcp;
 protocol(17) -> udp.
 
+
+%%
+%% Portability
+%%
+
+% struct sockaddr
+sockaddr_common(Family, Length) ->
+    case erlang:system_info(os_type) of
+        {unix,BSD} when BSD == darwin;
+            BSD == openbsd;
+            BSD == netbsd;
+            BSD == freebsd ->
+            <<Length:8, Family:8>>;
+        {unix,_} ->
+            <<Family:16/native>>
+    end.
+
+% UNIX_PATH_MAX
+unix_path_max() ->
+    case erlang:system_info(os_type) of
+        {unix,BSD} when BSD == darwin;
+            BSD == openbsd;
+            BSD == netbsd;
+            BSD == freebsd -> 104;
+        {unix,_} -> 108
+    end.
 
