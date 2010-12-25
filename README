@@ -35,7 +35,7 @@ COMPILING
 Try running: make
 
 
-SETUID vs SUDO
+SETUID vs SUDO vc Capabilities
 
 The procket executable needs root privileges. Either allow your user to
 run procket using sudo or copy procket to somewhere owned by root and
@@ -52,6 +52,20 @@ make it setuid.
     sudo chown root:yourgroup /usr/local/bin/procket
     sudo chmod 750 /usr/local/bin/procket
     sudo chmod u+s /usr/local/bin/procket
+
+* use Linux capabilities: beam or the user running beam can be
+given whatever socket privileges are needed. For example, using file
+capabilities:
+
+    setcap cap_net_raw=ep /usr/local/lib/erlang/erts-5.8.3/bin/beam.smp
+
+To see the capabilities:
+
+    getcap /usr/local/lib/erlang/erts-5.8.3/bin/beam.smp
+    
+To remove the capabilities:
+
+    setcap -r /usr/local/lib/erlang/erts-5.8.3/bin/beam.smp
 
 
 USING IT
