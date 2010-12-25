@@ -398,7 +398,7 @@ static ErlNifFunc nif_funcs[] = {
     {"connect", 2, nif_connect},
     {"listen", 2, nif_listen},
     {"ioctl", 3, nif_ioctl},
-    {"socket", 3, nif_socket},
+    {"socket_nif", 3, nif_socket},
     {"recvfrom", 4, nif_recvfrom},
     {"sendto", 4, nif_sendto},
     {"setsockopt", 4, nif_setsockopt}

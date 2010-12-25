@@ -98,7 +98,10 @@ socket(Family, Type, Protocol) when is_atom(Type) ->
     socket(Family, type(Type), Protocol);
 socket(Family, Type, Protocol) when is_atom(Protocol) ->
     socket(Family, Type, protocol(Protocol));
-socket(_,_,_) ->
+socket(Family, Type, Protocol)
+    when is_integer(Family), is_integer(Type), is_integer(Protocol) ->
+    socket_nif(Family, Type, Protocol).
+socket_nif(_,_,_) ->
     erlang:error(not_implemented).
 
 ioctl(_,_,_) ->
