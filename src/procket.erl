@@ -40,7 +40,7 @@
         accept/1,accept/2,
         close/1,
         recv/2,recvfrom/2,recvfrom/4,
-        sendto/4,
+        sendto/2, sendto/3,sendto/4,
         bind/2,
         ioctl/3,
         setsockopt/4
@@ -104,6 +104,10 @@ socket(_,_,_) ->
 ioctl(_,_,_) ->
     erlang:error(not_implemented).
 
+sendto(Socket, Buf) ->
+    sendto(Socket, Buf, 0, <<>>).
+sendto(Socket, Buf, Flags) ->
+    sendto(Socket, Buf, Flags, <<>>).
 sendto(_,_,_,_) ->
     erlang:error(not_implemented).
 
