@@ -37,10 +37,18 @@
 #define BACKLOG     5
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, int errnum);
+void alloc_free(ErlNifEnv *env, void *obj);
 
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_eagain;
+
+static ErlNifResourceType *PROCKET_ALLOC_RESOURCE;
+
+typedef struct _alloc_state {
+    size_t size;
+    void *buf;
+} ALLOC_STATE;
 
 
     static int
@@ -49,6 +57,11 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     atom_ok = enif_make_atom(env, "ok");
     atom_error = enif_make_atom(env, "error");
     atom_eagain = enif_make_atom(env, "eagain");
+
+    if ( (PROCKET_ALLOC_RESOURCE = enif_open_resource_type(env, NULL,
+        "procket_alloc_resource", alloc_free,
+        ERL_NIF_RT_CREATE, NULL)) == NULL)
+        return -1;
 
     return (0);
 }
@@ -380,6 +393,127 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
+/* Allocate structures for ioctl
+ *
+ * Some ioctl request structures have a field pointing
+ * to a user allocated buffer.
+ */
+
+/* 0: list */
+    static ERL_NIF_TERM
+nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM head;
+    ERL_NIF_TERM tail;
+
+    int arity = 0;
+    char key[MAXATOMLEN+1];  /* Includes terminating NULL */
+    size_t val = 0;
+    const ERL_NIF_TERM *array = NULL;
+
+    ERL_NIF_TERM resources = {0};
+    ErlNifBinary req = {0};
+
+
+    if (!enif_is_list(env, argv[0]) || enif_is_empty_list(env, argv[0]))
+        return enif_make_badarg(env);
+
+    resources = enif_make_list(env, 0);
+    if (!enif_alloc_binary(0, &req))
+        return error_tuple(env, ENOMEM);
+
+    tail = argv[0];
+
+    /* [binary(), {ptr, integer()}, ...] */
+    while (enif_get_list_cell(env, tail, &head, &tail)) {
+        int index = req.size;
+        ErlNifBinary bin = {0};
+
+        if (enif_inspect_binary(env, head, &bin)) {
+            enif_realloc_binary(&req, req.size+bin.size);
+            (void)memcpy(req.data+index, bin.data, bin.size);
+        }
+        else if (enif_get_tuple(env, head, &arity, &array)) {
+            ALLOC_STATE *p = NULL;
+            ERL_NIF_TERM res = {0};
+
+            if ( (arity != 2) ||
+                !enif_get_atom(env, array[0], key, sizeof(key), ERL_NIF_LATIN1) ||
+                (strcmp(key, "ptr") != 0) ||
+                !enif_get_ulong(env, array[1], (ulong *)&val) ||
+                val == 0)
+                return enif_make_badarg(env);
+
+            p = enif_alloc_resource(PROCKET_ALLOC_RESOURCE, sizeof(ALLOC_STATE));
+
+            if (p == NULL)
+                return error_tuple(env, ENOMEM);
+
+            p->size = val;
+            p->buf = calloc(val, 1);
+
+            if (p->buf == NULL) {
+                enif_release_resource(p);
+                return error_tuple(env, ENOMEM);
+            }
+
+            enif_realloc_binary(&req, req.size+sizeof(void *));
+            (void)memcpy(req.data+index, &p->buf, sizeof(void *));
+
+            res = enif_make_resource(env, p);
+            enif_release_resource(p);
+
+            resources = enif_make_list_cell(env, res, resources);
+        }
+        else
+            return enif_make_badarg(env);
+    }
+
+    return enif_make_tuple3(env, atom_ok,
+            enif_make_binary(env, &req),
+            resources);
+}
+
+/* 1: resource */
+    static ERL_NIF_TERM
+nif_buf(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ALLOC_STATE *p = NULL;
+
+    ErlNifBinary buf = {0};
+
+    if (!enif_get_resource(env, argv[0], PROCKET_ALLOC_RESOURCE, (void **)&p))
+        return enif_make_badarg(env);
+
+    if (!enif_alloc_binary(p->size, &buf))
+        return error_tuple(env, ENOMEM);
+
+    (void)memcpy(buf.data, p->buf, buf.size);
+
+    return enif_make_tuple2(env,
+            atom_ok,
+            enif_make_binary(env, &buf));
+}
+
+/* 0: resource, 1: binary */
+    static ERL_NIF_TERM
+nif_memcpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ALLOC_STATE *p = NULL;
+    ErlNifBinary buf = {0};
+
+
+    if (!enif_get_resource(env, argv[0], PROCKET_ALLOC_RESOURCE, (void **)&p))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &buf) || buf.size > p->size)
+        return enif_make_badarg(env);
+
+    (void)memcpy(p->buf, buf.data, p->size);
+
+    return atom_ok;
+}
+
     static ERL_NIF_TERM
 error_tuple(ErlNifEnv *env, int errnum)
 {
@@ -387,6 +521,17 @@ error_tuple(ErlNifEnv *env, int errnum)
             atom_error,
             enif_make_atom(env, erl_errno_id(errnum)));
 }
+
+
+    void
+alloc_free(ErlNifEnv *env, void *obj)
+{
+    ALLOC_STATE *p = obj;
+
+    if (p->buf)
+        free(p->buf);
+}
+
 
 
 static ErlNifFunc nif_funcs[] = {
@@ -401,7 +546,11 @@ static ErlNifFunc nif_funcs[] = {
     {"socket_nif", 3, nif_socket},
     {"recvfrom", 4, nif_recvfrom},
     {"sendto", 4, nif_sendto},
-    {"setsockopt", 4, nif_setsockopt}
+    {"setsockopt", 4, nif_setsockopt},
+
+    {"alloc", 1, nif_alloc},
+    {"memcpy", 2, nif_memcpy},
+    {"buf", 1, nif_buf}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, NULL, NULL, NULL)

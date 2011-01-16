@@ -43,7 +43,11 @@
         sendto/2, sendto/3,sendto/4,
         bind/2,
         ioctl/3,
-        setsockopt/4
+        setsockopt/4,
+
+        alloc/1,
+        buf/1,
+        memcpy/2
     ]).
 -export([unix_path_max/0, sockaddr_common/2]).
 -export([make_args/2,progname/0]).
@@ -106,6 +110,12 @@ socket_nif(_,_,_) ->
     erlang:error(not_implemented).
 
 ioctl(_,_,_) ->
+    erlang:error(not_implemented).
+alloc(_) ->
+    erlang:error(not_implemented).
+buf(_) ->
+    erlang:error(not_implemented).
+memcpy(_,_) ->
     erlang:error(not_implemented).
 
 sendto(Socket, Buf) ->
