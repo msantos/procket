@@ -52,10 +52,11 @@
 
 
 #define PROCKET_VERSION   "0.01"
-#define MAXBUFLEN           4096    /* Largest message accepted on stdin */
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX  sizeof(((struct sockaddr_un *)0)->sun_path)
 #endif
+
+#define MAXATOMLEN  255     /* ei.h: does not include terminating NULL */
 
 #define IS_ERR(x) do { \
         if ((x) == -1) return (-1); \
