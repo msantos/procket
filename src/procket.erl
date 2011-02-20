@@ -192,14 +192,7 @@ make_args(Port, Options) ->
             get_switch(IP) ++ ":" ++ integer_to_list(Port)
     end,
     proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
-    string:join([ get_switch(proplists:lookup(Arg, Options)) || Arg <- [
-                pipe,
-                protocol,
-                family,
-                type,
-                interface
-            ], proplists:lookup(Arg, Options) /= none ],
-        " ") ++ Bind.
+    string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++ Bind.
 
 get_switch({pipe, Arg}) ->
     "-p " ++ Arg;
@@ -227,7 +220,11 @@ get_switch({interface, Name}) when is_list(Name) ->
     % subset of all charactes, use a whitelist and extend it if needed
     SName = [C || C <- Name, ((C >= $a) and (C =< $z)) or ((C >= $A) and (C =< $Z))
                           or ((C >= $0) and (C =< $9)) or (C == $.)],
-    "-I " ++ SName.
+    "-I " ++ SName;
+
+% Ignore any other arguments
+get_switch(_Arg) ->
+    "".
 
 progname() ->
     filename:join([
