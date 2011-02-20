@@ -40,6 +40,7 @@
         ipv4address/2,
         macaddress/2,
         promiscuous/2,
+        bindtodevice/2,
         send/3
     ]).
 
@@ -59,6 +60,10 @@
 -define(PACKET_ADD_MEMBERSHIP, 1).
 -define(PACKET_DROP_MEMBERSHIP, 2).
 -define(PACKET_MR_PROMISC, 1).
+
+% Options for binding to interfaces
+-define(SOL_SOCKET, 1).
+-define(SO_BINDTODEVICE, 25).
 
 -define(ETH_P_IP, 16#0800).
 
@@ -205,6 +210,18 @@ promiscuous(Socket, Ifindex) ->
         0:16,                           % mr_alen: address length
         0:64                            % mr_address[8]:  physical layer address
         >>).
+
+
+%%-------------------------------------------------------------------------
+%% Bind socket to interface. Equivalent to the {interface, Device} option
+%% but requires running Erlang with heightened privs (CAP_NET_RAW)
+%%-------------------------------------------------------------------------
+bindtodevice(Socket, Dev) when length(Dev) < 16 ->
+    % struct ifreq
+    procket:setsockopt(Socket, ?SOL_SOCKET, ?SO_BINDTODEVICE, list_to_binary([
+        Dev, <<0:((15*8) - (length(Dev)*8)), 0:8>>, % ifrn_name[IFNAMSIZ]: interface name
+        <<0:(16*8)>>
+    ])).
 
 
 %%-------------------------------------------------------------------------
