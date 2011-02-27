@@ -1,4 +1,4 @@
-/* Copyright (c) 2010, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -474,7 +474,7 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             resources);
 }
 
-/* 1: resource */
+/* 0: resource */
     static ERL_NIF_TERM
 nif_buf(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -528,8 +528,12 @@ alloc_free(ErlNifEnv *env, void *obj)
 {
     ALLOC_STATE *p = obj;
 
-    if (p->buf)
-        free(p->buf);
+    if (p->buf == NULL)
+        return;
+
+    free(p->buf);
+    p->buf = NULL;
+    p->size = 0;
 }
 
 
