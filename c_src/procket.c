@@ -509,7 +509,7 @@ nif_memcpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[1], &buf) || buf.size > p->size)
         return enif_make_badarg(env);
 
-    (void)memcpy(p->buf, buf.data, p->size);
+    (void)memcpy(p->buf, buf.data, buf.size);
 
     return atom_ok;
 }
