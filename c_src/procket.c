@@ -408,7 +408,6 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     int arity = 0;
     char key[MAXATOMLEN+1];  /* Includes terminating NULL */
-    size_t val = 0;
     const ERL_NIF_TERM *array = NULL;
 
     ERL_NIF_TERM resources = {0};
@@ -424,7 +423,7 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     tail = argv[0];
 
-    /* [binary(), {ptr, integer()}, ...] */
+    /* [binary(), {ptr, integer()}, {ptr, binary()}, ...] */
     while (enif_get_list_cell(env, tail, &head, &tail)) {
         int index = req.size;
         ErlNifBinary bin = {0};
@@ -436,13 +435,19 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         else if (enif_get_tuple(env, head, &arity, &array)) {
             ALLOC_STATE *p = NULL;
             ERL_NIF_TERM res = {0};
+            size_t val = 0;
+            ErlNifBinary initial = {0};
 
             if ( (arity != 2) ||
                 !enif_get_atom(env, array[0], key, sizeof(key), ERL_NIF_LATIN1) ||
-                (strcmp(key, "ptr") != 0) ||
-                !enif_get_ulong(env, array[1], (ulong *)&val) ||
-                val == 0)
+                (strcmp(key, "ptr") != 0))
                 return enif_make_badarg(env);
+
+            if ( !(enif_get_ulong(env, array[1], (ulong *)&val) && val > 0) &&
+                !(enif_inspect_binary(env, array[1], &initial) && initial.size > 0))
+                return enif_make_badarg(env);
+
+            val = (initial.size > 0) ? initial.size : val;
 
             p = enif_alloc_resource(PROCKET_ALLOC_RESOURCE, sizeof(ALLOC_STATE));
 
@@ -456,6 +461,9 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
                 enif_release_resource(p);
                 return error_tuple(env, ENOMEM);
             }
+
+            if (initial.size > 0)
+                (void)memcpy(p->buf, initial.data, p->size);
 
             enif_realloc_binary(&req, req.size+sizeof(void *));
             (void)memcpy(req.data+index, &p->buf, sizeof(void *));
