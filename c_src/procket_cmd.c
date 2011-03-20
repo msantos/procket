@@ -48,7 +48,7 @@ main(int argc, char *argv[])
     int ch = 0;
 
 
-    IS_NULL(ps = (PROCKET_STATE *)calloc(1, sizeof(PROCKET_STATE)));
+    IS_NULL(ps = calloc(1, sizeof(PROCKET_STATE)));
 
     ps->ip = INADDR_ANY;
     ps->backlog = BACKLOG;
