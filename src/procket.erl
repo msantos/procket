@@ -1,4 +1,4 @@
-%% Copyright (c) 2010, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %% 
 %% Redistribution and use in source and binary forms, with or without
@@ -97,15 +97,10 @@ recvfrom(Socket,Size) ->
 recvfrom(_,_,_,_) ->
     erlang:error(not_implemented).
 
-socket(Family, Type, Protocol) when is_atom(Family) ->
-    socket(family(Family), Type, Protocol);
-socket(Family, Type, Protocol) when is_atom(Type) ->
-    socket(Family, type(Type), Protocol);
-socket(Family, Type, Protocol) when is_atom(Protocol) ->
-    socket(Family, Type, protocol(Protocol));
-socket(Family, Type, Protocol)
-    when is_integer(Family), is_integer(Type), is_integer(Protocol) ->
-    socket_nif(Family, Type, Protocol).
+socket(Family, Type, Protocol) ->
+    socket_nif(maybe_atom(family, Family),
+        maybe_atom(type, Type),
+        maybe_atom(protocol, Protocol)).
 socket_nif(_,_,_) ->
     erlang:error(not_implemented).
 
@@ -268,6 +263,11 @@ protocol(0) -> raw;
 protocol(1) -> icmp;
 protocol(6) -> tcp;
 protocol(17) -> udp.
+
+maybe_atom(_Type, Value) when is_integer(Value) -> Value;
+maybe_atom(family, Value) -> family(Value);
+maybe_atom(type, Value) -> type(Value);
+maybe_atom(protocol, Value) -> protocol(Value).
 
 
 %%
