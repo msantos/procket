@@ -443,7 +443,7 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
                 (strcmp(key, "ptr") != 0))
                 return enif_make_badarg(env);
 
-            if ( !(enif_get_ulong(env, array[1], (ulong *)&val) && val > 0) &&
+            if ( !(enif_get_ulong(env, array[1], (unsigned long *)&val) && val > 0) &&
                 !(enif_inspect_binary(env, array[1], &initial) && initial.size > 0))
                 return enif_make_badarg(env);
 
