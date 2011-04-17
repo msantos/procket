@@ -66,9 +66,6 @@ open(Dev) ->
     % Set the interface for the bpf
     {ok, _} = procket:ioctl(Socket, ?BIOCSETIF, Ifreq),
 
-    % Set immediate mode (reads/writes return immediately)
-    {ok, _} = procket:ioctl(Socket, ?BIOCIMMEDIATE, <<1:32/native>>),
-
     % Get bpf buf len
     {ok, Len} = procket:ioctl(Socket, ?BIOCGBLEN, <<1:32/native>>),
 
