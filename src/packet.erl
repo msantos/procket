@@ -1,4 +1,4 @@
-%% Copyright (c) 2010, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -73,9 +73,12 @@
 %%-------------------------------------------------------------------------
 socket() ->
     socket(?ETH_P_IP).
-socket(EthType) when is_integer(EthType) ->
-    <<Protocol:16>> = <<EthType:16/native>>,
-    procket:open(0, [{protocol, Protocol}, {type, raw}, {family, packet}]).
+socket(Protocol) when is_integer(Protocol) ->
+    procket:open(0, [
+            {protocol, procket:ntohl(Protocol)},
+            {type, raw},
+            {family, packet}
+        ]).
 
 
 %%-------------------------------------------------------------------------

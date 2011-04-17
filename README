@@ -127,10 +127,9 @@ procket uses libancillary for passing file descriptors between processes:
 
 TODO
 
-* Support BPF on BSD for sending/receiving packets
+* add support for BPF filter rules
 
-* Examples/changes to support sending TCP/UDP packets using the raw
-  socket interface, using epcap to receive packets
+* interface for opening any character device
 
 * Docs and type specs
 

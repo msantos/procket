@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <err.h>
+#include <sys/param.h>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -101,6 +102,7 @@ typedef struct {
     int type;               /* socket type: SOCK_STREAM */
     int protocol;           /* socket protocol: IPPROTO_TCP */
     int backlog;            /* Listen backlog */
+    int bpf;                /* Open a bpf device */
 } PROCKET_STATE;
 
 

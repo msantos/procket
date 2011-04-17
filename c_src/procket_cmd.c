@@ -1,4 +1,4 @@
-/* Copyright (c) 2010, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 void procket_parse_address(PROCKET_STATE *ps);
 int procket_pipe(PROCKET_STATE *ps);
 int procket_open_socket(PROCKET_STATE *ps);
+int procket_open_bpf(PROCKET_STATE *ps);
 void usage(PROCKET_STATE *ep);
 
 
@@ -57,7 +58,7 @@ main(int argc, char *argv[])
     ps->type = SOCK_STREAM;
     ps->protocol = IPPROTO_TCP;
 
-    while ( (ch = getopt(argc, argv, "b:F:hp:P:T:v:I:")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:BF:hp:P:T:v:I:")) != -1) {
         switch (ch) {
             case 'b':   /* listen backlog */
                 ps->backlog = atoi(optarg);
@@ -79,6 +80,9 @@ main(int argc, char *argv[])
             case 'I': /* Interface name */
                 IS_NULL(ps->ifname = strdup(optarg));
                 break;
+            case 'B': /* Open a BPF device */
+                ps->bpf = 1;
+                break;
             case 'v':
                 ps->verbose++;
                 break;
@@ -91,6 +95,7 @@ main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
+    if (ps->bpf == 0) {
     if (ps->path == NULL)
         usage(ps);
 
@@ -104,6 +109,13 @@ main(int argc, char *argv[])
     if (procket_open_socket(ps) != 0) {
         (void)fprintf(stderr, "%s", strerror(errno));
         exit (-errno);
+    }
+    }
+    else {
+    if (procket_open_bpf(ps) < 0) {
+        (void)fprintf(stderr, "%s", strerror(errno));
+        exit (-errno);
+    }
     }
 
     if (setgid(getgid()) == -1)
@@ -196,6 +208,32 @@ procket_pipe(PROCKET_STATE *ps)
     return (0);
 }
 
+/* BPF support */
+    int
+procket_open_bpf(PROCKET_STATE *ps)
+{
+    char dev[MAXPATHLEN];
+    int i = 0;
+
+    for (i = 0; i < 255; i++) {
+        (void)snprintf(dev, sizeof(dev), "/dev/bpf%d", i);
+
+        ps->s = open(dev, O_RDWR);
+
+        if (ps->s > -1)
+            return 0;
+
+        switch (errno) {
+            case EBUSY:
+                break;
+            default:
+                return -1;
+        }
+    }
+
+    return -1;
+}
+
 
     void
 usage(PROCKET_STATE *ps)
@@ -210,11 +248,10 @@ usage(PROCKET_STATE *ps)
 #ifdef SO_BINDTODEVICE
             "              -I <name>        interface [default: ANY]\n"
 #endif
+            "              -B               enable BPF support\n"
             "              -v               verbose mode\n",
             __progname
             );
 
     exit (EXIT_FAILURE);
 }
-
-

@@ -41,6 +41,7 @@
         close/1,
         recv/2,recvfrom/2,recvfrom/4,
         sendto/2, sendto/3,sendto/4,
+        read/2, write/2,
         bind/2,
         ioctl/3,
         setsockopt/4,
@@ -49,7 +50,12 @@
         buf/1,
         memcpy/2
     ]).
--export([unix_path_max/0, sockaddr_common/2]).
+-export([
+        unix_path_max/0,
+        sockaddr_common/2,
+        ntohl/1,
+        ntohs/1
+    ]).
 -export([make_args/2,progname/0]).
 
 -on_load(on_load/0).
@@ -97,6 +103,9 @@ recvfrom(Socket,Size) ->
 recvfrom(_,_,_,_) ->
     erlang:error(not_implemented).
 
+read(_,_) ->
+    erlang:error(not_implemented).
+
 socket(Family, Type, Protocol) ->
     socket_nif(maybe_atom(family, Family),
         maybe_atom(type, Type),
@@ -118,6 +127,9 @@ sendto(Socket, Buf) ->
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
 sendto(_,_,_,_) ->
+    erlang:error(not_implemented).
+
+write(_,_) ->
     erlang:error(not_implemented).
 
 setsockopt(_,_,_,_) ->
@@ -217,6 +229,9 @@ get_switch({interface, Name}) when is_list(Name) ->
                           or ((C >= $0) and (C =< $9)) or (C == $.)],
     "-I " ++ SName;
 
+get_switch({bpf, true}) ->
+    "-B ";
+
 % Ignore any other arguments
 get_switch(_Arg) ->
     "".
@@ -296,3 +311,14 @@ unix_path_max() ->
         {unix,_} -> 108
     end.
 
+
+ntohl(<<I:32>>) ->
+    ntohl(I);
+ntohl(I) when is_integer(I) ->
+    <<N:32>> = <<I:32/native>>,
+    N.
+ntohs(<<I:32>>) ->
+    ntohs(I);
+ntohs(I) when is_integer(I) ->
+    <<N:16>> = <<I:16/native>>,
+    N.

@@ -5,6 +5,7 @@
     {modules, [
         procket,
         packet,
+        bpf,
         mktmp,
         icmp,
         echo

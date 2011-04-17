@@ -289,6 +289,64 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
+/* 0: socket, 1: length */
+    static ERL_NIF_TERM
+nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int fd = -1;
+    unsigned long len = 0;
+
+    ErlNifBinary buf;
+    ssize_t bufsz = 0;
+
+
+    if (!enif_get_int(env, argv[0], &fd))
+        return enif_make_badarg(env);
+    if (!enif_get_ulong(env, argv[1], &len))
+        return enif_make_badarg(env);
+
+    if (!enif_alloc_binary(len, &buf))
+        return error_tuple(env, ENOMEM);
+
+    if ( (bufsz = read(fd, buf.data, buf.size)) == -1) {
+        enif_release_binary(&buf);
+        switch (errno) {
+            case EAGAIN:
+            case EINTR:
+                return enif_make_tuple2(env, atom_error, atom_eagain);
+            default:
+                return error_tuple(env, errno);
+        }
+    }
+
+    if (bufsz != buf.size)
+        enif_realloc_binary(&buf, bufsz);
+
+    return enif_make_tuple2(env, atom_ok, enif_make_binary(env, &buf));
+}
+
+
+/* 0: fd, 1: buffer */
+    static ERL_NIF_TERM
+nif_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int fd = -1;
+
+    ErlNifBinary buf;
+
+    if (!enif_get_int(env, argv[0], &fd))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &buf))
+        return enif_make_badarg(env);
+
+    if (write(fd, buf.data, buf.size) == -1)
+        return error_tuple(env, errno);
+
+    return atom_ok;
+}
+
+
 /* 0: socket descriptor, 1: struct sockaddr */
     static ERL_NIF_TERM
 nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
@@ -338,14 +396,14 @@ nif_connect(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
-    int req = 0;
+    unsigned long req = 0;
     ErlNifBinary arg;
 
 
     if (!enif_get_int(env, argv[0], &s))
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[1], &req))
+    if (!enif_get_ulong(env, argv[1], &req))
         return enif_make_badarg(env);
 
     if (!enif_inspect_binary(env, argv[2], &arg))
@@ -560,11 +618,12 @@ static ErlNifFunc nif_funcs[] = {
     {"sendto", 4, nif_sendto},
     {"setsockopt", 4, nif_setsockopt},
 
+    {"read", 2, nif_read},
+    {"write", 2, nif_write},
+
     {"alloc", 1, nif_alloc},
     {"memcpy", 2, nif_memcpy},
     {"buf", 1, nif_buf}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, NULL, NULL, NULL)
-
-
