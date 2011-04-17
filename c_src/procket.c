@@ -209,7 +209,7 @@ nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
-    int len = 0;
+    unsigned long len = 0;
     int salen = 0;
     int flags = 0;
 
@@ -220,7 +220,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     if (!enif_get_int(env, argv[0], &sockfd))
         return enif_make_badarg(env);
-    if (!enif_get_int(env, argv[1], &len))
+    if (!enif_get_ulong(env, argv[1], &len))
         return enif_make_badarg(env);
     if (!enif_get_int(env, argv[2], &flags))
         return enif_make_badarg(env);
