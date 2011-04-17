@@ -41,6 +41,43 @@
 -define(SIZEOF_INT32_T, 4).
 -define(SIZEOF_U_INT, ?SIZEOF_INT32_T).
 
+%% struct bpf_program {
+%%         u_int bf_len;
+%%         struct bpf_insn *bf_insns;
+%% };
+
+%% struct bpf_insn {
+%%         u_short     code;
+%%         u_char      jt;
+%%         u_char      jf;
+%%         bpf_u_int32 k;
+%% };
+-define(SIZEOF_STRUCT_BPF_PROGRAM,
+    ?SIZEOF_U_INT + 2 + 1 + 1 + ?SIZEOF_U_INT).
+
+%% struct bpf_stat {
+%%         u_int bs_recv;
+%%         u_int bs_drop;
+%% };
+-define(SIZEOF_STRUCT_BPF_STAT,
+    ?SIZEOF_U_INT + ?SIZEOF_U_INT)
+
+%% struct bpf_version {
+%%         u_short bv_major;
+%%         u_short bv_minor;
+%% };
+-define(SIZEOF_STRUCT_BPF_VERSION, 2 + 2).
+
+%% struct bpf_dltlist {
+%%     u_int32_t       bfl_len;
+%%     union {
+%%         u_int32_t   *bflu_list;
+%%         u_int64_t   bflu_pad;
+%%     } bfl_u;
+%% };
+-define(SIZEOF_STRUCT_BPF_DLTLIST,
+    ?SIZEOF_U_INT + ?SIZEOF_U_INT + 8).
+
 -define(BPF_ALIGNMENT, ?SIZEOF_INT32_T).
 
 -define(IOC_IN, 16#80000000).
@@ -48,10 +85,27 @@
 -define(IOC_VOID, 16#20000000).
 -define(IOCPARM_MASK, 16#1fff).
 
--define(BIOCGBLEN, ior($B,102, ?SIZEOF_U_INT)).
--define(BIOCPROMISC, io($B,105)).
+-define(BIOCGBLEN, ior($B, 102, ?SIZEOF_U_INT)).
+-define(BIOCSBLEN, iowr($B, 102, ?SIZEOF_U_INT)).
+-define(BIOCSETF, iow($B, 103, ?SIZEOF_STRUCT_BPF_PROGRAM)).
+-define(BIOCFLUSH, io($B, 104)).
+-define(BIOCPROMISC, io($B, 105)).
+-define(BIOCGDLT, ior($B,106, ?SIZEOF_U_INT)).
+-define(BIOCGETIF, ior($B,107, ?SIZEOF_STRUCT_IFREQ)).
 -define(BIOCSETIF, iow($B, 108, ?SIZEOF_STRUCT_IFREQ)).
+-define(BIOCSRTIMEOUT, iow($B, 109, sizeof(timeval)).
+-define(BIOCGRTIMEOUT, ior($B, 110, sizeof(timeval)).
+-define(BIOCGSTATS, ior($B, 111, ?SIZEOF_STRUCT_BPF_STAT)).
 -define(BIOCIMMEDIATE, iow($B, 112, ?SIZEOF_U_INT)).
+-define(BIOCVERSION, ior($B, 113, SIZEOF_STRUCT_BPF_VERSION)).
+-define(BIOCGRSIG, ior($B, 114, ?SIZEOF_U_INT)).
+-define(BIOCSRSIG, iow($B, 115, ?SIZEOF_U_INT)).
+-define(BIOCGHDRCMPLT, ior($B, 116, ?SIZEOF_U_INT)).
+-define(BIOCSHDRCMPLT, iow($B, 117, ?SIZEOF_U_INT)).
+-define(BIOCGSEESENT, ior($B, 118, ?SIZEOF_U_INT)).
+-define(BIOCSSEESENT, iow($B, 119, ?SIZEOF_U_INT)).
+-define(BIOCSDLT, iow($B, 120, ?SIZEOF_U_INT)).
+-define(BIOCGDLTLIST, iowr($B, 121, ?SIZEOF_STRUCT_BPF_DLTLIST)).
 
 
 open(Dev) ->
@@ -65,6 +119,12 @@ open(Dev) ->
 
     % Set the interface for the bpf
     {ok, _} = procket:ioctl(Socket, ?BIOCSETIF, Ifreq),
+
+    % Allow caller to provide packet header (header complete)
+    {ok, _} = procket:ioctl(Socket, ?BIOCSHDRCMPLT, <<1:32/native>>),
+
+    % Return packets sent from the interface
+    {ok, _} = procket:ioctl(Socket, ?BIOCSSEESENT, <<1:32/native>>),
 
     % Get bpf buf len
     {ok, Len} = procket:ioctl(Socket, ?BIOCGBLEN, <<1:32/native>>),
@@ -135,3 +195,6 @@ iow(G,N,T) ->
 
 ior(G,N,T) ->
     ioc(?IOC_OUT, G, N, T).
+
+sizeof(timeval) ->
+    erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT.
