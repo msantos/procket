@@ -30,7 +30,11 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(bpf).
 
--export([open/1, data/1]).
+-export([
+        open/1,
+        data/1,
+        promiscuous/1
+    ]).
 -export([pad/1, align/1]).
 
 -define(SIZEOF_STRUCT_IFREQ, 32).
@@ -41,11 +45,13 @@
 
 -define(IOC_IN, 16#80000000).
 -define(IOC_OUT, 16#40000000).
+-define(IOC_VOID, 16#20000000).
 -define(IOCPARM_MASK, 16#1fff).
 
+-define(BIOCGBLEN, ior($B,102, ?SIZEOF_U_INT)).
+-define(BIOCPROMISC, io($B,105)).
 -define(BIOCSETIF, iow($B, 108, ?SIZEOF_STRUCT_IFREQ)).
 -define(BIOCIMMEDIATE, iow($B, 112, ?SIZEOF_U_INT)).
--define(BIOCGBLEN, ior($B,102, ?SIZEOF_U_INT)).
 
 
 open(Dev) ->
@@ -113,12 +119,19 @@ data(Data) when is_binary(Data) ->
     {Time, Datalen, Packet, Rest}.
 
 
+promiscuous(FD) ->
+    procket:ioctl(FD, ?BIOCPROMISC, 0).
+
+
 %%-------------------------------------------------------------------------
 %%% Internal functions
 %%-------------------------------------------------------------------------
 %% BSD ioctl request calculation (taken from ioccom.h)
 ioc(Inout, Group, Num, Len) ->
     Inout bor ((Len band ?IOCPARM_MASK) bsl 16) bor (Group bsl 8) bor Num.
+
+io(G,N) ->
+    ioc(?IOC_VOID, G, N, 0).
 
 iow(G,N,T) ->
     ioc(?IOC_IN, G, N, T).
