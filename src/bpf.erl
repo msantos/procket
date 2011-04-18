@@ -33,7 +33,8 @@
 -export([
         open/1,
         data/1,
-        promiscuous/1
+        promiscuous/1,
+        attr/2, attr/3
     ]).
 -export([pad/1, align/1]).
 
@@ -111,26 +112,47 @@
 open(Dev) ->
     {ok, Socket} = procket:open(0, [{dev, "bpf"}]),
 
-    % struct ifreq
-    Ifreq = list_to_binary([
-        Dev, <<0:((15*8) - (length(Dev)*8)), 0:8>>,
-        <<0:(16*8)>>
-    ]),
-
     % Set the interface for the bpf
-    {ok, _} = procket:ioctl(Socket, ?BIOCSETIF, Ifreq),
+    {ok, _} = attr(Socket, setif, Dev),
 
     % Allow caller to provide packet header (header complete)
-    {ok, _} = procket:ioctl(Socket, ?BIOCSHDRCMPLT, <<1:32/native>>),
+    {ok, _} = attr(Socket, hdrcmplt, true),
 
     % Return packets sent from the interface
-    {ok, _} = procket:ioctl(Socket, ?BIOCSSEESENT, <<1:32/native>>),
+    {ok, _} = attr(Socket, seesent, true),
 
     % Get bpf buf len
-    {ok, Len} = procket:ioctl(Socket, ?BIOCGBLEN, <<1:32/native>>),
+    {ok, Len} = attr(Socket, blen),
 
-    {ok, Socket, procket:ntohl(Len)}.
+    {ok, Socket, Len}.
 
+
+attr(Socket, blen) ->
+    case procket:ioctl(Socket, ?BIOCGBLEN, <<1:32/native>>) of
+        {ok, Len} -> {ok, procket:ntohl(Len)};
+        Error -> Error
+    end.
+
+attr(Socket, setif, Ifname) ->
+    % struct ifreq
+    Ifreq = list_to_binary([
+        Ifname, <<0:((15*8) - (length(Ifname)*8)), 0:8>>,
+        <<0:(16*8)>>
+    ]),
+    procket:ioctl(Socket, ?BIOCSETIF, Ifreq);
+
+attr(Socket, immediate, Bool) when Bool == true; Bool == false ->
+    procket:ioctl(Socket, ?BIOCIMMEDIATE, bool(Bool));
+
+attr(Socket, hdrcmplt, Bool) when Bool == true; Bool == false ->
+    procket:ioctl(Socket, ?BIOCSHDRCMPLT, bool(Bool));
+
+attr(Socket, seesent, Bool) when Bool == true; Bool == false ->
+    procket:ioctl(Socket, ?BIOCSSEESENT, bool(Bool)).
+
+
+bool(true) -> <<1:32/native>>;
+bool(false) -> <<0:32>>.
 
 %% struct bpf_hdr {
 %%     struct BPF_TIMEVAL bh_tstamp;   /* time stamp */
