@@ -110,7 +110,7 @@
 
 
 open(Dev) ->
-    {ok, Socket} = procket:open(0, [{dev, "bpf"}]),
+    {ok, Socket} = procket:dev("bpf"),
 
     % Set the interface for the bpf
     {ok, _} = attr(Socket, setif, Dev),

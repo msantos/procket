@@ -34,6 +34,7 @@
 -export([
         init/0,
         open/1,open/2,
+        dev/1,
         socket/3,
         listen/1,listen/2,
         connect/2,
@@ -135,6 +136,9 @@ write(_,_) ->
 setsockopt(_,_,_,_) ->
     erlang:error(not_implemented).
 
+
+dev(Dev) when is_list(Dev) ->
+    open(0, [{dev, Dev}]).
 
 open(Port) ->
     open(Port, []).
