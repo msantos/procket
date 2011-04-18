@@ -223,7 +223,7 @@ get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 get_switch({ip, Arg}) when is_list(Arg) -> Arg;
 
 get_switch({interface, Name}) when is_list(Name) ->
-    case is_device(Name) of
+    case is_interface(Name) of
         true ->
             "-I " ++ Name;
         false ->
@@ -249,7 +249,7 @@ is_interface(Name) when is_list(Name) ->
         or ((C >= $0) and (C =< $9)) or (C == $.)].
 
 is_device(Name) when is_list(Name) ->
-    Name == [C || C <- Name, (C >= $a) and (C =< $z))
+    Name == [C || C <- Name, ((C >= $a) and (C =< $z))
         or ((C >= $0) and (C =< $9))].
 
 progname() ->
