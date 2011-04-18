@@ -1,7 +1,7 @@
 {application, procket,
     [
     {description, "Low level socket operations"},
-    {vsn, "0.02"},
+    {vsn, "0.03"},
     {modules, [
         procket,
         packet,

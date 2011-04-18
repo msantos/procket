@@ -38,7 +38,8 @@
 void procket_parse_address(PROCKET_STATE *ps);
 int procket_pipe(PROCKET_STATE *ps);
 int procket_open_socket(PROCKET_STATE *ps);
-int procket_open_bpf(PROCKET_STATE *ps);
+int procket_open_dev(PROCKET_STATE *ps);
+int procket_open_char_dev(char *dev);
 void usage(PROCKET_STATE *ep);
 
 
@@ -58,7 +59,7 @@ main(int argc, char *argv[])
     ps->type = SOCK_STREAM;
     ps->protocol = IPPROTO_TCP;
 
-    while ( (ch = getopt(argc, argv, "b:BF:hp:P:T:v:I:")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:d:F:hp:P:T:v:I:")) != -1) {
         switch (ch) {
             case 'b':   /* listen backlog */
                 ps->backlog = atoi(optarg);
@@ -80,8 +81,19 @@ main(int argc, char *argv[])
             case 'I': /* Interface name */
                 IS_NULL(ps->ifname = strdup(optarg));
                 break;
-            case 'B': /* Open a BPF device */
-                ps->bpf = 1;
+            case 'd': { /* Open a character device */
+                char  *p = NULL;
+
+                IS_NULL(ps->dev = strdup(optarg));
+
+                if (strlen(ps->dev) >= 32)
+                    usage(ps);
+
+                for (p = ps->dev; *p; p++) {
+                    if (!islower(*p) && !isdigit(*p))
+                        usage(ps);
+                }
+                }
                 break;
             case 'v':
                 ps->verbose++;
@@ -95,10 +107,10 @@ main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if (ps->bpf == 0) {
     if (ps->path == NULL)
         usage(ps);
 
+    if (ps->dev == NULL) {
     if (ps->protocol == IPPROTO_TCP || ps->protocol == IPPROTO_UDP) {
         if (argc == 0)
             usage(ps);
@@ -112,7 +124,7 @@ main(int argc, char *argv[])
     }
     }
     else {
-    if (procket_open_bpf(ps) < 0) {
+    if (procket_open_dev(ps) < 0) {
         (void)fprintf(stderr, "%s", strerror(errno));
         exit (-errno);
     }
@@ -208,17 +220,32 @@ procket_pipe(PROCKET_STATE *ps)
     return (0);
 }
 
-/* BPF support */
+/* character device support */
     int
-procket_open_bpf(PROCKET_STATE *ps)
+procket_open_dev(PROCKET_STATE *ps)
 {
     char dev[MAXPATHLEN];
     int i = 0;
 
-    for (i = 0; i < 255; i++) {
-        (void)snprintf(dev, sizeof(dev), "/dev/bpf%d", i);
 
-        ps->s = open(dev, O_RDWR);
+    (void)snprintf(dev, sizeof(dev), "/dev/%s", ps->dev);
+
+    ps->s = procket_open_char_dev(dev);
+
+    if (ps->s > -1)
+        return 0;
+
+    switch (errno) {
+        case ENOENT:
+            break;
+        default:
+            return -1;
+    }
+
+    for (i = 0; i < 255; i++) {
+        (void)snprintf(dev, sizeof(dev), "/dev/%s%d", ps->dev, i);
+
+        ps->s = procket_open_char_dev(dev);
 
         if (ps->s > -1)
             return 0;
@@ -230,6 +257,37 @@ procket_open_bpf(PROCKET_STATE *ps)
                 return -1;
         }
     }
+
+    return -1;
+}
+
+    int
+procket_open_char_dev(char *dev)
+{
+    int fd = -1;
+    struct stat buf = {0};
+    int err = 0;
+
+    if ( (fd = open(dev, O_RDWR)) < 0)
+        return -1;
+
+    /* Test the file is a character device */
+    if (fstat(fd, &buf) < 0) {
+        err = errno;
+        goto ERR;
+    }
+
+    if (!S_ISCHR(buf.st_mode)) {
+        err = ENOENT;
+        goto ERR;
+    }
+
+    return fd;
+
+ERR:
+    if (fd > -1)
+        (void)close(fd);
+    errno = err;
 
     return -1;
 }
@@ -248,7 +306,7 @@ usage(PROCKET_STATE *ps)
 #ifdef SO_BINDTODEVICE
             "              -I <name>        interface [default: ANY]\n"
 #endif
-            "              -B               enable BPF support\n"
+            "              -d <name>        open device\n"
             "              -v               verbose mode\n",
             __progname
             );

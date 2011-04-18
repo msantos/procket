@@ -223,18 +223,34 @@ get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 get_switch({ip, Arg}) when is_list(Arg) -> Arg;
 
 get_switch({interface, Name}) when is_list(Name) ->
-    % An interface name is expected to consist of a reasonable
-    % subset of all charactes, use a whitelist and extend it if needed
-    SName = [C || C <- Name, ((C >= $a) and (C =< $z)) or ((C >= $A) and (C =< $Z))
-                          or ((C >= $0) and (C =< $9)) or (C == $.)],
-    "-I " ++ SName;
+    case is_device(Name) of
+        true ->
+            "-I " ++ Name;
+        false ->
+            throw({bad_interface, Name})
+    end;
 
-get_switch({bpf, true}) ->
-    "-B ";
+get_switch({dev, Dev}) when is_list(Dev) ->
+    case is_device(Dev) of
+        true ->
+            "-d " ++ Dev;
+        false ->
+            throw({bad_device, Dev})
+    end;
 
 % Ignore any other arguments
 get_switch(_Arg) ->
     "".
+
+is_interface(Name) when is_list(Name) ->
+    % An interface name is expected to consist of a reasonable
+    % subset of all characters, use a whitelist and extend it if needed
+    Name == [C || C <- Name, (((C bor 32) >= $a) and ((C bor 32) =< $z))
+        or ((C >= $0) and (C =< $9)) or (C == $.)].
+
+is_device(Name) when is_list(Name) ->
+    Name == [C || C <- Name, (C >= $a) and (C =< $z))
+        or ((C >= $0) and (C =< $9))].
 
 progname() ->
     filename:join([

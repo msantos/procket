@@ -51,8 +51,11 @@
 
 #include <sys/ioctl.h>
 
+#include <sys/stat.h>
+#include <ctype.h>
 
-#define PROCKET_VERSION   "0.01"
+
+#define PROCKET_VERSION   "0.03"
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX  sizeof(((struct sockaddr_un *)0)->sun_path)
 #endif
@@ -93,6 +96,7 @@ typedef struct {
     char *address;          /* <port> or <ipaddr:port> */
     char *ifname;           /* network interface name */
     int verbose;            /* Debug messages */
+    char *dev;              /* Open a character device */
 
     in_addr_t ip;           /* IP Address */
     in_port_t port;         /* Port */
@@ -102,7 +106,6 @@ typedef struct {
     int type;               /* socket type: SOCK_STREAM */
     int protocol;           /* socket protocol: IPPROTO_TCP */
     int backlog;            /* Listen backlog */
-    int bpf;                /* Open a bpf device */
 } PROCKET_STATE;
 
 
