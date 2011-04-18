@@ -268,7 +268,7 @@ procket_open_char_dev(char *dev)
     struct stat buf = {0};
     int err = 0;
 
-    if ( (fd = open(dev, O_RDWR)) < 0)
+    if ( (fd = open(dev, O_RDWR|O_NONBLOCK)) < 0)
         return -1;
 
     /* Test the file is a character device */
