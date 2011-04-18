@@ -109,7 +109,7 @@
 
 
 open(Dev) ->
-    {ok, Socket} = procket:open(0, [{bpf, true}]),
+    {ok, Socket} = procket:open(0, [{dev, "bpf"}]),
 
     % struct ifreq
     Ifreq = list_to_binary([
