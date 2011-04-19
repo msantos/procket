@@ -30,83 +30,27 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(bpf).
 
+-include("bpf.hrl").
+
+% BPF ioctl
 -export([
         open/1,
         data/1,
         promiscuous/1,
-        attr/2, attr/3
+        ctl/2, ctl/3
     ]).
--export([pad/1, align/1]).
-
--define(SIZEOF_STRUCT_IFREQ, 32).
--define(SIZEOF_INT32_T, 4).
--define(SIZEOF_U_INT, ?SIZEOF_INT32_T).
-
-%% struct bpf_program {
-%%         u_int bf_len;
-%%         struct bpf_insn *bf_insns;
-%% };
-
-%% struct bpf_insn {
-%%         u_short     code;
-%%         u_char      jt;
-%%         u_char      jf;
-%%         bpf_u_int32 k;
-%% };
--define(SIZEOF_STRUCT_BPF_PROGRAM,
-    ?SIZEOF_U_INT + 2 + 1 + 1 + ?SIZEOF_U_INT).
-
-%% struct bpf_stat {
-%%         u_int bs_recv;
-%%         u_int bs_drop;
-%% };
--define(SIZEOF_STRUCT_BPF_STAT,
-    ?SIZEOF_U_INT + ?SIZEOF_U_INT)
-
-%% struct bpf_version {
-%%         u_short bv_major;
-%%         u_short bv_minor;
-%% };
--define(SIZEOF_STRUCT_BPF_VERSION, 2 + 2).
-
-%% struct bpf_dltlist {
-%%     u_int32_t       bfl_len;
-%%     union {
-%%         u_int32_t   *bflu_list;
-%%         u_int64_t   bflu_pad;
-%%     } bfl_u;
-%% };
--define(SIZEOF_STRUCT_BPF_DLTLIST,
-    ?SIZEOF_U_INT + ?SIZEOF_U_INT + 8).
-
--define(BPF_ALIGNMENT, ?SIZEOF_INT32_T).
-
--define(IOC_IN, 16#80000000).
--define(IOC_OUT, 16#40000000).
--define(IOC_VOID, 16#20000000).
--define(IOCPARM_MASK, 16#1fff).
-
--define(BIOCGBLEN, ior($B, 102, ?SIZEOF_U_INT)).
--define(BIOCSBLEN, iowr($B, 102, ?SIZEOF_U_INT)).
--define(BIOCSETF, iow($B, 103, ?SIZEOF_STRUCT_BPF_PROGRAM)).
--define(BIOCFLUSH, io($B, 104)).
--define(BIOCPROMISC, io($B, 105)).
--define(BIOCGDLT, ior($B,106, ?SIZEOF_U_INT)).
--define(BIOCGETIF, ior($B,107, ?SIZEOF_STRUCT_IFREQ)).
--define(BIOCSETIF, iow($B, 108, ?SIZEOF_STRUCT_IFREQ)).
--define(BIOCSRTIMEOUT, iow($B, 109, sizeof(timeval)).
--define(BIOCGRTIMEOUT, ior($B, 110, sizeof(timeval)).
--define(BIOCGSTATS, ior($B, 111, ?SIZEOF_STRUCT_BPF_STAT)).
--define(BIOCIMMEDIATE, iow($B, 112, ?SIZEOF_U_INT)).
--define(BIOCVERSION, ior($B, 113, SIZEOF_STRUCT_BPF_VERSION)).
--define(BIOCGRSIG, ior($B, 114, ?SIZEOF_U_INT)).
--define(BIOCSRSIG, iow($B, 115, ?SIZEOF_U_INT)).
--define(BIOCGHDRCMPLT, ior($B, 116, ?SIZEOF_U_INT)).
--define(BIOCSHDRCMPLT, iow($B, 117, ?SIZEOF_U_INT)).
--define(BIOCGSEESENT, ior($B, 118, ?SIZEOF_U_INT)).
--define(BIOCSSEESENT, iow($B, 119, ?SIZEOF_U_INT)).
--define(BIOCSDLT, iow($B, 120, ?SIZEOF_U_INT)).
--define(BIOCGDLTLIST, iowr($B, 121, ?SIZEOF_STRUCT_BPF_DLTLIST)).
+% BPF filters
+-export([
+        insn/1,
+        stmt/2, jump/4,
+        offset/1
+    ]).
+% Utility functions
+-export([
+        pad/1, align/1,
+        io/2, iow/3, ior/3, iowr/3, ioc/4,
+        sizeof/1
+    ]).
 
 
 open(Dev) ->
@@ -122,13 +66,66 @@ open(Dev) ->
     end.
 
 
-attr(Socket, blen) ->
+%%
+%% Get bpf attributes
+%%
+ctl(Socket, blen) ->
     case procket:ioctl(Socket, ?BIOCGBLEN, <<1:32/native>>) of
         {ok, Len} -> {ok, procket:ntohl(Len)};
         Error -> Error
+    end;
+
+ctl(Socket, dlt) ->
+    case procket:ioctl(Socket, ?BIOCGDLT, <<1:32/native>>) of
+        {ok, DLT} -> {ok, procket:ntohl(DLT)};
+        Error -> Error
+    end;
+
+% struct bpf_dtlist
+%ctl(Socket, dltlist) ->
+%    procket:ioctl(Socket, ?BIOCGDLTLIST, <<1:32/native>>);
+
+ctl(Socket, flush) ->
+    procket:ioctl(Socket, ?BIOCFLUSH, <<0:32/native>>);
+
+% struct ifreq
+ctl(Socket, getif) ->
+    case procket:ioctl(Socket, ?BIOCGETIF, <<0:32/integer-unit:8>>) of
+        {ok, Ifname} ->
+            {ok, binary_to_list(hd(binary:split(Ifname, <<0>>)))};
+        Error ->
+            Error
+    end;
+
+%ctl(Socket, timeout) ->
+%    Size = sizeof(timeval),
+%    procket:ioctl(Socket, ?BIOCGRTIMEOUT, <<0:Size/bytes>>);
+
+ctl(Socket, version) ->
+    case procket:ioctl(Socket, ?BIOCVERSION, <<0:32>>) of
+        {ok, <<Major:2/native-unsigned-integer-unit:8,
+            Minor:2/native-unsigned-integer-unit:8>>} ->
+            {Major, Minor};
+        Error ->
+            Error
     end.
 
-attr(Socket, setif, Ifname) ->
+%%
+%% Set bpf attributes
+%%
+ctl(Socket, blen, Len) ->
+    case procket:ioctl(Socket, ?BIOCSBLEN, <<Len:32/native>>) of
+        {ok, Len} -> {ok, procket:ntohl(Len)};
+        Error -> Error
+    end;
+
+ctl(Socket, dlt, DLT) ->
+    case procket:ioctl(Socket, ?BIOCSDLT, <<DLT:32/native>>) of
+        {ok, N} -> {ok, procket:ntohl(N)};
+        Error -> Error
+    end;
+
+ctl(Socket, setif, Ifname) ->
     % struct ifreq
     Ifreq = list_to_binary([
         Ifname, <<0:((15*8) - (length(Ifname)*8)), 0:8>>,
@@ -136,14 +133,33 @@ attr(Socket, setif, Ifname) ->
     ]),
     procket:ioctl(Socket, ?BIOCSETIF, Ifreq);
 
-attr(Socket, immediate, Bool) when Bool == true; Bool == false ->
+ctl(Socket, immediate, Bool) when Bool == true; Bool == false ->
     procket:ioctl(Socket, ?BIOCIMMEDIATE, bool(Bool));
 
-attr(Socket, hdrcmplt, Bool) when Bool == true; Bool == false ->
+ctl(Socket, hdrcmplt, Bool) when Bool == true; Bool == false ->
     procket:ioctl(Socket, ?BIOCSHDRCMPLT, bool(Bool));
 
-attr(Socket, seesent, Bool) when Bool == true; Bool == false ->
-    procket:ioctl(Socket, ?BIOCSSEESENT, bool(Bool)).
+ctl(Socket, seesent, Bool) when Bool == true; Bool == false ->
+    procket:ioctl(Socket, ?BIOCSSEESENT, bool(Bool));
+
+ctl(Socket, setf, []) ->
+    procket:ioctl(Socket, ?BIOCSETF, <<0:((?SIZEOF_STRUCT_BPF_PROGRAM)*8)>>);
+ctl(Socket, setf, Insn) when is_list(Insn) ->
+    % struct bpf_program
+    {ok, Code, [Res]} = procket:alloc([
+        <<(length(Insn)):4/native-unsigned-integer-unit:8>>,
+        {ptr, list_to_binary(Insn)}
+    ]),
+    case procket:ioctl(Socket, ?BIOCSETF, Code) of
+        {ok, _} ->
+            procket:buf(Res);
+        Error ->
+            Error
+    end.
+
+% struct timeval
+%ctl(Socket, timeout, Timeout) ->
+%    procket:ioctl(Socket, ?BIOCSRTIMEOUT, <<0:(sizeof(timeval))/bytes>>).
 
 
 bool(true) -> <<1:32/native>>;
@@ -198,6 +214,53 @@ promiscuous(FD) ->
 
 
 %%-------------------------------------------------------------------------
+%%% BPF filtering
+%%-------------------------------------------------------------------------
+insn(#insn{
+        code = Code,
+        jt = JT,
+        jf = JF,
+        k = K
+    }) ->
+    <<Code:2/native-unsigned-integer-unit:8,
+    JT:8, JF:8,
+    K:4/native-unsigned-integer-unit:8>>;
+insn(<<Code:2/native-unsigned-integer-unit:8,
+    JT:8, JF:8,
+    K:4/native-unsigned-integer-unit:8>>) ->
+    #insn{
+        code = Code,
+        jt = JT,
+        jf = JF,
+        k = K
+    }.
+
+stmt(Code, K) when is_integer(Code), is_integer(K) ->
+    insn(#insn{
+        code = Code,
+        k = K
+    }).
+
+jump(Code, K, JT, JF) when is_integer(Code), is_integer(K),
+    is_integer(JT), is_integer(JF) ->
+    insn(#insn{
+        code = Code,
+        jt = JT,
+        jf = JF,
+        k = K
+    }).
+
+
+offset(word) -> ?BPF_W;
+offset(halfword) -> ?BPF_H;
+offset(byte) -> ?BPF_B;
+
+offset(?BPF_W) -> word;
+offset(?BPF_H) -> halfword;
+offset(?BPF_B) -> byte.
+
+
+%%-------------------------------------------------------------------------
 %%% Internal functions
 %%-------------------------------------------------------------------------
 %% BSD ioctl request calculation (taken from ioccom.h)
@@ -213,18 +276,21 @@ iow(G,N,T) ->
 ior(G,N,T) ->
     ioc(?IOC_OUT, G, N, T).
 
+iowr(G,N,T) ->
+    ioc(?IOC_INOUT, G, N, T).
+
 sizeof(timeval) ->
     erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT.
 
 init(Socket, Dev) ->
     % Set the interface for the bpf
-    {ok, _} = attr(Socket, setif, Dev),
+    {ok, _} = ctl(Socket, setif, Dev),
 
     % Allow caller to provide packet header (header complete)
-    {ok, _} = attr(Socket, hdrcmplt, true),
+    {ok, _} = ctl(Socket, hdrcmplt, true),
 
     % Return packets sent from the interface
-    {ok, _} = attr(Socket, seesent, true),
+    {ok, _} = ctl(Socket, seesent, true),
 
     % Get bpf buf len
-    attr(Socket, blen).
+    ctl(Socket, blen).
