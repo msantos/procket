@@ -112,19 +112,14 @@
 open(Dev) ->
     {ok, Socket} = procket:dev("bpf"),
 
-    % Set the interface for the bpf
-    {ok, _} = attr(Socket, setif, Dev),
-
-    % Allow caller to provide packet header (header complete)
-    {ok, _} = attr(Socket, hdrcmplt, true),
-
-    % Return packets sent from the interface
-    {ok, _} = attr(Socket, seesent, true),
-
-    % Get bpf buf len
-    {ok, Len} = attr(Socket, blen),
-
-    {ok, Socket, Len}.
+    try init(Socket, Dev) of
+        {ok, Len} ->
+            {ok, Socket, Len}
+    catch
+        error:_ ->
+            procket:close(Socket),
+            {error, enxio}
+    end.
 
 
 attr(Socket, blen) ->
@@ -220,3 +215,16 @@ ior(G,N,T) ->
 
 sizeof(timeval) ->
     erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT.
+
+init(Socket, Dev) ->
+    % Set the interface for the bpf
+    {ok, _} = attr(Socket, setif, Dev),
+
+    % Allow caller to provide packet header (header complete)
+    {ok, _} = attr(Socket, hdrcmplt, true),
+
+    % Return packets sent from the interface
+    {ok, _} = attr(Socket, seesent, true),
+
+    % Get bpf buf len
+    attr(Socket, blen).
