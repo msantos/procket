@@ -346,7 +346,7 @@ dlt(?DLT_PPP_BSDOS) -> ppp_bsdos;
 dlt(?DLT_PFSYNC) -> pfsync;
 dlt(?DLT_ATM_CLIP) -> atm_clip;
 dlt(?DLT_PPP_SERIAL) -> ppp_serial;
-dlt(?DLT_C_HDLC) -> c_hdlc;
+%dlt(?DLT_C_HDLC) -> c_hdlc;
 dlt(?DLT_CHDLC) -> chdlc;
 dlt(?DLT_IEEE802_11) -> ieee802_11;
 dlt(?DLT_LOOP) -> loop;
