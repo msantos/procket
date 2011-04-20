@@ -243,7 +243,15 @@ data(Data) when is_binary(Data) ->
 
     Time = {Sec div 1000000, Sec rem 1000000, Usec},
 
-    Pad = pad(Hdrlen + Caplen),
+    % FIXME In some cases, 2 bytes of padding is lost or
+    % FIXME dropped. For example, a packet of 174 bytes
+    % FIXME should be padded to 176 bytes, but only 174
+    % FIXME bytes is left in the buf.
+    Len = Hdrlen + Caplen,
+    Pad = case byte_size(Data) of
+        Len -> 0;
+        _ -> pad(Len)
+    end,
 
     % Include the padding
     <<_Hdr:Hdrlen/bytes,
