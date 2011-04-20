@@ -126,6 +126,19 @@ ctl(Socket, seesent) ->
             Error
     end;
 
+%% struct bpf_stat {
+%%     u_int bs_recv;
+%%     u_int bs_drop;
+%% };
+ctl(Socket, stats) ->
+    case procket:ioctl(Socket, ?BIOCGSTATS, <<0:32, 0:32>>) of
+        {ok, <<Recv:4/native-unsigned-integer-unit:8,
+            Drop:4/native-unsigned-integer-unit:8>>} ->
+            {ok, {Recv, Drop}};
+        Error ->
+            Error
+    end;
+
 %ctl(Socket, timeout) ->
 %    Size = sizeof(timeval),
 %    procket:ioctl(Socket, ?BIOCGRTIMEOUT, <<0:Size/bytes>>);
