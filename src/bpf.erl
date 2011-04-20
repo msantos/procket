@@ -118,6 +118,14 @@ ctl(Socket, hdrcmplt) ->
             Error
     end;
 
+ctl(Socket, seesent) ->
+    case procket:ioctl(Socket, ?BIOCGSEESENT, <<1:32/native>>) of
+        {ok, Bool} ->
+            {ok, bool(Bool)};
+        Error ->
+            Error
+    end;
+
 %ctl(Socket, timeout) ->
 %    Size = sizeof(timeval),
 %    procket:ioctl(Socket, ?BIOCGRTIMEOUT, <<0:Size/bytes>>);
