@@ -36,7 +36,6 @@
 -export([
         open/1,
         data/1,
-        promiscuous/1,
         ctl/2, ctl/3
     ]).
 % BPF filters
@@ -167,19 +166,14 @@ ctl(Socket, dlt, DLT) ->
         Error -> Error
     end;
 
-ctl(Socket, setif, Ifname) ->
-    % struct ifreq
-    Ifreq = list_to_binary([
-        Ifname, <<0:((15*8) - (length(Ifname)*8)), 0:8>>,
-        <<0:(16*8)>>
-    ]),
-    procket:ioctl(Socket, ?BIOCSETIF, Ifreq);
+ctl(Socket, hdrcmplt, Bool) when Bool == true; Bool == false ->
+    procket:ioctl(Socket, ?BIOCSHDRCMPLT, bool(Bool));
 
 ctl(Socket, immediate, Bool) when Bool == true; Bool == false ->
     procket:ioctl(Socket, ?BIOCIMMEDIATE, bool(Bool));
 
-ctl(Socket, hdrcmplt, Bool) when Bool == true; Bool == false ->
-    procket:ioctl(Socket, ?BIOCSHDRCMPLT, bool(Bool));
+ctl(Socket, promisc, Bool) when Bool == true; Bool == false ->
+    procket:ioctl(Socket, ?BIOCPROMISC, bool(Bool));
 
 ctl(Socket, seesent, Bool) when Bool == true; Bool == false ->
     procket:ioctl(Socket, ?BIOCSSEESENT, bool(Bool));
@@ -197,7 +191,15 @@ ctl(Socket, setf, Insn) when is_list(Insn) ->
             procket:buf(Res);
         Error ->
             Error
-    end.
+    end;
+
+ctl(Socket, setif, Ifname) ->
+    % struct ifreq
+    Ifreq = list_to_binary([
+        Ifname, <<0:((15*8) - (length(Ifname)*8)), 0:8>>,
+        <<0:(16*8)>>
+    ]),
+    procket:ioctl(Socket, ?BIOCSETIF, Ifreq).
 
 % struct timeval
 %ctl(Socket, timeout, Timeout) ->
@@ -252,10 +254,6 @@ data(Data) when is_binary(Data) ->
     Rest/binary>> = Data,
 
     {Time, Datalen, Packet, Rest}.
-
-
-promiscuous(FD) ->
-    procket:ioctl(FD, ?BIOCPROMISC, 0).
 
 
 %%-------------------------------------------------------------------------
