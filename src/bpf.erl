@@ -49,7 +49,8 @@
 -export([
         pad/1, align/1,
         io/2, iow/3, ior/3, iowr/3, ioc/4,
-        sizeof/1
+        sizeof/1,
+        dlt/1
     ]).
 
 
@@ -82,8 +83,20 @@ ctl(Socket, dlt) ->
     end;
 
 % struct bpf_dtlist
-%ctl(Socket, dltlist) ->
-%    procket:ioctl(Socket, ?BIOCGDLTLIST, <<1:32/native>>);
+ctl(Socket, dltlist) ->
+    {ok, DLTs, [Res]} = procket:alloc([
+        <<32:4/native-unsigned-integer-unit:8>>,
+        {ptr, 32*4},
+        <<0:32>> % pad, needed?
+    ]),
+    case procket:ioctl(Socket, ?BIOCGDLTLIST, DLTs) of
+        {ok, _} ->
+            {ok, List} = procket:buf(Res),
+            Endian = erlang:system_info(endian),
+            {ok, [ binary:decode_unsigned(<<N:32>>, Endian) || <<N:32>> <= List, N /= 0 ]};
+        Error ->
+            Error
+    end;
 
 ctl(Socket, flush) ->
     procket:ioctl(Socket, ?BIOCFLUSH, <<0:32/native>>);
@@ -93,6 +106,14 @@ ctl(Socket, getif) ->
     case procket:ioctl(Socket, ?BIOCGETIF, <<0:32/integer-unit:8>>) of
         {ok, Ifname} ->
             {ok, binary_to_list(hd(binary:split(Ifname, <<0>>)))};
+        Error ->
+            Error
+    end;
+
+ctl(Socket, hdrcmplt) ->
+    case procket:ioctl(Socket, ?BIOCGHDRCMPLT, <<1:32/native>>) of
+        {ok, Bool} ->
+            {ok, bool(Bool)};
         Error ->
             Error
     end;
@@ -163,7 +184,10 @@ ctl(Socket, setf, Insn) when is_list(Insn) ->
 
 
 bool(true) -> <<1:32/native>>;
-bool(false) -> <<0:32>>.
+bool(false) -> <<0:32>>;
+
+bool(<<1:32/native>>) -> true;
+bool(<<0:32>>) -> false.
 
 %% struct bpf_hdr {
 %%     struct BPF_TIMEVAL bh_tstamp;   /* time stamp */
@@ -281,6 +305,64 @@ iowr(G,N,T) ->
 
 sizeof(timeval) ->
     erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT.
+
+
+dlt(?DLT_NULL) -> null;
+dlt(?DLT_EN10MB) -> en10mb;
+dlt(?DLT_EN3MB) -> en3mb;
+dlt(?DLT_AX25) -> ax25;
+dlt(?DLT_PRONET) -> pronet;
+dlt(?DLT_CHAOS) -> chaos;
+dlt(?DLT_IEEE802) -> ieee802;
+dlt(?DLT_ARCNET) -> arcnet;
+dlt(?DLT_SLIP) -> slip;
+dlt(?DLT_PPP) -> ppp;
+dlt(?DLT_FDDI) -> fddi;
+dlt(?DLT_ATM_RFC1483) -> atm_rfc1483;
+dlt(?DLT_RAW) -> raw;
+dlt(?DLT_SLIP_BSDOS) -> slip_bsdos;
+dlt(?DLT_PPP_BSDOS) -> ppp_bsdos;
+dlt(?DLT_PFSYNC) -> pfsync;
+dlt(?DLT_ATM_CLIP) -> atm_clip;
+dlt(?DLT_PPP_SERIAL) -> ppp_serial;
+dlt(?DLT_C_HDLC) -> c_hdlc;
+dlt(?DLT_CHDLC) -> chdlc;
+dlt(?DLT_IEEE802_11) -> ieee802_11;
+dlt(?DLT_LOOP) -> loop;
+dlt(?DLT_LINUX_SLL) -> linux_sll;
+dlt(?DLT_PFLOG) -> pflog;
+dlt(?DLT_IEEE802_11_RADIO) -> ieee802_11_radio;
+dlt(?DLT_APPLE_IP_OVER_IEEE1394) -> apple_ip_over_ieee1394;
+dlt(?DLT_IEEE802_11_RADIO_AVS) -> ieee802_11_radio_avs;
+
+dlt(null) -> ?DLT_NULL;
+dlt(en10mb) -> ?DLT_EN10MB;
+dlt(en3mb) -> ?DLT_EN3MB;
+dlt(ax25) -> ?DLT_AX25;
+dlt(pronet) -> ?DLT_PRONET;
+dlt(chaos) -> ?DLT_CHAOS;
+dlt(ieee802) -> ?DLT_IEEE802;
+dlt(arcnet) -> ?DLT_ARCNET;
+dlt(slip) -> ?DLT_SLIP;
+dlt(ppp) -> ?DLT_PPP;
+dlt(fddi) -> ?DLT_FDDI;
+dlt(atm_rfc1483) -> ?DLT_ATM_RFC1483;
+dlt(raw) -> ?DLT_RAW;
+dlt(slip_bsdos) -> ?DLT_SLIP_BSDOS;
+dlt(ppp_bsdos) -> ?DLT_PPP_BSDOS;
+dlt(pfsync) -> ?DLT_PFSYNC;
+dlt(atm_clip) -> ?DLT_ATM_CLIP;
+dlt(ppp_serial) -> ?DLT_PPP_SERIAL;
+dlt(c_hdlc) -> ?DLT_C_HDLC;
+dlt(chdlc) -> ?DLT_CHDLC;
+dlt(ieee802_11) -> ?DLT_IEEE802_11;
+dlt(loop) -> ?DLT_LOOP;
+dlt(linux_sll) -> ?DLT_LINUX_SLL;
+dlt(pflog) -> ?DLT_PFLOG;
+dlt(ieee802_11_radio) -> ?DLT_IEEE802_11_RADIO;
+dlt(apple_ip_over_ieee1394) -> ?DLT_APPLE_IP_OVER_IEEE1394;
+dlt(ieee802_22_radio_avs) -> ?DLT_IEEE802_11_RADIO_AVS.
+
 
 init(Socket, Dev) ->
     % Set the interface for the bpf
