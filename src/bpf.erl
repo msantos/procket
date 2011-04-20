@@ -185,7 +185,7 @@ ctl(Socket, seesent, Bool) when Bool == true; Bool == false ->
     procket:ioctl(Socket, ?BIOCSSEESENT, bool(Bool));
 
 ctl(Socket, setf, []) ->
-    procket:ioctl(Socket, ?BIOCSETF, <<0:((?SIZEOF_STRUCT_BPF_PROGRAM)*8)>>);
+    procket:ioctl(Socket, ?BIOCSETF, <<0:(?SIZEOF_STRUCT_BPF_PROGRAM*8)>>);
 ctl(Socket, setf, Insn) when is_list(Insn) ->
     % struct bpf_program
     {ok, Code, [Res]} = procket:alloc([
