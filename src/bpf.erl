@@ -225,8 +225,6 @@ bool(<<0:32>>) -> false.
 %% On 32-bit, struct timeval32: 4 bytes tv_sec, 4 bytes tv_usec
 %% On 64-bit, struct timeval: 8 bytes tv_sec, 4 bytes tv_usec
 
-%% #define BPF_ALIGNMENT sizeof(int32_t)
-%% #define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
 pad(Len) ->
     align(Len) - Len.
 
@@ -245,7 +243,7 @@ data(Data) when is_binary(Data) ->
 
     Time = {Sec div 1000000, Sec rem 1000000, Usec},
 
-    Pad = pad(Caplen),
+    Pad = pad(Hdrlen + Caplen),
 
     % Include the padding
     <<_Hdr:Hdrlen/bytes,

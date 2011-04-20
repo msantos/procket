@@ -74,7 +74,10 @@
 -define(SIZEOF_STRUCT_BPF_DLTLIST,
     (?SIZEOF_U_INT + ?SIZEOF_U_INT + 4)).
 
+%% #define BPF_ALIGNMENT sizeof(int32_t)
 -define(BPF_ALIGNMENT, ?SIZEOF_INT32_T).
+%% #define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
+-define(BPF_WORDALIGN(X), bpf:align(X)).
 
 -define(IOC_IN, 16#80000000).
 -define(IOC_OUT, 16#40000000).
