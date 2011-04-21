@@ -149,7 +149,10 @@ ctl(Socket, version) ->
             {Major, Minor};
         Error ->
             Error
-    end.
+    end;
+
+ctl(_Socket, _Request) ->
+    {error, not_supported}.
 
 %%
 %% Set bpf attributes
@@ -199,11 +202,14 @@ ctl(Socket, setif, Ifname) ->
         Ifname, <<0:((15*8) - (length(Ifname)*8)), 0:8>>,
         <<0:(16*8)>>
     ]),
-    procket:ioctl(Socket, ?BIOCSETIF, Ifreq).
+    procket:ioctl(Socket, ?BIOCSETIF, Ifreq);
 
 % struct timeval
 %ctl(Socket, timeout, Timeout) ->
-%    procket:ioctl(Socket, ?BIOCSRTIMEOUT, <<0:(sizeof(timeval))/bytes>>).
+%    procket:ioctl(Socket, ?BIOCSRTIMEOUT, <<0:(sizeof(timeval))/bytes>>);
+
+ctl(_Socket, _Request, _Arg) ->
+    {error, not_supported}.
 
 
 bool(true) -> <<1:32/native>>;
