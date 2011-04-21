@@ -426,5 +426,8 @@ init(Socket, Dev) ->
     % Return packets sent from the interface
     {ok, _} = ctl(Socket, seesent, true),
 
+    % Return packets immediately (do wait until full buffer)
+    {ok, _} = ctl(Socket, immediate, true),
+
     % Get bpf buf len
     ctl(Socket, blen).
