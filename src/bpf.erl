@@ -35,7 +35,7 @@
 % BPF ioctl
 -export([
         open/1,
-        data/1,
+        data/1, hdr/1, packet/3,
         ctl/2, ctl/3
     ]).
 % BPF filters
@@ -231,17 +231,38 @@ pad(Len) ->
 align(N) ->
     (N + (?BPF_ALIGNMENT-1)) band bnot (?BPF_ALIGNMENT-1).
 
+
 data(Data) when is_binary(Data) ->
+    data_1(hdr(Data), Data).
+
+data_1({bpf_hdr, Time, Caplen, Datalen, Hdrlen}, Data) ->
+    data_2(Time, Datalen, packet(Hdrlen, Caplen, Data));
+data_1(Error, _) ->
+    Error.
+
+data_2(Time, Datalen, {bpf_packet, Packet, Rest}) ->
+    {bpf_data, Time, Datalen, Packet, Rest};
+data_2(_Time, _Datalen, Error) ->
+    Error.
+
+
+hdr(Data) ->
     Size = erlang:system_info({wordsize, external}),
 
-    <<Sec:Size/native-unsigned-integer-unit:8,
-      Usec:4/native-unsigned-integer-unit:8,
-      Caplen:4/native-unsigned-integer-unit:8,
-      Datalen:4/native-unsigned-integer-unit:8,
-      Hdrlen:2/native-unsigned-integer-unit:8,
-      _/binary>> = Data,
+    case Data of
+        <<Sec:Size/native-unsigned-integer-unit:8,
+        Usec:4/native-unsigned-integer-unit:8,
+        Caplen:4/native-unsigned-integer-unit:8,
+        Datalen:4/native-unsigned-integer-unit:8,
+        Hdrlen:2/native-unsigned-integer-unit:8,
+        _/binary>> ->
+            Time = {Sec div 1000000, Sec rem 1000000, Usec},
+            {bpf_hdr, Time, Caplen, Datalen, Hdrlen};
+        _ ->
+            {error, bad_hdr}
+    end.
 
-    Time = {Sec div 1000000, Sec rem 1000000, Usec},
+packet(Hdrlen, Caplen, Data) ->
 
     % FIXME In some cases, 2 bytes of padding is lost or
     % FIXME dropped. For example, a packet of 174 bytes
@@ -253,13 +274,13 @@ data(Data) when is_binary(Data) ->
         _ -> pad(Len)
     end,
 
-    % Include the padding
-    <<_Hdr:Hdrlen/bytes,
-    Packet:Caplen/bytes,
-    _Pad:Pad/bytes,
-    Rest/binary>> = Data,
-
-    {Time, Datalen, Packet, Rest}.
+    case Data of
+        <<_Hdr:Hdrlen/bytes, Packet:Caplen/bytes,
+        _Pad:Pad/bytes, Rest/binary>> ->
+            {bpf_packet, Packet, Rest};
+        _ ->
+            {error, bad_data}
+    end.
 
 
 %%-------------------------------------------------------------------------
