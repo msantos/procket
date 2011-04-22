@@ -35,7 +35,7 @@
 % BPF ioctl
 -export([
         open/1,
-        buf/1, hdr/1, data/3,
+        buf/1, hdr/1, packet/3,
         ctl/2, ctl/3
     ]).
 % BPF filters
@@ -242,11 +242,11 @@ buf(Data) when is_binary(Data) ->
     buf_1(hdr(Data), Data).
 
 buf_1({bpf_hdr, Time, Caplen, Datalen, Hdrlen}, Data) ->
-    buf_2(Time, Datalen, data(Hdrlen, Caplen, Data));
+    buf_2(Time, Datalen, packet(Hdrlen, Caplen, Data));
 buf_1(Error, _) ->
     Error.
 
-buf_2(Time, Datalen, {bpf_data, Packet, Rest}) ->
+buf_2(Time, Datalen, {bpf_packet, Packet, Rest}) ->
     {bpf_buf, Time, Datalen, Packet, Rest};
 buf_2(_Time, _Datalen, Error) ->
     Error.
@@ -268,7 +268,7 @@ hdr(Data) ->
             {error, bad_hdr}
     end.
 
-data(Hdrlen, Caplen, Data) ->
+packet(Hdrlen, Caplen, Data) ->
 
     % FIXME In some cases, 2 bytes of padding is lost or
     % FIXME dropped. For example, a packet of 174 bytes
@@ -283,9 +283,9 @@ data(Hdrlen, Caplen, Data) ->
     case Data of
         <<_Hdr:Hdrlen/bytes, Packet:Caplen/bytes,
         _Pad:Pad/bytes, Rest/binary>> ->
-            {bpf_data, Packet, Rest};
+            {bpf_packet, Packet, Rest};
         _ ->
-            {error, bad_data}
+            {error, bad_packet}
     end.
 
 
