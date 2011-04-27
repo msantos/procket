@@ -75,7 +75,7 @@ socket() ->
     socket(?ETH_P_IP).
 socket(Protocol) when is_integer(Protocol) ->
     procket:open(0, [
-            {protocol, procket:ntohl(Protocol)},
+            {protocol, procket:ntohs(Protocol)},
             {type, raw},
             {family, packet}
         ]).
