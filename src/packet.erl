@@ -41,6 +41,7 @@
         macaddress/2,
         promiscuous/2,
         bindtodevice/2,
+        filter/2, unfilter/1, unfilter/2,
         send/3
     ]).
 
@@ -64,6 +65,11 @@
 % Options for binding to interfaces
 -define(SOL_SOCKET, 1).
 -define(SO_BINDTODEVICE, 25).
+
+% Options for BPF filtering
+-define(SO_ATTACH_FILTER, 26).
+-define(SO_DETACH_FILTER, 27).
+-define(BPF_MAXINSNS, 4096).
 
 -define(ETH_P_IP, 16#0800).
 
@@ -262,6 +268,41 @@ macaddress(Socket, Dev) ->
                 Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
             ])),
     {SM1,SM2,SM3,SM4,SM5,SM6}.
+
+%%-------------------------------------------------------------------------
+%% Berkely Packet Filter
+%%
+%% Filters can be applied in bpf(4) format to any socket.
+%%
+%% Note: BPF uses 4 bytes for the instruction length, LSF uses 2 bytes
+%% but has 2 bytes pad
+%%
+%% See:
+%%  http://www.kernel.org/doc/Documentation/networking/filter.txt
+%%
+%%-------------------------------------------------------------------------
+filter(Socket, Insn) when is_list(Insn) ->
+    filter_1(Socket, Insn, ?SO_ATTACH_FILTER).
+
+% Remove or replace filter
+unfilter(Socket) ->
+    Size = erlang:system_info(wordsize),
+    procket:setsockopt(Socket, ?SOL_SOCKET, ?SO_DETACH_FILTER,
+        <<0,0,0,0, 0:(Size*8)>>).
+unfilter(Socket, Insn) when is_list(Insn) ->
+    filter_1(Socket, Insn, ?SO_DETACH_FILTER).
+
+filter_1(Socket, Insn, Optname) when length(Insn) < ?BPF_MAXINSNS ->
+    {ok, Fcode, [Res]} = procket:alloc([
+        <<(length(Insn)):4/native-unsigned-integer-unit:8>>,
+        {ptr, list_to_binary(Insn)}
+    ]),
+    case procket:setsockopt(Socket, ?SOL_SOCKET, Optname, Fcode) of
+        ok ->
+            procket:buf(Res);
+        Error ->
+            Error
+    end.
 
 
 %%-------------------------------------------------------------------------
