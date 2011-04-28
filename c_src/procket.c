@@ -444,7 +444,7 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[3], &val))
         return enif_make_badarg(env);
 
-    if (setsockopt(s, level, name, (void *)val.data, val.size) < 0)
+    if (setsockopt(s, level, name, val.data, val.size) < 0)
         return error_tuple(env, errno);
 
     return atom_ok;
