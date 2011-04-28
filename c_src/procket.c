@@ -429,8 +429,8 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
     int level = 0;
-    int name = 0;
-    ErlNifBinary val;
+    int optname = 0;
+    ErlNifBinary optval;
 
     if (!enif_get_int(env, argv[0], &s))
         return enif_make_badarg(env);
@@ -438,13 +438,13 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[1], &level))
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[2], &name))
+    if (!enif_get_int(env, argv[2], &optname))
         return enif_make_badarg(env);
 
-    if (!enif_inspect_binary(env, argv[3], &val))
+    if (!enif_inspect_binary(env, argv[3], &optval))
         return enif_make_badarg(env);
 
-    if (setsockopt(s, level, name, val.data, val.size) < 0)
+    if (setsockopt(s, level, optname, optval.data, optval.size) < 0)
         return error_tuple(env, errno);
 
     return atom_ok;
