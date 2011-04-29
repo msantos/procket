@@ -69,7 +69,6 @@
 % Options for BPF filtering
 -define(SO_ATTACH_FILTER, 26).
 -define(SO_DETACH_FILTER, 27).
--define(BPF_MAXINSNS, 4096).
 
 -define(ETH_P_IP, 16#0800).
 
@@ -292,7 +291,7 @@ unfilter(Socket) ->
 unfilter(Socket, Insn) when is_list(Insn) ->
     filter_1(Socket, Insn, ?SO_DETACH_FILTER).
 
-filter_1(Socket, Insn, Optname) when length(Insn) < ?BPF_MAXINSNS ->
+filter_1(Socket, Insn, Optname) ->
     {ok, Fcode, [Res]} = procket:alloc([
         <<(length(Insn)):4/native-unsigned-integer-unit:8>>,
         {ptr, list_to_binary(Insn)}
