@@ -90,7 +90,7 @@ main(int argc, char *argv[])
                     usage(ps);
 
                 for (p = ps->dev; *p; p++) {
-                    if (!islower(*p) && !isdigit(*p))
+                    if (!islower(*p) && !isdigit(*p) && *p != '/')
                         usage(ps);
                 }
                 }
