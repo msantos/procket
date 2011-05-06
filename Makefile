@@ -10,7 +10,7 @@ all: dirs compile
 	chmod +x ./rebar
 
 dirs:
-	@mkdir -p priv/tmp
+	-@mkdir -p priv/tmp
 
 compile: $(REBAR)
 	@$(REBAR) compile
