@@ -254,7 +254,7 @@ is_interface(Name) when is_list(Name) ->
 
 is_device(Name) when is_list(Name) ->
     Name == [C || C <- Name, ((C >= $a) and (C =< $z))
-        or ((C >= $0) and (C =< $9))].
+        or ((C >= $0) and (C =< $9) or (C == $/))].
 
 progname() ->
     filename:join([

@@ -79,12 +79,6 @@
 %% #define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
 -define(BPF_WORDALIGN(X), bpf:align(X)).
 
--define(IOC_IN, 16#80000000).
--define(IOC_OUT, 16#40000000).
--define(IOC_INOUT, ?IOC_IN bor ?IOC_OUT).
--define(IOC_VOID, 16#20000000).
--define(IOCPARM_MASK, 16#1fff).
-
 -define(BIOCGBLEN, bpf:ior($B, 102, ?SIZEOF_U_INT)).
 -define(BIOCSBLEN, bpf:iowr($B, 102, ?SIZEOF_U_INT)).
 -define(BIOCSETF, bpf:iow($B, 103, ?SIZEOF_STRUCT_BPF_PROGRAM)).
