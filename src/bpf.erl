@@ -340,19 +340,19 @@ offset(?BPF_B) -> byte.
 %%-------------------------------------------------------------------------
 %% BSD ioctl request calculation (taken from ioccom.h)
 ioc(Inout, Group, Num, Len) ->
-    Inout bor ((Len band ?IOCPARM_MASK) bsl 16) bor (Group bsl 8) bor Num.
+    procket_ioctl:ioc(Inout, Group, Num, Len).
 
 io(G,N) ->
-    ioc(?IOC_VOID, G, N, 0).
+    ioc(procket_ioctl:void(bsd), G, N, 0).
 
 iow(G,N,T) ->
-    ioc(?IOC_IN, G, N, T).
+    ioc(procket_ioctl:in(bsd), G, N, T).
 
 ior(G,N,T) ->
-    ioc(?IOC_OUT, G, N, T).
+    ioc(procket_ioctl:out(bsd), G, N, T).
 
 iowr(G,N,T) ->
-    ioc(?IOC_INOUT, G, N, T).
+    ioc(procket_ioctl:inout(bsd), G, N, T).
 
 sizeof(timeval) ->
     erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT.
