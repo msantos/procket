@@ -7,7 +7,6 @@
         procket_ioctl,
         packet,
         bpf,
-        tuntap,
         mktmp,
         icmp,
         echo
