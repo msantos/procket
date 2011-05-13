@@ -264,7 +264,7 @@ macaddress(Socket, Dev) ->
         _/binary>>} = procket:ioctl(Socket,
         ?SIOCGIFHWADDR,
         list_to_binary([
-                Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
+                Dev, <<0:((15 - length(Dev))*8), 0:8, 0:128>>
             ])),
     {SM1,SM2,SM3,SM4,SM5,SM6}.
 
