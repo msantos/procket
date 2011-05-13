@@ -32,6 +32,8 @@
 -define(UNIX_PATH_MAX, 108).
 -define(BACKLOG, 50).
 
+-define(IFNAMSIZ, 16).      % Max length of an interface device name including NULL
+
 -define(SOCK_STREAM, 1).    % Sequenced, reliable, connection-based byte streams.
 -define(SOCK_DGRAM, 2).     % Connectionless, unreliable datagrams of fixed maximum length.
 -define(SOCK_RAW, 3).       % Raw protocol interface.
