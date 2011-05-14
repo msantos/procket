@@ -193,7 +193,8 @@ procket_parse_address(PROCKET_STATE *ps)
 
     *p++ = '\0';
     ps->port = (in_port_t)atoi(p);
-    IS_LTZERO(inet_aton(ps->address, &in));
+    if (inet_aton(ps->address, &in) < 0)
+        return -1;
     ps->ip = in.s_addr;
 
     return 0;
@@ -206,22 +207,27 @@ procket_open_socket(PROCKET_STATE *ps)
     struct sockaddr_in sa = { 0 };
     int flags = 0;
 
-    IS_ERR(ps->s = socket(ps->family, ps->type, ps->protocol));
+
+    if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
+            return -1;
 
 #ifdef SO_BINDTODEVICE
     if(ps->ifname) {
         struct ifreq ifr;
 
         (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
-        IS_ERR(setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)));
+        if (setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
+            return -1;
     }
 #endif
 
-
     flags = fcntl(ps->s, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    (void)fcntl(ps->s, F_SETFL, flags);
 
+    if (flags < 0)
+        return -1;
+
+    if (fcntl(ps->s, F_SETFL, flags|O_NONBLOCK) < 0)
+        return -1;
 
     /* Erlang assumes the socket has already been bound */
     if ( (ps->protocol == IPPROTO_TCP) || (ps->protocol == IPPROTO_UDP)) {
@@ -229,9 +235,9 @@ procket_open_socket(PROCKET_STATE *ps)
         sa.sin_port = htons(ps->port);
         sa.sin_addr.s_addr = ps->ip;
 
-        IS_ERR(bind(ps->s, (struct sockaddr *)&sa, sizeof(sa)));
+        if (bind(ps->s, (struct sockaddr *)&sa, sizeof(sa)) < 0)
+            return -1;
     }
-
 
     return (0);
 }
@@ -240,7 +246,7 @@ procket_open_socket(PROCKET_STATE *ps)
     int
 procket_pipe(PROCKET_STATE *ps)
 {
-    struct sockaddr_un sa = { 0 };
+    struct sockaddr_un sa = {0};
     int s = -1;
 
 
@@ -248,16 +254,19 @@ procket_pipe(PROCKET_STATE *ps)
 
     sa.sun_family = PF_LOCAL;
 
-    IS_LTZERO(s = socket(PF_LOCAL, SOCK_STREAM, 0));
+    if ( (s = socket(PF_LOCAL, SOCK_STREAM, 0)) < 0)
+        return -1;
+
     if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-        err(EXIT_FAILURE, "connect");
+        return -1;
 
     if (ancil_send_fd(s, ps->s) < 0)
-        err(EXIT_FAILURE, "ancil_send_fd");
+        return -1;
 
-    (void)close (s);
+    if (close(s) < 0)
+        return -1;
 
-    return (0);
+    return 0;
 }
 
 /* character device support */
