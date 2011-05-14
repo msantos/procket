@@ -49,7 +49,9 @@
 
         alloc/1,
         buf/1,
-        memcpy/2
+        memcpy/2,
+
+        errno_id/1
     ]).
 -export([
         unix_path_max/0,
@@ -136,6 +138,9 @@ write(_,_) ->
 setsockopt(_,_,_,_) ->
     erlang:error(not_implemented).
 
+errno_id(_) ->
+    erlang:error(not_implemented).
+
 
 dev(Dev) when is_list(Dev) ->
     open(0, [{dev, Dev}]).
@@ -159,13 +164,13 @@ open1(Port, Options) ->
     {ok, Sockfd} = fdopen(Pipe),
     Cmd = make_args(Port, Options),
     case os:cmd(Cmd) of
-        [] ->
+        "0" ->
             FD = fdget(Sockfd),
             cleanup(Sockfd, Pipe, Options),
             FD;
         Error ->
             cleanup(Sockfd, Pipe, Options),
-            {error, {procket_cmd, Error}}
+            {error, errno_id(list_to_integer(Error))}
     end.
 
 cleanup(Sockfd, Pipe, Options) ->
@@ -203,7 +208,8 @@ make_args(Port, Options) ->
             get_switch(IP) ++ ":" ++ integer_to_list(Port)
     end,
     proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
-    string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++ Bind.
+    string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++ Bind ++
+    " > /dev/null 2>&1; echo -n $?".
 
 get_switch({pipe, Arg}) ->
     "-p " ++ Arg;

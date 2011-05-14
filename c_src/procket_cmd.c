@@ -368,10 +368,8 @@ error_result(PROCKET_STATE *ps, int err)
 {
     if (ps->verbose > 0)
         (void)fprintf(stderr, "%s", strerror(err));
-    else
-        (void)fprintf(stderr, "%d", err);
 
-    exit(-err);
+    exit(err);
 }
 
 

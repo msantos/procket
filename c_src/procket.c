@@ -580,6 +580,21 @@ nif_memcpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return atom_ok;
 }
 
+
+/* 0: errno */
+    static ERL_NIF_TERM
+nif_errno_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int err = -1;
+
+
+    if (!enif_get_int(env, argv[0], &err))
+        return enif_make_badarg(env);
+
+    return enif_make_atom(env, erl_errno_id(err));
+}
+
+
     static ERL_NIF_TERM
 error_tuple(ErlNifEnv *env, int errnum)
 {
@@ -623,7 +638,9 @@ static ErlNifFunc nif_funcs[] = {
 
     {"alloc", 1, nif_alloc},
     {"memcpy", 2, nif_memcpy},
-    {"buf", 1, nif_buf}
+    {"buf", 1, nif_buf},
+
+    {"errno_id", 1, nif_errno_id}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, NULL, NULL, NULL)
