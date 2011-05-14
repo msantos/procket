@@ -35,12 +35,19 @@
 
 #define BACKLOG     50  /* default backlog for TCP connections */
 
-void procket_parse_address(PROCKET_STATE *ps);
+int procket_open_fd(PROCKET_STATE *ps);
+int procket_check_devname(char *dev, size_t len);
+int procket_parse_address(PROCKET_STATE *ps);
 int procket_pipe(PROCKET_STATE *ps);
 int procket_open_socket(PROCKET_STATE *ps);
 int procket_open_dev(PROCKET_STATE *ps);
 int procket_open_char_dev(char *dev);
 void usage(PROCKET_STATE *ep);
+
+enum {
+    PROCKET_FD_SOCKET,
+    PROCKET_FD_CHARDEV
+};
 
 
     int
@@ -59,7 +66,9 @@ main(int argc, char *argv[])
     ps->type = SOCK_STREAM;
     ps->protocol = IPPROTO_TCP;
 
-    while ( (ch = getopt(argc, argv, "b:d:F:hp:P:T:v:I:")) != -1) {
+    ps->fdtype = PROCKET_FD_SOCKET;
+
+    while ( (ch = getopt(argc, argv, "b:d:F:hp:P:T:vI:")) != -1) {
         switch (ch) {
             case 'b':   /* listen backlog */
                 ps->backlog = atoi(optarg);
@@ -82,17 +91,12 @@ main(int argc, char *argv[])
                 IS_NULL(ps->ifname = strdup(optarg));
                 break;
             case 'd': { /* Open a character device */
-                char  *p = NULL;
-
                 IS_NULL(ps->dev = strdup(optarg));
 
-                if (strlen(ps->dev) >= 32)
+                if (procket_check_devname(ps->dev, 32) < 0)
                     usage(ps);
 
-                for (p = ps->dev; *p; p++) {
-                    if (!islower(*p) && !isdigit(*p) && *p != '/')
-                        usage(ps);
-                }
+                ps->fdtype = PROCKET_FD_CHARDEV;
                 }
                 break;
             case 'v':
@@ -110,24 +114,12 @@ main(int argc, char *argv[])
     if (ps->path == NULL)
         usage(ps);
 
-    if (ps->dev == NULL) {
-    if (ps->protocol == IPPROTO_TCP || ps->protocol == IPPROTO_UDP) {
-        if (argc == 0)
-            usage(ps);
+    if (argc > 0)
         IS_NULL(ps->address = strdup(argv[0]));
-        procket_parse_address(ps);
-    }
 
-    if (procket_open_socket(ps) != 0) {
+    if (procket_open_fd(ps) < 0) {
         (void)fprintf(stderr, "%s", strerror(errno));
         exit (-errno);
-    }
-    }
-    else {
-    if (procket_open_dev(ps) < 0) {
-        (void)fprintf(stderr, "%s", strerror(errno));
-        exit (-errno);
-    }
     }
 
     if (setgid(getgid()) == -1)
@@ -141,22 +133,70 @@ main(int argc, char *argv[])
 }
 
 
-    void
+    int
+procket_open_fd(PROCKET_STATE *ps)
+{
+    switch (ps->fdtype) {
+        case PROCKET_FD_SOCKET:
+            if (ps->protocol == IPPROTO_TCP || ps->protocol == IPPROTO_UDP) {
+                if (procket_parse_address(ps) < 0)
+                    return -1;
+            }
+
+            if (procket_open_socket(ps) != 0)
+                return -1;
+            break;
+
+        case PROCKET_FD_CHARDEV:
+            if (procket_open_dev(ps) < 0)
+                return -1;
+            break;
+    }
+
+    return 0;
+}
+
+
+    int
+procket_check_devname(char *dev, size_t len)
+{
+    char *p = NULL;
+
+    if (strlen(dev) >= len)
+        return -1;
+
+    for (p = dev; *p; p++) {
+        if (!isascii(*p) && !isalnum(*p) && *p != '/')
+            return -1;
+    }
+
+    return 0;
+}
+
+
+    int
 procket_parse_address(PROCKET_STATE *ps)
 {
     struct in_addr in;
     char *p = NULL;
 
 
+    if (ps->address == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
     if ( (p = strchr(ps->address, ':')) == NULL) {
         ps->port = (in_port_t)atoi(ps->address);
-        return;
+        return 0;
     }
 
     *p++ = '\0';
     ps->port = (in_port_t)atoi(p);
     IS_LTZERO(inet_aton(ps->address, &in));
     ps->ip = in.s_addr;
+
+    return 0;
 }
 
 
@@ -228,6 +268,11 @@ procket_open_dev(PROCKET_STATE *ps)
     int i = 0;
 
 
+    if (dev == NULL) {
+        errno = ENXIO;
+        return -1;
+    }
+
     (void)snprintf(dev, sizeof(dev), "/dev/%s", ps->dev);
 
     ps->s = procket_open_char_dev(dev);
@@ -267,6 +312,7 @@ procket_open_char_dev(char *dev)
     int fd = -1;
     struct stat buf = {0};
     int err = 0;
+
 
     if ( (fd = open(dev, O_RDWR|O_NONBLOCK)) < 0)
         return -1;

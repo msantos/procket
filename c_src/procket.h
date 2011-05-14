@@ -92,6 +92,7 @@ extern char *__progname;
 
 
 typedef struct {
+    int fdtype;             /* fd type requested */
     char *path;             /* path to pipe file */
     char *address;          /* <port> or <ipaddr:port> */
     char *ifname;           /* network interface name */
