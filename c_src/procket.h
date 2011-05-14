@@ -62,32 +62,6 @@
 
 #define MAXATOMLEN  255     /* ei.h: does not include terminating NULL */
 
-#define IS_ERR(x) do { \
-        if ((x) == -1) return (-1); \
-} while (0)
-
-#define IS_NULL(x) do { \
-    if ((x) == NULL) \
-    errx(EXIT_FAILURE, "%s", #x); \
-} while (0);
-
-#define IS_FALSE(x) do { \
-    if ((x) != 0) \
-    errx(EXIT_FAILURE, "%s", #x); \
-} while (0);
-
-#define IS_LTZERO(x) do { \
-    if ((x) < 0) \
-    errx(EXIT_FAILURE, "%s", #x); \
-} while (0);
-
-#define VERBOSE(x, ...) do { \
-    if (ep->verbose >= x) { \
-        (void)fprintf (stderr, __VA_ARGS__); \
-    } \
-} while (0)
-
-
 extern char *__progname;
 
 

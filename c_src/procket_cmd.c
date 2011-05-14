@@ -42,6 +42,7 @@ int procket_pipe(PROCKET_STATE *ps);
 int procket_open_socket(PROCKET_STATE *ps);
 int procket_open_dev(PROCKET_STATE *ps);
 int procket_open_char_dev(char *dev);
+void error_result(PROCKET_STATE *ps, int err);
 void usage(PROCKET_STATE *ep);
 
 enum {
@@ -57,7 +58,10 @@ main(int argc, char *argv[])
     int ch = 0;
 
 
-    IS_NULL(ps = calloc(1, sizeof(PROCKET_STATE)));
+    ps = calloc(1, sizeof(PROCKET_STATE));
+
+    if (ps == NULL)
+        error_result(ps, errno);
 
     ps->ip = INADDR_ANY;
     ps->backlog = BACKLOG;
@@ -77,7 +81,11 @@ main(int argc, char *argv[])
                 ps->family = atoi(optarg);
                 break;
             case 'p':   /* path to pipe */
-                IS_NULL(ps->path = strdup(optarg));
+                ps->path = strdup(optarg);
+
+                if (ps->path == NULL)
+                    error_result(ps, errno);
+
                 if (strlen(ps->path) >= UNIX_PATH_MAX)
                     usage(ps);
                 break;
@@ -88,10 +96,16 @@ main(int argc, char *argv[])
                 ps->type = atoi(optarg);
                 break;
             case 'I': /* Interface name */
-                IS_NULL(ps->ifname = strdup(optarg));
+                ps->ifname = strdup(optarg);
+
+                if (ps->ifname == NULL)
+                    error_result(ps, errno);
                 break;
             case 'd': { /* Open a character device */
-                IS_NULL(ps->dev = strdup(optarg));
+                ps->dev = strdup(optarg);
+
+                if (ps->dev == NULL)
+                    error_result(ps, errno);
 
                 if (procket_check_devname(ps->dev, 32) < 0)
                     usage(ps);
@@ -114,22 +128,23 @@ main(int argc, char *argv[])
     if (ps->path == NULL)
         usage(ps);
 
-    if (argc > 0)
-        IS_NULL(ps->address = strdup(argv[0]));
+    if (argc > 0) {
+        ps->address = strdup(argv[0]);
 
-    if (procket_open_fd(ps) < 0) {
-        (void)fprintf(stderr, "%s", strerror(errno));
-        exit (-errno);
+        if (ps->address == NULL)
+            error_result(ps, errno);
     }
 
-    if (setgid(getgid()) == -1)
-        err(EXIT_FAILURE, "setgid");
-    if (setuid(getuid()) == -1)
-        err(EXIT_FAILURE, "setuid");
+    if (procket_open_fd(ps) < 0)
+        error_result(ps, errno);
 
-    IS_LTZERO(procket_pipe(ps));
+    if ( (setgid(getgid()) < 0) || (setuid(getuid()) < 0))
+        error_result(ps, errno);
 
-    exit (0);
+    if (procket_pipe(ps) < 0)
+        error_result(ps, errno);
+
+    exit(0);
 }
 
 
@@ -345,6 +360,18 @@ ERR:
     errno = err;
 
     return -1;
+}
+
+
+    void
+error_result(PROCKET_STATE *ps, int err)
+{
+    if (ps->verbose > 0)
+        (void)fprintf(stderr, "%s", strerror(err));
+    else
+        (void)fprintf(stderr, "%d", err);
+
+    exit(-err);
 }
 
 
