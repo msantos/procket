@@ -1,4 +1,4 @@
-%% Copyright (c) 2010, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %% 
 %% Redistribution and use in source and binary forms, with or without
@@ -34,14 +34,6 @@
 %% This module just creates a directory, put whatever temp files
 %% you need inside the directory.
 %%
-%% Problems:
-%% * On some platforms, Unix sockets will be created with
-%%   modes 777.
-%% * The module does not test if the directory exists before
-%%   creation
-%% * If the directory creation fails, the module will just
-%%   return an error.
-
 -module(mktmp).
 
 -export([dirname/0,name/1,template/2,make_dir/1,close/1]).
@@ -69,7 +61,7 @@ template(Name, Chars) ->
     template(lists:reverse(Name), [], Chars).
 template([$X|Rest], Acc, Chars) ->
     template(Rest,
-        [lists:nth(crypto:rand_uniform(1,length(Chars)+1), Chars)|Acc],
+        [lists:nth(crypto:rand_uniform(1, length(Chars)+1), Chars)|Acc],
         Chars);
 template(Name, Rand, _) when length(Rand) >= 6 ->
     lists:reverse(Name) ++ Rand.
@@ -84,5 +76,3 @@ make_dir(Path) ->
 
 close(Path) ->
     file:del_dir(Path).
-
-
