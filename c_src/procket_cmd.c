@@ -208,8 +208,10 @@ procket_parse_address(PROCKET_STATE *ps)
 
     *p++ = '\0';
     ps->port = (in_port_t)atoi(p);
-    if (inet_aton(ps->address, &in) == 0)
+    if (inet_aton(ps->address, &in) == 0) {
+        errno = EINVAL;
         return -1;
+    }
     ps->ip = in.s_addr;
 
     return 0;
@@ -219,7 +221,7 @@ procket_parse_address(PROCKET_STATE *ps)
     int
 procket_open_socket(PROCKET_STATE *ps)
 {
-    struct sockaddr_in sa = { 0 };
+    struct sockaddr_in sa = {0};
     int flags = 0;
 
 
@@ -391,5 +393,5 @@ usage(PROCKET_STATE *ps)
             __progname
             );
 
-    exit (EXIT_FAILURE);
+    exit(-1);
 }
