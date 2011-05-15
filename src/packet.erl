@@ -28,6 +28,11 @@
 %% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
+
+%%
+%% Functions for dealing with PF_PACKET sockets and other Linux
+%% specific interfaces.
+%%
 -module(packet).
 -export([
         socket/0, socket/1,
@@ -187,8 +192,8 @@ ifindex(Socket, Dev) ->
 %%-------------------------------------------------------------------------
 %% procket:sendto/4 with defaults set
 %%-------------------------------------------------------------------------
-send(S, Ifindex, Packet) ->
-    procket:sendto(S, Packet, 0,
+send(Socket, Ifindex, Packet) ->
+    procket:sendto(Socket, Packet, 0,
         <<
         ?PF_PACKET:16/native,   % sll_family: PF_PACKET
         0:16,                   % sll_protocol: Physical layer protocol
