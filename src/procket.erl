@@ -150,8 +150,8 @@ open(Port) ->
 open(Port, Options) when is_integer(Port), is_list(Options) ->
     Opt = case proplists:get_value(pipe, Options) of
         undefined ->
-            Tmp = mktmp:dirname(),
-            ok = mktmp:make_dir(Tmp),
+            Tmp = procket_mktmp:dirname(),
+            ok = procket_mktmp:make_dir(Tmp),
             Path = Tmp ++ "/sock",
             [{pipe, Path}, {tmpdir, Tmp}] ++ Options;
         _ ->
@@ -180,7 +180,7 @@ cleanup(Sockfd, Pipe, Options) ->
         false ->
             ok;
         Path ->
-            mktmp:close(Path)
+            procket_mktmp:close(Path)
     end.
 
 fdopen(Path) when is_list(Path) ->

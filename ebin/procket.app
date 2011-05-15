@@ -7,7 +7,7 @@
         procket_ioctl,
         packet,
         bpf,
-        mktmp,
+        procket_mktmp,
         icmp,
         echo
             ]},
@@ -18,4 +18,3 @@
             ]},
     {env, []}
     ]}.
-
