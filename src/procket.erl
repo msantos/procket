@@ -209,7 +209,7 @@ make_args(Port, Options) ->
     end,
     proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
     string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++ Bind ++
-    " > /dev/null 2>&1; echo -n $?".
+    " > /dev/null 2>&1; printf $?".
 
 get_switch({pipe, Arg}) ->
     "-p " ++ Arg;
