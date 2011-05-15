@@ -7,9 +7,7 @@
         procket_ioctl,
         packet,
         bpf,
-        procket_mktmp,
-        icmp,
-        echo
+        procket_mktmp
             ]},
     {registered, []},
     {applications, [

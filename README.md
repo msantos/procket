@@ -89,6 +89,10 @@ capabilities:
 
 ## EXAMPLES
 
+To build the examples:
+
+    erlc -o ebin examples/*
+
 ### Simple echo server
 
     $ erl -pa ebin
