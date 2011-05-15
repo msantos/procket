@@ -208,7 +208,7 @@ procket_parse_address(PROCKET_STATE *ps)
 
     *p++ = '\0';
     ps->port = (in_port_t)atoi(p);
-    if (inet_aton(ps->address, &in) < 0)
+    if (inet_aton(ps->address, &in) == 0)
         return -1;
     ps->ip = in.s_addr;
 
