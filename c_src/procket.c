@@ -160,7 +160,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int l = -1;
     int s = -1;
     int salen = 0;
-    ErlNifBinary sa;
+    ErlNifBinary sa = {0};
     int flags = 0;
 
 
