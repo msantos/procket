@@ -80,11 +80,13 @@ nif_fdrecv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (ancil_recv_fd(fd, &s) < 0) {
+        int err = errno;
         (void)close(fd);
-        return error_tuple(env, errno);
+        return error_tuple(env, err);
     }
 
-    (void)close(fd);
+    if (close(fd) < 0)
+        return error_tuple(env, errno);
 
     return enif_make_tuple2(env,
             atom_ok,
@@ -117,8 +119,12 @@ nif_socket(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return error_tuple(env, errno);
 
     flags = fcntl(s, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    (void)fcntl(s, F_SETFL, flags);
+
+    if (flags < 0)
+        return error_tuple(env, errno);
+
+    if (fcntl(s, F_SETFL, flags|O_NONBLOCK) < 0)
+        return error_tuple(env, errno);
 
     return enif_make_tuple2(env,
            atom_ok,
@@ -172,11 +178,17 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return error_tuple(env, errno);
 
     flags = fcntl(s, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    (void)fcntl(s, F_SETFL, flags);
 
-    if (salen != sa.size)
-        enif_realloc_binary(&sa, salen);
+    if (flags < 0)
+        return error_tuple(env, errno);
+
+    if (fcntl(s, F_SETFL, flags|O_NONBLOCK) < 0)
+        return error_tuple(env, errno);
+
+    if (salen != sa.size) {
+        if (!enif_realloc_binary(&sa, salen))
+            return error_tuple(env, ENOMEM);
+    }
 
     return enif_make_tuple3(env,
             atom_ok,
@@ -185,8 +197,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
-/* 0: file descriptor
- */
+/* 0: file descriptor */
     static ERL_NIF_TERM
 nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -213,8 +224,8 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int salen = 0;
     int flags = 0;
 
-    ErlNifBinary buf;
-    ErlNifBinary sa;
+    ErlNifBinary buf = {0};
+    ErlNifBinary sa = {0};
     ssize_t bufsz = 0;
 
 
@@ -247,11 +258,15 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         }
     }
 
-    if (bufsz != buf.size)
-        enif_realloc_binary(&buf, bufsz);
+    if (bufsz != buf.size) {
+        if (!enif_realloc_binary(&buf, bufsz))
+            return error_tuple(env, ENOMEM);
+    }
 
-    if (salen != sa.size)
-        enif_realloc_binary(&sa, salen);
+    if (salen != sa.size) {
+        if (!enif_realloc_binary(&sa, salen))
+            return error_tuple(env, ENOMEM);
+    }
 
     return enif_make_tuple3(env, atom_ok, enif_make_binary(env, &buf),
              enif_make_binary(env, &sa));
@@ -265,8 +280,8 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int sockfd = -1;
     int flags = 0;
 
-    ErlNifBinary buf;
-    ErlNifBinary sa;
+    ErlNifBinary buf = {0};
+    ErlNifBinary sa = {0};
 
     if (!enif_get_int(env, argv[0], &sockfd))
         return enif_make_badarg(env);
@@ -296,7 +311,7 @@ nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int fd = -1;
     unsigned long len = 0;
 
-    ErlNifBinary buf;
+    ErlNifBinary buf = {0};
     ssize_t bufsz = 0;
 
 
@@ -319,8 +334,10 @@ nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         }
     }
 
-    if (bufsz != buf.size)
-        enif_realloc_binary(&buf, bufsz);
+    if (bufsz != buf.size) {
+        if (!enif_realloc_binary(&buf, bufsz))
+            return error_tuple(env, ENOMEM);
+    }
 
     return enif_make_tuple2(env, atom_ok, enif_make_binary(env, &buf));
 }
@@ -332,7 +349,7 @@ nif_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int fd = -1;
 
-    ErlNifBinary buf;
+    ErlNifBinary buf = {0};
 
     if (!enif_get_int(env, argv[0], &fd))
         return enif_make_badarg(env);
@@ -352,7 +369,7 @@ nif_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
-    ErlNifBinary sa;
+    ErlNifBinary sa = {0};
 
 
     if (!enif_get_int(env, argv[0], &s))
@@ -373,7 +390,7 @@ nif_bind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 nif_connect(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
-    ErlNifBinary sa;
+    ErlNifBinary sa = {0};
 
 
     if (!enif_get_int(env, argv[0], &s))
@@ -397,7 +414,7 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int s = -1;
     unsigned long req = 0;
-    ErlNifBinary arg;
+    ErlNifBinary arg = {0};
 
 
     if (!enif_get_int(env, argv[0], &s))
@@ -430,7 +447,7 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int s = -1;
     int level = 0;
     int optname = 0;
-    ErlNifBinary optval;
+    ErlNifBinary optval = {0};
 
     if (!enif_get_int(env, argv[0], &s))
         return enif_make_badarg(env);
@@ -461,8 +478,8 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     static ERL_NIF_TERM
 nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    ERL_NIF_TERM head;
-    ERL_NIF_TERM tail;
+    ERL_NIF_TERM head = {0};
+    ERL_NIF_TERM tail = {0};
 
     int arity = 0;
     char key[MAXATOMLEN+1];  /* Includes terminating NULL */
@@ -523,7 +540,9 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             if (initial.size > 0)
                 (void)memcpy(p->buf, initial.data, p->size);
 
-            enif_realloc_binary(&req, req.size+sizeof(void *));
+            if (!enif_realloc_binary(&req, req.size+sizeof(void *)))
+                return error_tuple(env, ENOMEM);
+
             (void)memcpy(req.data+index, &p->buf, sizeof(void *));
 
             res = enif_make_resource(env, p);
