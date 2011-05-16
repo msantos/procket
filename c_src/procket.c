@@ -50,6 +50,35 @@ typedef struct _alloc_state {
     void *buf;
 } ALLOC_STATE;
 
+/* Grow or shrink a binary.
+ *
+ * We increase the size of the binary to indicate to the
+ * caller the size required, e.g., recvfrom/2 will
+ * return the number of bytes needed for the address
+ * parameter if the provided address structure was too
+ * small.
+ *
+ * One problem is that enif_realloc_binary() doesn't zero
+ * allocated bytes, so we may leak internal VM data in the
+ * binary.
+ *
+ * In the case where we are increasing the size of the binary,
+ * zero the trailing bytes.
+ *
+ * WARNING: Only use with mutable binaries. If the bin is
+ * immutable, the result may or may not be mutable.
+ *
+ */
+#define PROCKET_REALLOC(bin, nsize) do { \
+    size_t osize = bin.size; \
+    if (nsize != bin.size) { \
+        if (!enif_realloc_binary(&bin, nsize)) \
+            return error_tuple(env, ENOMEM); \
+        if (nsize > osize) \
+            (void)memset(bin.data+osize, 0, bin.size-osize); \
+    } \
+} while (0);
+
 
     static int
 load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
@@ -185,10 +214,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (fcntl(s, F_SETFL, flags|O_NONBLOCK) < 0)
         return error_tuple(env, errno);
 
-    if (salen != sa.size) {
-        if (!enif_realloc_binary(&sa, salen))
-            return error_tuple(env, ENOMEM);
-    }
+    PROCKET_REALLOC(sa, salen);
 
     return enif_make_tuple3(env,
             atom_ok,
@@ -258,15 +284,8 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         }
     }
 
-    if (bufsz != buf.size) {
-        if (!enif_realloc_binary(&buf, bufsz))
-            return error_tuple(env, ENOMEM);
-    }
-
-    if (salen != sa.size) {
-        if (!enif_realloc_binary(&sa, salen))
-            return error_tuple(env, ENOMEM);
-    }
+    PROCKET_REALLOC(buf, bufsz);
+    PROCKET_REALLOC(sa, salen);
 
     return enif_make_tuple3(env, atom_ok, enif_make_binary(env, &buf),
              enif_make_binary(env, &sa));
@@ -334,10 +353,7 @@ nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         }
     }
 
-    if (bufsz != buf.size) {
-        if (!enif_realloc_binary(&buf, bufsz))
-            return error_tuple(env, ENOMEM);
-    }
+    PROCKET_REALLOC(buf, bufsz);
 
     return enif_make_tuple2(env, atom_ok, enif_make_binary(env, &buf));
 }
@@ -635,7 +651,6 @@ alloc_free(ErlNifEnv *env, void *obj)
     p->buf = NULL;
     p->size = 0;
 }
-
 
 
 static ErlNifFunc nif_funcs[] = {
