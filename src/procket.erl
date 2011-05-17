@@ -274,12 +274,14 @@ progname() ->
 %% Protocol family (aka domain)
 family(unspec) -> 0;
 family(inet) -> 2;
+family(inet6) -> 10;
 family(packet) -> 17;
 family(Proto) when Proto == local; Proto == unix; Proto == file -> 1;
 
 family(0) -> unspec;
 family(1) -> unix;
 family(2) -> inet;
+family(10) -> inet6;
 family(17) -> packet.
 
 
