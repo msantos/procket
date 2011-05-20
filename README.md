@@ -102,7 +102,7 @@ capabilities:
     Erlang R13B03 (erts-5.7.4) [source] [rq:1] [async-threads:0] [hipe] [kernel-poll:false]
     
     Eshell V5.7.4  (abort with ^G)
-    1> {ok, FD} = procket:open(53, [{progname, "sudo priv/procket"},{protocol, udp},{type, dgram}]).
+    1> {ok, FD} = procket:open(53, [{protocol, udp},{type, dgram},{family, inet}]).
     {ok,9}
     2> {ok, S} = gen_udp:open(53, [{fd,FD}]).
     {ok,#Port<0.929>}
@@ -124,7 +124,7 @@ To build the examples:
 ### Simple echo server
 
     $ erl -pa ebin
-    1> echo:start(53, [{progname, "sudo priv/procket"}, {protocol, tcp}]).
+    1> echo:start(53, [{protocol, tcp}, {type, stream}, {family, inet6}]).
 
 ### ICMP ping
 

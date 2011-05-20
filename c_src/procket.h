@@ -40,6 +40,7 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <netdb.h>
 
 #include <netinet/in.h>
 #include <sys/un.h>
@@ -55,7 +56,7 @@
 #include <ctype.h>
 
 
-#define PROCKET_VERSION   "0.03"
+#define PROCKET_VERSION   "0.04"
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX  sizeof(((struct sockaddr_un *)0)->sun_path)
 #endif
@@ -68,12 +69,11 @@ extern char *__progname;
 typedef struct {
     int fdtype;             /* fd type requested */
     char *path;             /* path to pipe file */
-    char *address;          /* <port> or <ipaddr:port> */
+    char *address;          /* IP address */
     char *ifname;           /* network interface name */
     int verbose;            /* Debug messages */
     char *dev;              /* Open a character device */
 
-    in_addr_t ip;           /* IP Address */
     in_port_t port;         /* Port */
 
     int s;                  /* socket fd */

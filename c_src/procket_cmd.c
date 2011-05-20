@@ -37,9 +37,10 @@
 
 int procket_open_fd(PROCKET_STATE *ps);
 int procket_check_devname(char *dev, size_t len);
-int procket_parse_address(PROCKET_STATE *ps);
 int procket_pipe(PROCKET_STATE *ps);
 int procket_open_socket(PROCKET_STATE *ps);
+int procket_create_socket(PROCKET_STATE *ps);
+int procket_lookup_socket(PROCKET_STATE *ps);
 int procket_open_dev(PROCKET_STATE *ps);
 int procket_open_char_dev(char *dev);
 void error_result(PROCKET_STATE *ps, int err);
@@ -63,16 +64,15 @@ main(int argc, char *argv[])
     if (ps == NULL)
         error_result(ps, errno);
 
-    ps->ip = INADDR_ANY;
     ps->backlog = BACKLOG;
 
-    ps->family = PF_INET;
+    ps->family = PF_UNSPEC; /* bind IPv4 and IPv6 socket */
     ps->type = SOCK_STREAM;
     ps->protocol = IPPROTO_TCP;
 
     ps->fdtype = PROCKET_FD_SOCKET;
 
-    while ( (ch = getopt(argc, argv, "b:d:F:hp:P:T:vI:")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:d:F:hI:p:P:T:u:v")) != -1) {
         switch (ch) {
             case 'b':   /* listen backlog */
                 ps->backlog = atoi(optarg);
@@ -80,7 +80,7 @@ main(int argc, char *argv[])
             case 'F':   /* socket family/domain */
                 ps->family = atoi(optarg);
                 break;
-            case 'p':   /* path to pipe */
+            case 'u':   /* path to Unix socket */
                 ps->path = strdup(optarg);
 
                 if (ps->path == NULL)
@@ -88,6 +88,9 @@ main(int argc, char *argv[])
 
                 if (strlen(ps->path) >= UNIX_PATH_MAX)
                     usage(ps);
+                break;
+            case 'p':   /* port */
+                ps->port = atoi(optarg);
                 break;
             case 'P':   /* socket protocol */
                 ps->protocol = atoi(optarg);
@@ -153,22 +156,14 @@ procket_open_fd(PROCKET_STATE *ps)
 {
     switch (ps->fdtype) {
         case PROCKET_FD_SOCKET:
-            if (ps->protocol == IPPROTO_TCP || ps->protocol == IPPROTO_UDP) {
-                if (procket_parse_address(ps) < 0)
-                    return -1;
-            }
-
-            if (procket_open_socket(ps) != 0)
-                return -1;
-            break;
+            return procket_open_socket(ps);
 
         case PROCKET_FD_CHARDEV:
-            if (procket_open_dev(ps) < 0)
-                return -1;
-            break;
-    }
+            return procket_open_dev(ps);
 
-    return 0;
+        default:
+            return -1;
+    }
 }
 
 
@@ -176,6 +171,7 @@ procket_open_fd(PROCKET_STATE *ps)
 procket_check_devname(char *dev, size_t len)
 {
     char *p = NULL;
+
 
     if (strlen(dev) >= len)
         return -1;
@@ -190,46 +186,108 @@ procket_check_devname(char *dev, size_t len)
 
 
     int
-procket_parse_address(PROCKET_STATE *ps)
+procket_open_socket(PROCKET_STATE *ps)
 {
-    struct in_addr in;
-    char *p = NULL;
+    switch (ps->protocol) {
+        case IPPROTO_TCP:
+        case IPPROTO_UDP:
+            if (procket_lookup_socket(ps) < 0)
+                return -1;
+            break;
 
-
-    if (ps->address == NULL) {
-        errno = EINVAL;
-        return -1;
+        default:
+            if (procket_create_socket(ps) < 0)
+                return -1;
+            break;
     }
-
-    if ( (p = strchr(ps->address, ':')) == NULL) {
-        ps->port = (in_port_t)atoi(ps->address);
-        return 0;
-    }
-
-    *p++ = '\0';
-    ps->port = (in_port_t)atoi(p);
-    if (inet_aton(ps->address, &in) == 0) {
-        errno = EINVAL;
-        return -1;
-    }
-    ps->ip = in.s_addr;
 
     return 0;
 }
 
 
     int
-procket_open_socket(PROCKET_STATE *ps)
+procket_lookup_socket(PROCKET_STATE *ps)
 {
-    struct sockaddr_in sa = {0};
+    struct addrinfo hints = {0};
+    struct addrinfo *res = NULL;
+    struct addrinfo *rp = NULL;
+    char port[NI_MAXSERV] = {0};
+    int err = 0;
+
+
+    hints.ai_family = ps->family;
+    hints.ai_socktype = ps->type;
+    hints.ai_protocol = ps->protocol;
+    hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
+
+    (void)snprintf(port, sizeof(port), "%u", ps->port);
+
+    err = getaddrinfo(ps->address, port, &hints, &res);
+
+    switch (err) {
+        case 0:
+            break;
+        case EAI_SYSTEM:
+            return -1;
+
+            /* fake errno values */
+#ifdef EAI_ADDRFAMILY
+        case EAI_ADDRFAMILY:
+            errno = EAFNOSUPPORT;
+            return -1;
+#endif
+        case EAI_AGAIN:
+            errno = EAGAIN;
+            return -1;
+        case EAI_FAMILY:
+            errno = EPFNOSUPPORT;
+            return -1;
+        case EAI_MEMORY:
+            errno = EAI_MEMORY;
+            return -1;
+        case EAI_SERVICE:
+        case EAI_SOCKTYPE:
+            errno = ESOCKTNOSUPPORT;
+            return -1;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
+        ps->family = rp->ai_family;
+        ps->type = rp->ai_socktype;
+        ps->protocol = rp->ai_protocol;
+
+        if (procket_create_socket(ps) == 0) {
+            if (bind(ps->s, rp->ai_addr, rp->ai_addrlen) < 0)
+                return -1;
+            break;
+        }
+    }
+
+    freeaddrinfo(res);
+
+    if (ps->s < 0)
+        return -1;
+
+    return 0;
+}
+
+
+    int
+procket_create_socket(PROCKET_STATE *ps)
+{
     int flags = 0;
 
 
-    if ( (ps->s = socket(ps->family, ps->type, ps->protocol)) < 0)
-            return -1;
+    ps->s = socket(ps->family, ps->type, ps->protocol);
+
+    if (ps->s < 0)
+        return -1;
 
 #ifdef SO_BINDTODEVICE
-    if(ps->ifname) {
+    if (ps->ifname) {
         struct ifreq ifr;
 
         (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
@@ -241,22 +299,22 @@ procket_open_socket(PROCKET_STATE *ps)
     flags = fcntl(ps->s, F_GETFL, 0);
 
     if (flags < 0)
-        return -1;
+        goto ERR;
 
     if (fcntl(ps->s, F_SETFL, flags|O_NONBLOCK) < 0)
-        return -1;
+        goto ERR;
 
-    /* Erlang assumes the socket has already been bound */
-    if ( (ps->protocol == IPPROTO_TCP) || (ps->protocol == IPPROTO_UDP)) {
-        sa.sin_family = ps->family;
-        sa.sin_port = htons(ps->port);
-        sa.sin_addr.s_addr = ps->ip;
+    return 0;
 
-        if (bind(ps->s, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-            return -1;
+ERR:
+    if (ps->s > -1) {
+        int err = errno;
+        (void)close(ps->s);
+        errno = err;
+        ps->s = -1;
     }
 
-    return (0);
+    return -1;
 }
 
 
@@ -285,6 +343,7 @@ procket_pipe(PROCKET_STATE *ps)
 
     return 0;
 }
+
 
 /* character device support */
     int
@@ -380,9 +439,10 @@ usage(PROCKET_STATE *ps)
 {
     (void)fprintf(stderr, "%s, %s\n", __progname, PROCKET_VERSION);
     (void)fprintf(stderr,
-            "usage: %s <options> <port|ipaddress:port>\n"
-            "              -p <path>        path to Unix socket\n"
-            "              -F <family>      family [default: PF_INET]\n"
+            "usage: %s <options> ipaddress>\n"
+            "              -u <path>        path to Unix socket\n"
+            "              -p <port>        port\n"
+            "              -F <family>      family [default: PF_UNSPEC]\n"
             "              -P <protocol>    protocol [default: IPPROTO_TCP]\n"
             "              -T <type>        type [default: SOCK_STREAM]\n"
 #ifdef SO_BINDTODEVICE
