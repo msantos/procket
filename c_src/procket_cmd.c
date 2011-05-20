@@ -198,7 +198,7 @@ procket_open_socket(PROCKET_STATE *ps)
     hints.ai_family = ps->family;
     hints.ai_socktype = ps->type;
     hints.ai_protocol = ps->protocol;
-    hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE | AI_V4MAPPED | AI_ADDRCONFIG;
+    hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
 
     (void)snprintf(port, sizeof(port), "%u", ps->port);
 
