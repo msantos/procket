@@ -201,18 +201,13 @@ fdget(Socket) ->
     fdrecv(S).
 
 make_args(Port, Options) ->
-    Bind = " " ++ case proplists:lookup(ip, Options) of
-        none ->
-            integer_to_list(Port);
-        IP ->
-            get_switch(IP) ++ ":" ++ integer_to_list(Port)
-    end,
     proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
-    string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++ Bind ++
+    string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++
+    " " ++ get_switch({port, Port}) ++ get_switch(ip) ++
     " > /dev/null 2>&1; printf $?".
 
 get_switch({pipe, Arg}) ->
-    "-p " ++ Arg;
+    "-u " ++ Arg;
 
 get_switch({protocol, Proto}) when is_atom(Proto) ->
     get_switch({protocol, protocol(Proto)});
@@ -231,6 +226,9 @@ get_switch({family, Family}) when is_integer(Family) ->
 
 get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 get_switch({ip, Arg}) when is_list(Arg) -> Arg;
+
+get_switch({port, Port}) when is_integer(Port) ->
+    "-p " ++ integer_to_list(Port);
 
 get_switch({interface, Name}) when is_list(Name) ->
     case is_interface(Name) of
