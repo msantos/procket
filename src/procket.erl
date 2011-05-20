@@ -157,9 +157,9 @@ open(Port, Options) when is_integer(Port), is_list(Options) ->
         _ ->
             [{tmpdir, false}] ++ Options
     end,
-    open1(Port, Opt).
+    open_1(Port, Opt).
 
-open1(Port, Options) ->
+open_1(Port, Options) ->
     Pipe = proplists:get_value(pipe, Options),
     {ok, Sockfd} = fdopen(Pipe),
     Cmd = make_args(Port, Options),
