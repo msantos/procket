@@ -1,12 +1,40 @@
 
-procket is an Erlang socket interface which can be used for requesting
-socket features that usually require superuser privileges.
+procket is an Erlang library for socket creation and manipulation.
 
-procket uses the experimental NIF interface first introduced in Erlang
-R13B03.
+procket uses a setuid helper so actions like binding low ports and
+requesting some sockets types can be done while Erlang is running as an
+unprivileged user.
+
+
+## FEATURES
+
+Other features include:
+
+* low level socket manipulation using ioctl(), setsockopt(), ...
+
+* support any protocols supported by the socket interface: ICMP, Unix
+  sockets, ...
+
+* support for the BSD raw socket interface
+
+* generate and snoop packets using PF_PACKET sockets on Linux
+
+* generate and snoop packets using the BPF interface on BSDs like Mac OS X
+
+* support for creating and reading/writing from character devices like
+  TUN/TAP interfaces
+
+
+## REQUIREMENTS
+
+procket may work with any version of Erlang after R14A but using
+the latest Erlang release is advisable.
 
 
 ## CHANGES
+
+### V0.04:
+* IPv6 support
 
 ### V0.02:
 * procket:listen/1,2 has been renamed procket:open/1,2. procket:listen/2
