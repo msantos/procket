@@ -191,7 +191,7 @@ procket_open_socket(PROCKET_STATE *ps)
     struct addrinfo hints = {0};
     struct addrinfo *res = NULL;
     struct addrinfo *rp = NULL;
-    char port[10] = {0};
+    char port[NI_MAXSERV] = {0};
     int err = 0;
 
 
@@ -255,7 +255,6 @@ procket_open_socket(PROCKET_STATE *ps)
 procket_create_socket(PROCKET_STATE *ps, struct addrinfo *rp)
 {
     int flags = 0;
-    int err = 0;
 
 
     ps->s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
@@ -278,7 +277,7 @@ procket_create_socket(PROCKET_STATE *ps, struct addrinfo *rp)
 
 ERR:
     if (ps->s > -1) {
-        err = errno;
+        int err = errno;
         (void)close(ps->s);
         errno = err;
         ps->s = -1;
