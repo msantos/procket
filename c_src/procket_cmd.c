@@ -39,8 +39,8 @@ int procket_open_fd(PROCKET_STATE *ps);
 int procket_check_devname(char *dev, size_t len);
 int procket_pipe(PROCKET_STATE *ps);
 int procket_open_socket(PROCKET_STATE *ps);
-int procket_create_socket(PROCKET_STATE *ps, struct addrinfo *rp);
-int procket_bind_socket(PROCKET_STATE *ps, struct addrinfo *rp);
+int procket_create_socket(PROCKET_STATE *ps);
+int procket_lookup_socket(PROCKET_STATE *ps);
 int procket_open_dev(PROCKET_STATE *ps);
 int procket_open_char_dev(char *dev);
 void error_result(PROCKET_STATE *ps, int err);
@@ -188,6 +188,26 @@ procket_check_devname(char *dev, size_t len)
     int
 procket_open_socket(PROCKET_STATE *ps)
 {
+    switch (ps->protocol) {
+        case IPPROTO_TCP:
+        case IPPROTO_UDP:
+            if (procket_lookup_socket(ps) < 0)
+                return -1;
+            break;
+
+        default:
+            if (procket_create_socket(ps) < 0)
+                return -1;
+            break;
+    }
+
+    return 0;
+}
+
+
+    int
+procket_lookup_socket(PROCKET_STATE *ps)
+{
     struct addrinfo hints = {0};
     struct addrinfo *res = NULL;
     struct addrinfo *rp = NULL;
@@ -234,12 +254,16 @@ procket_open_socket(PROCKET_STATE *ps)
             return -1;
     }
 
-    if (err < 0)
-        return -1;
-
     for (rp = res; rp != NULL; rp = rp->ai_next) {
-        if (procket_create_socket(ps, rp) == 0)
+        ps->family = rp->ai_family;
+        ps->type = rp->ai_socktype;
+        ps->protocol = rp->ai_protocol;
+
+        if (procket_create_socket(ps) == 0) {
+            if (bind(ps->s, rp->ai_addr, rp->ai_addrlen) < 0)
+                return -1;
             break;
+        }
     }
 
     freeaddrinfo(res);
@@ -252,15 +276,25 @@ procket_open_socket(PROCKET_STATE *ps)
 
 
     int
-procket_create_socket(PROCKET_STATE *ps, struct addrinfo *rp)
+procket_create_socket(PROCKET_STATE *ps)
 {
     int flags = 0;
 
 
-    ps->s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    ps->s = socket(ps->family, ps->type, ps->protocol);
 
     if (ps->s < 0)
         return -1;
+
+#ifdef SO_BINDTODEVICE
+    if (ps->ifname) {
+        struct ifreq ifr;
+
+        (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
+        if (setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
+            return -1;
+    }
+#endif
 
     flags = fcntl(ps->s, F_GETFL, 0);
 
@@ -268,9 +302,6 @@ procket_create_socket(PROCKET_STATE *ps, struct addrinfo *rp)
         goto ERR;
 
     if (fcntl(ps->s, F_SETFL, flags|O_NONBLOCK) < 0)
-        goto ERR;
-
-    if (procket_bind_socket(ps, rp) < 0)
         goto ERR;
 
     return 0;
@@ -284,35 +315,6 @@ ERR:
     }
 
     return -1;
-}
-
-
-    int
-procket_bind_socket(PROCKET_STATE *ps, struct addrinfo *rp)
-{
-#ifdef SO_BINDTODEVICE
-    if (ps->ifname) {
-        struct ifreq ifr;
-
-        (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
-        if (setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
-            return -1;
-    }
-#endif
-
-    /* Erlang requires a bound socket */
-    switch (rp->ai_protocol) {
-        case IPPROTO_TCP:
-        case IPPROTO_UDP:
-            break;
-        default:
-            return 0;
-    }
-
-    if (bind(ps->s, rp->ai_addr, rp->ai_addrlen) < 0)
-        return -1;
-
-    return 0;
 }
 
 
