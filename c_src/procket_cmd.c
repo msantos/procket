@@ -136,7 +136,6 @@ main(int argc, char *argv[])
 
         if (ps->address == NULL)
             error_result(ps, errno);
-
     }
 
     if (procket_open_fd(ps) < 0)
@@ -203,8 +202,37 @@ procket_open_socket(PROCKET_STATE *ps)
 
     (void)snprintf(port, sizeof(port), "%u", ps->port);
 
-    errno = EINVAL;
     err = getaddrinfo(ps->address, port, &hints, &res);
+
+    switch (err) {
+        case 0:
+            break;
+        case EAI_SYSTEM:
+            return -1;
+
+            /* fake errno values */
+#ifdef EAI_ADDRFAMILY
+        case EAI_ADDRFAMILY:
+            errno = EAFNOSUPPORT;
+            return -1;
+#endif
+        case EAI_AGAIN:
+            errno = EAGAIN;
+            return -1;
+        case EAI_FAMILY:
+            errno = EPFNOSUPPORT;
+            return -1;
+        case EAI_MEMORY:
+            errno = EAI_MEMORY;
+            return -1;
+        case EAI_SERVICE:
+        case EAI_SOCKTYPE:
+            errno = ESOCKTNOSUPPORT;
+            return -1;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
 
     if (err < 0)
         return -1;
@@ -249,9 +277,8 @@ procket_create_socket(PROCKET_STATE *ps, struct addrinfo *rp)
     return 0;
 
 ERR:
-    err = errno;
-
     if (ps->s > -1) {
+        err = errno;
         (void)close(ps->s);
         errno = err;
         ps->s = -1;
