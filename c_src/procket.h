@@ -70,12 +70,10 @@ typedef struct {
     int fdtype;             /* fd type requested */
     char *path;             /* path to pipe file */
     char *address;          /* IP address */
+    char *port;             /* Port */
     char *ifname;           /* network interface name */
-    int verbose;            /* Debug messages */
     char *dev;              /* Open a character device */
-
-    in_port_t port;         /* Port */
-
+    int verbose;            /* Debug messages */
     int s;                  /* socket fd */
     int family;             /* socket family: PF_INET */
     int type;               /* socket type: SOCK_STREAM */

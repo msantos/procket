@@ -87,10 +87,16 @@ main(int argc, char *argv[])
                     error_result(ps, errno);
 
                 if (strlen(ps->path) >= UNIX_PATH_MAX)
-                    usage(ps);
+                    error_result(ps, ENAMETOOLONG);
                 break;
             case 'p':   /* port */
-                ps->port = atoi(optarg);
+                ps->port = strdup(optarg);
+
+                if (ps->port == NULL)
+                    error_result(ps, errno);
+
+                if (strlen(ps->port) >= NI_MAXSERV)
+                    error_result(ps, ENAMETOOLONG);
                 break;
             case 'P':   /* socket protocol */
                 ps->protocol = atoi(optarg);
@@ -98,13 +104,16 @@ main(int argc, char *argv[])
             case 'T':   /* socket type */
                 ps->type = atoi(optarg);
                 break;
-            case 'I': /* Interface name */
+            case 'I':   /* Interface name */
                 ps->ifname = strdup(optarg);
 
                 if (ps->ifname == NULL)
                     error_result(ps, errno);
+
+                if (strlen(ps->port) >= IFNAMSIZ)
+                    error_result(ps, ENAMETOOLONG);
                 break;
-            case 'd': { /* Open a character device */
+            case 'd':   /* Open a character device */
                 ps->dev = strdup(optarg);
 
                 if (ps->dev == NULL)
@@ -114,7 +123,6 @@ main(int argc, char *argv[])
                     usage(ps);
 
                 ps->fdtype = PROCKET_FD_CHARDEV;
-                }
                 break;
             case 'v':
                 ps->verbose++;
@@ -129,13 +137,16 @@ main(int argc, char *argv[])
     argv += optind;
 
     if (ps->path == NULL)
-        usage(ps);
+        error_result(ps, ENOENT);
 
     if (argc > 0) {
         ps->address = strdup(argv[0]);
 
         if (ps->address == NULL)
             error_result(ps, errno);
+
+        if (strlen(ps->address) >= NI_MAXHOST)
+            error_result(ps, ENAMETOOLONG);
     }
 
     if (procket_open_fd(ps) < 0)
@@ -211,7 +222,6 @@ procket_lookup_socket(PROCKET_STATE *ps)
     struct addrinfo hints = {0};
     struct addrinfo *res = NULL;
     struct addrinfo *rp = NULL;
-    char port[NI_MAXSERV] = {0};
     int err = 0;
 
 
@@ -220,9 +230,7 @@ procket_lookup_socket(PROCKET_STATE *ps)
     hints.ai_protocol = ps->protocol;
     hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
 
-    (void)snprintf(port, sizeof(port), "%u", ps->port);
-
-    err = getaddrinfo(ps->address, port, &hints, &res);
+    err = getaddrinfo(ps->address, ps->port, &hints, &res);
 
     switch (err) {
         case 0:
