@@ -110,7 +110,7 @@ main(int argc, char *argv[])
                 if (ps->ifname == NULL)
                     error_result(ps, errno);
 
-                if (strlen(ps->port) >= IFNAMSIZ)
+                if (strlen(ps->ifname) >= IFNAMSIZ)
                     error_result(ps, ENAMETOOLONG);
                 break;
             case 'd':   /* Open a character device */
