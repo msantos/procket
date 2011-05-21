@@ -357,11 +357,11 @@ procket_pipe(PROCKET_STATE *ps)
     int
 procket_open_dev(PROCKET_STATE *ps)
 {
-    char dev[MAXPATHLEN];
+    char dev[MAXPATHLEN] = {0};
     int i = 0;
 
 
-    if (dev == NULL) {
+    if (ps->dev == NULL) {
         errno = ENXIO;
         return -1;
     }
