@@ -228,7 +228,7 @@ procket_lookup_socket(PROCKET_STATE *ps)
     hints.ai_family = ps->family;
     hints.ai_socktype = ps->type;
     hints.ai_protocol = ps->protocol;
-    hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
+    hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV | AI_PASSIVE;
 
     err = getaddrinfo(ps->address, ps->port, &hints, &res);
 
