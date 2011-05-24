@@ -201,10 +201,19 @@ fdget(Socket) ->
     fdrecv(S).
 
 make_args(Port, Options) ->
+    Args = reorder_args(Port, Options),
     proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
-    string:join([ get_switch(Arg) || Arg <- Options, element(1,Arg) /= ip ], " ") ++
-    " " ++ get_switch({port, Port}) ++ get_switch(ip) ++
+    string:join([ get_switch(Arg) || Arg <- Args ], " ") ++
     " > /dev/null 2>&1; printf $?".
+
+reorder_args(Port, Options) ->
+    NewOpts = case proplists:lookup(ip, Options) of
+        none ->
+            Options;
+        IP ->
+            proplists:delete(ip, Options) ++ [IP]
+    end,
+    [{port, Port}] ++ NewOpts.
 
 get_switch({pipe, Arg}) ->
     "-u " ++ Arg;
