@@ -33,7 +33,9 @@
 #include "erl_driver.h"
 #include "ancillary.h"
 #include "procket.h"
+#ifdef HAVE_EV4
 #include "ev.h"
+#endif
 
 #define BACKLOG     5
 
@@ -45,6 +47,8 @@ static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_eagain;
 
 static ErlNifResourceType *PROCKET_ALLOC_RESOURCE;
+
+#ifdef HAVE_EV4
 static ErlNifResourceType *PROCKET_WATCHER_RESOURCE;
 
 static struct event_loop {
@@ -54,18 +58,21 @@ static struct event_loop {
     ev_async        kick;
     ev_async        die;
 } PROCKET_EVENT_LOOP;
+#endif
 
 typedef struct _alloc_state {
     size_t size;
     void *buf;
 } ALLOC_STATE;
 
+#ifdef HAVE_EV4
 typedef struct _watcher_state {
     ev_io         io;
     ErlNifEnv    *env;
     ErlNifPid     pid;
     ERL_NIF_TERM  term;
 } WATCHER_STATE;
+#endif
 
 /* Grow or shrink a binary.
  *
@@ -96,6 +103,7 @@ typedef struct _watcher_state {
     } \
 } while (0);
 
+#ifdef HAVE_EV4
 /* libev processing
  * 
  * We set up a separate thread to listen for libev registered events
@@ -171,6 +179,7 @@ watcher_free(ErlNifEnv *env, void *obj)
 
     enif_free_env(w->env);
 }
+#endif
 
     static int
 load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
@@ -184,6 +193,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
         ERL_NIF_RT_CREATE, NULL)) == NULL)
         return -1;
 
+#if HAVE_EV4
     if ( (PROCKET_WATCHER_RESOURCE = enif_open_resource_type(env, NULL,
         "procket_watcher_resource", watcher_free,
         ERL_NIF_RT_CREATE, NULL)) == NULL)
@@ -209,6 +219,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
 
     if (enif_thread_create("libev", &el->tid, event_loop, NULL, NULL) < 0)
         return -1;
+#endif
 
     return (0);
 }
@@ -216,6 +227,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     static void
 unload(ErlNifEnv* env, void *priv_data)
 {
+#if HAVE_EV4
     struct event_loop *el = &PROCKET_EVENT_LOOP;
 
     /* send an asynchronous ev_break */
@@ -227,6 +239,7 @@ unload(ErlNifEnv* env, void *priv_data)
     enif_thread_join(el->tid, NULL);
 
     enif_mutex_destroy(el->mutex);
+#endif
 }
 
 /* Retrieve the file descriptor from the forked privileged process */
@@ -762,6 +775,7 @@ nif_errno_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return enif_make_atom(env, erl_errno_id(err));
 }
 
+#ifdef HAVE_EV4
    static void
 watcher_arm(WATCHER_STATE *w)
 {
@@ -848,6 +862,7 @@ nif_watcher_disarm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     return atom_ok;
 }
+#endif
 
     static ERL_NIF_TERM
 error_tuple(ErlNifEnv *env, int errnum)
@@ -893,9 +908,11 @@ static ErlNifFunc nif_funcs[] = {
     {"memcpy", 2, nif_memcpy},
     {"buf", 1, nif_buf},
 
+#ifdef HAVE_EV4
     {"watcher_create", 3, nif_watcher_create},
     {"watcher_arm", 1, nif_watcher_arm},
     {"watcher_disarm", 1, nif_watcher_disarm},
+#endif
 
     {"errno_id", 1, nif_errno_id}
 };
