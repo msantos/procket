@@ -51,6 +51,10 @@
         buf/1,
         memcpy/2,
 
+ 	    watcher_create/3,
+	    watcher_arm/1,
+	    watcher_disarm/1,
+
         errno_id/1
     ]).
 -export([
@@ -123,6 +127,13 @@ alloc(_) ->
 buf(_) ->
     erlang:error(not_implemented).
 memcpy(_,_) ->
+    erlang:error(not_implemented).
+
+watcher_create(_,_,_) ->
+    erlang:error(not_implemented).
+watcher_arm(_) ->
+    erlang:error(not_implemented).
+watcher_disarm(_) ->
     erlang:error(not_implemented).
 
 sendto(Socket, Buf) ->
