@@ -405,28 +405,36 @@ procket_open_char_dev(char *dev)
     int fd = -1;
     struct stat buf = {0};
     int err = 0;
+    int flags = 0;
 
 
-    if ( (fd = open(dev, O_RDWR|O_NONBLOCK)) < 0)
+    if ( (fd = open(dev, O_RDWR)) < 0)
         return -1;
 
-    /* Test the file is a character device */
-    if (fstat(fd, &buf) < 0) {
-        err = errno;
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
         goto ERR;
-    }
+
+    if (fcntl(fd, F_SETFL, flags|O_NONBLOCK) < 0)
+        goto ERR;
+
+    /* Test the file is a character device */
+    if (fstat(fd, &buf) < 0)
+        goto ERR;
 
     if (!S_ISCHR(buf.st_mode)) {
-        err = ENOENT;
+        errno = ENOENT;
         goto ERR;
     }
 
     return fd;
 
 ERR:
-    if (fd > -1)
+    if (fd > -1) {
+        err = errno;
         (void)close(fd);
-    errno = err;
+        errno = err;
+    }
 
     return -1;
 }
