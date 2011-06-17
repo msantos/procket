@@ -42,7 +42,7 @@
         close/1,
         recv/2,recvfrom/2,recvfrom/4,
         sendto/2, sendto/3,sendto/4,
-        read/2, write/2,
+        read/2, write/2, writev/2,
         bind/2,
         ioctl/3,
         setsockopt/4,
@@ -144,6 +144,8 @@ sendto(_,_,_,_) ->
     erlang:error(not_implemented).
 
 write(_,_) ->
+    erlang:error(not_implemented).
+writev(_,_) ->
     erlang:error(not_implemented).
 
 setsockopt(_,_,_,_) ->

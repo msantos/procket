@@ -525,6 +525,47 @@ nif_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return atom_ok;
 }
 
+#define IOVMAX 256
+
+/* 0: fd, 1: list of buffers */
+    static ERL_NIF_TERM
+nif_writev(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM head = {0};
+    ERL_NIF_TERM tail = {0};
+    struct iovec iovs[IOVMAX];
+    int fd = -1;
+    unsigned iovcnt;
+    
+    if (!enif_get_int(env, argv[0], &fd))
+        return enif_make_badarg(env);
+
+    tail = argv[1];
+
+    if (!enif_get_list_length(env, tail, &iovcnt))
+        return enif_make_badarg(env);
+
+    if (!iovcnt || iovcnt > IOVMAX)
+        return enif_make_badarg(env);
+
+    iovcnt = 0;
+
+    while (enif_get_list_cell(env, tail, &head, &tail)) {
+        struct iovec *iov = &iovs[iovcnt++];
+        ErlNifBinary buf = {0};
+
+        if (!enif_inspect_binary(env, head, &buf))
+            return enif_make_badarg(env);
+
+        iov->iov_base = buf.data;
+        iov->iov_len = buf.size;
+    }
+
+    if (writev(fd, iovs, iovcnt) == -1)
+        return error_tuple(env, errno);
+
+    return atom_ok;
+}
 
 /* 0: socket descriptor, 1: struct sockaddr */
     static ERL_NIF_TERM
@@ -903,6 +944,7 @@ static ErlNifFunc nif_funcs[] = {
 
     {"read", 2, nif_read},
     {"write", 2, nif_write},
+    {"writev", 2, nif_writev},
 
     {"alloc", 1, nif_alloc},
     {"memcpy", 2, nif_memcpy},
