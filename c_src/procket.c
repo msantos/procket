@@ -569,7 +569,7 @@ nif_connect(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 
 /* 0: (int)socket descriptor, 1: (int)device dependent request,
- * 2: (char *)argp, pointer to structure
+ * 2: (char *)argp, pointer to structure | int
  */
     static ERL_NIF_TERM
 nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
@@ -577,6 +577,7 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int s = -1;
     unsigned long req = 0;
     ErlNifBinary arg = {0};
+    int n = 0;
 
 
     if (!enif_get_int(env, argv[0], &s))
@@ -585,14 +586,26 @@ nif_ioctl(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_ulong(env, argv[1], &req))
         return enif_make_badarg(env);
 
-    if (!enif_inspect_binary(env, argv[2], &arg))
-        return enif_make_badarg(env);
+    if (enif_inspect_binary(env, argv[2], &arg)) {
+        /* Make the binary mutable */
+        if (!enif_realloc_binary(&arg, arg.size))
+            return error_tuple(env, ENOMEM);
 
-    if (!enif_realloc_binary(&arg, arg.size))
-        return enif_make_badarg(env);
+        if (ioctl(s, req, arg.data) < 0)
+            return error_tuple(env, errno);
+    }
+    else if (enif_get_int(env, argv[2], &n)) {
+        /* XXX integer args allow the caller to
+         * XXX pass in arbitrary pointers */
+        if (ioctl(s, req, n) < 0)
+            return error_tuple(env, errno);
 
-    if (ioctl(s, req, arg.data) < 0)
-        return error_tuple(env, errno);
+        /* return an empty binary */
+        if (!enif_alloc_binary(0, &arg))
+            return error_tuple(env, ENOMEM);
+    }
+    else
+        return enif_make_badarg(env);
 
     return enif_make_tuple2(env,
             atom_ok,
