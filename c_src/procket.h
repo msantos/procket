@@ -38,7 +38,6 @@
 #include <err.h>
 #include <sys/param.h>
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <netdb.h>
 
@@ -54,6 +53,8 @@
 
 #include <sys/stat.h>
 #include <ctype.h>
+
+#include <sys/uio.h>
 
 
 #define PROCKET_VERSION   "0.04"
