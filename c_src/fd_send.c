@@ -52,6 +52,11 @@ ancil_send_fds_with_buffer(int sock, const int *fds, unsigned n_fds, void *buffe
     struct cmsghdr *cmsg;
     int i;
 
+    union {
+        struct cmsghdr cm;
+        char control[CMSG_SPACE(sizeof(int))];
+    } control_un;
+
     nothing_ptr.iov_base = &nothing;
     nothing_ptr.iov_len = 1;
     msghdr.msg_name = NULL;
@@ -59,10 +64,10 @@ ancil_send_fds_with_buffer(int sock, const int *fds, unsigned n_fds, void *buffe
     msghdr.msg_iov = &nothing_ptr;
     msghdr.msg_iovlen = 1;
     msghdr.msg_flags = 0;
-    msghdr.msg_control = buffer;
-    msghdr.msg_controllen = sizeof(struct cmsghdr) + sizeof(int) * n_fds;
+    msghdr.msg_control = control_un.control;
+    msghdr.msg_controllen = sizeof(control_un.control);
     cmsg = CMSG_FIRSTHDR(&msghdr);
-    cmsg->cmsg_len = msghdr.msg_controllen;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(int));
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_RIGHTS;
     for(i = 0; i < n_fds; i++)
