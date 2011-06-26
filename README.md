@@ -181,3 +181,5 @@ procket uses libancillary for passing file descriptors between processes:
 
 ### Gregory Haskins
 * fix link-error on SUSE platforms
+* socket notifications
+* writev support
