@@ -294,15 +294,40 @@ progname() ->
 %% Protocol family (aka domain)
 family(unspec) -> 0;
 family(inet) -> 2;
-family(inet6) -> 10;
+family(inet6) ->
+    case os:type() of
+        {unix, linux} -> 10;
+        {unix, darwin} -> 30;
+        {unix, freebsd} -> 28
+    end;
 family(packet) -> 17;
 family(Proto) when Proto == local; Proto == unix; Proto == file -> 1;
 
 family(0) -> unspec;
 family(1) -> unix;
 family(2) -> inet;
-family(10) -> inet6;
-family(17) -> packet.
+family(10) ->
+    case os:type() of
+        {unix, linux} -> inet6;
+        {unix, _} -> ccitt
+    end;
+family(17) ->
+    case os:type() of
+        {unix, linux} -> packet;
+        {unix, _} -> route
+    end;
+family(28) ->
+    case os:type() of
+        % linux: not defined
+        {unix, freebsd} -> inet6;
+        {unix, darwin} -> isdn
+    end;
+family(30) ->
+    case os:type() of
+        {unix, linux} -> tipc;
+        {unix, freebsd} -> atm;
+        {unix, darwin} -> inet6
+    end.
 
 
 %% Socket type
