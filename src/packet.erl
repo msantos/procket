@@ -45,6 +45,7 @@
         ipv4address/2,
         macaddress/2,
         promiscuous/2,
+        bind/2,
         bindtodevice/2,
         filter/2, unfilter/1, unfilter/2,
         send/3
@@ -223,6 +224,30 @@ promiscuous(Socket, Ifindex) ->
         0:16,                           % mr_alen: address length
         0:64                            % mr_address[8]:  physical layer address
         >>).
+
+
+%%-------------------------------------------------------------------------
+%% Bind a PF_PACKET socket to an interface.
+%%-------------------------------------------------------------------------
+bind(Socket, Ifindex) ->
+    Sockaddr_ll = <<
+        ?PF_PACKET:16/native,   % sll_family: PF_PACKET
+        0:16,                   % sll_protocol: Physical layer protocol
+        Ifindex:32/native,      % sll_ifindex: Interface number
+        0:16,                   % sll_hatype: Header type
+        0:8,                    % sll_pkttype: Packet type
+        0:8,                    % sll_halen: address length
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8,                    % sll_addr[8]: physical layer address
+        0:8                     % sll_addr[8]: physical layer address
+    >>,
+
+    procket:bind(Socket, Sockaddr_ll).
 
 
 %%-------------------------------------------------------------------------
