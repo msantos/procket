@@ -345,4 +345,3 @@ checksum(Hdr) ->
 compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
-

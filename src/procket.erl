@@ -342,15 +342,16 @@ type(3) -> raw.
 
 % Select a protocol within the family (0 means use the default
 % protocol in the family)
-protocol(raw) -> 0;
+protocol(ip) -> 0;
 protocol(icmp) -> 1;
 protocol(tcp) -> 6;
 protocol(udp) -> 17;
+protocol(raw) -> 255;
 
-protocol(0) -> raw;
+protocol(0) -> ip;
 protocol(1) -> icmp;
 protocol(6) -> tcp;
-protocol(17) -> udp.
+protocol(255) -> raw.
 
 maybe_atom(_Type, Value) when is_integer(Value) -> Value;
 maybe_atom(family, Value) -> family(Value);
