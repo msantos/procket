@@ -1,0 +1,3 @@
+{application, procket,
+    [{description, "Low level socket operations"},
+    {vsn, "0.03"}]}.
