@@ -489,13 +489,14 @@ nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return error_tuple(env, ENOMEM);
 
     if ( (bufsz = read(fd, buf.data, buf.size)) == -1) {
+        int err = errno;
         enif_release_binary(&buf);
-        switch (errno) {
+        switch (err) {
             case EAGAIN:
             case EINTR:
                 return enif_make_tuple2(env, atom_error, atom_eagain);
             default:
-                return error_tuple(env, errno);
+                return error_tuple(env, err);
         }
     }
 
