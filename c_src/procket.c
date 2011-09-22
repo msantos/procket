@@ -922,8 +922,7 @@ nif_watcher_disarm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     static ERL_NIF_TERM
 error_tuple(ErlNifEnv *env, int errnum)
 {
-    return enif_make_tuple(env, 2,
-            atom_error,
+    return enif_make_tuple2(env, atom_error,
             enif_make_atom(env, erl_errno_id(errnum)));
 }
 
