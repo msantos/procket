@@ -47,7 +47,7 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
-#include <sys/errno.h>
+#include <errno.h>
 
 #include <sys/ioctl.h>
 
