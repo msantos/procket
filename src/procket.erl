@@ -50,6 +50,7 @@
         alloc/1,
         buf/1,
         memcpy/2,
+        wordalign/1, wordalign/2,
 
  	    watcher_create/3,
 	    watcher_arm/1,
@@ -396,3 +397,9 @@ ntohs(<<I:32>>) ->
 ntohs(I) when is_integer(I) ->
     <<N:16>> = <<I:16/native>>,
     N.
+
+
+wordalign(Offset) ->
+    wordalign(Offset, erlang:system_info({wordsize, external})).
+wordalign(Offset, Align) ->
+    (Align - (Offset rem Align)) rem Align.

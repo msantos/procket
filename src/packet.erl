@@ -316,14 +316,16 @@ filter(Socket, Insn) when is_list(Insn) ->
 % Remove or replace filter
 unfilter(Socket) ->
     Size = erlang:system_info(wordsize),
+    Pad = procket:wordalign(2),
     procket:setsockopt(Socket, ?SOL_SOCKET, ?SO_DETACH_FILTER,
-        <<0,0,0,0, 0:(Size*8)>>).
+        <<0,0, 0:(Pad*8), 0:(Size*8)>>).
 unfilter(Socket, Insn) when is_list(Insn) ->
     filter_1(Socket, Insn, ?SO_DETACH_FILTER).
 
 filter_1(Socket, Insn, Optname) ->
+    Pad = procket:wordalign(2),
     {ok, Fcode, [Res]} = procket:alloc([
-        <<(length(Insn)):4/native-unsigned-integer-unit:8>>,
+        <<(length(Insn)):2/native-unsigned-integer-unit:8, 0:(Pad*8)>>,
         {ptr, list_to_binary(Insn)}
     ]),
     case procket:setsockopt(Socket, ?SOL_SOCKET, Optname, Fcode) of
