@@ -274,8 +274,13 @@ is_device(Name) when is_list(Name) ->
 
 progname() ->
     % Is there a proper way of getting App-Name in this context?
-    PrivD = code:priv_dir( ?MODULE ),
-    filename:join([ PrivD, ?MODULE ]).
+    case application:get_env( ?MODULE, port_executable ) of
+        {ok, Executable} -> Executable;
+        undefined -> filename:join([
+                            code:priv_dir( ?MODULE ), 
+                            ?MODULE
+                        ])
+    end.
 
 %% Protocol family (aka domain)
 family(unspec) -> 0;
