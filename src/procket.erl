@@ -273,12 +273,15 @@ is_device(Name) when is_list(Name) ->
         or ((C >= $0) and (C =< $9) or (C == $/))].
 
 progname() ->
-    filename:join([
-        filename:dirname(code:which(?MODULE)),
-        "..",
-        "priv",
-        ?MODULE
-    ]).
+    % Is there a proper way of getting App-Name in this context?
+    PrivD = code:priv_dir( ?MODULE ),
+    filename:join([ PrivD, ?MODULE ]).
+    % filename:join([
+    %     filename:dirname(code:which(?MODULE)),
+    %     "..",
+    %     "priv",
+    %     ?MODULE
+    % ]).
 
 
 %% Protocol family (aka domain)
