@@ -72,6 +72,7 @@ on_load() ->
     erlang:load_nif(progname(), []).
 
 
+
 close(_) ->
     erlang:error(not_implemented).
 
@@ -272,14 +273,26 @@ is_device(Name) when is_list(Name) ->
     Name == [C || C <- Name, ((C >= $a) and (C =< $z))
         or ((C >= $0) and (C =< $9) or (C == $/))].
 
-progname() ->
-    % Is there a proper way of getting App-Name in this context?
+progname_ebin() ->
+    filename:join([
+        filename:dirname( code:which( ?MODULE ) ),
+        "..", "priv", ?MODULE
+    ]).
+
+progname_priv() ->
     case application:get_env( ?MODULE, port_executable ) of
         {ok, Executable} -> Executable;
         undefined -> filename:join([
                             code:priv_dir( ?MODULE ), 
                             ?MODULE
                         ])
+    end.
+
+progname() ->
+    % Is there a proper way of getting App-Name in this context?
+    case code:priv_dir( ?MODULE ) of
+        {error,bad_name} -> progname_ebin();
+        ________________ -> progname_priv()
     end.
 
 %% Protocol family (aka domain)
