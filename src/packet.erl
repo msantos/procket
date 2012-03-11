@@ -78,9 +78,9 @@ arplookup(IPaddr) when is_list(IPaddr) ->
     MAC.
 
 arplookup_iter(FH, IPaddr) ->
-    arplookup_iter1(FH, IPaddr, file:read_line(FH)).
+    arplookup_iter_1(FH, IPaddr, file:read_line(FH)).
 
-arplookup_iter1(FH, IPaddr, {ok, Line}) ->
+arplookup_iter_1(FH, IPaddr, {ok, Line}) ->
     case string:tokens(Line, "\s\n") of
         [IPaddr, _HWType, _Flags, MAC|_] ->
             list_to_tuple([ erlang:list_to_integer(E, 16) ||
@@ -88,7 +88,7 @@ arplookup_iter1(FH, IPaddr, {ok, Line}) ->
         _ ->
             arplookup_iter(FH, IPaddr)
     end;
-arplookup_iter1(_FH, _IPaddr, eof) ->
+arplookup_iter_1(_FH, _IPaddr, eof) ->
     false.
 
 
@@ -102,9 +102,9 @@ gateway(Dev) ->
     gateway_res(gateway_addr(Dev)).
 
 gateway_res(false) -> false;
-gateway_res(IP) -> gateway_res1(arplookup(IP), IP).
-gateway_res1(false, _) -> false;
-gateway_res1(MAC, IP) -> {ok, MAC, IP}.
+gateway_res(IP) -> gateway_res_1(arplookup(IP), IP).
+gateway_res_1(false, _) -> false;
+gateway_res_1(MAC, IP) -> {ok, MAC, IP}.
 
 gateway_addr(Dev) ->
     {ok, FH} = file:open("/proc/net/route", [read,raw]),
@@ -113,9 +113,9 @@ gateway_addr(Dev) ->
     IP.
 
 gateway_addr_iter(FH, Dev) ->
-    gateway_addr_iter1(FH, Dev, file:read_line(FH)).
+    gateway_addr_iter_1(FH, Dev, file:read_line(FH)).
 
-gateway_addr_iter1(FH, Dev, {ok, Line}) ->
+gateway_addr_iter_1(FH, Dev, {ok, Line}) ->
     case string:tokens(Line, "\t") of
         [Dev, "00000000", IP, "0003"|_] ->
             gateway_addr_res(IP);
@@ -124,7 +124,7 @@ gateway_addr_iter1(FH, Dev, {ok, Line}) ->
         _ ->
             gateway_addr_iter(FH, Dev)
     end;
-gateway_addr_iter1(_FH, _Dev, eof) ->
+gateway_addr_iter_1(_FH, _Dev, eof) ->
     false.
 
 gateway_addr_res(IPHex) ->
