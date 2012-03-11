@@ -1,4 +1,4 @@
-%% Copyright (c) 2011, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2011-2012, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -368,7 +368,7 @@ init(Socket, Dev) ->
     % Return packets sent from the interface
     {ok, _} = ctl(Socket, seesent, true),
 
-    % Return packets immediately (do wait until full buffer)
+    % Return packets immediately (do not wait until buffer full)
     {ok, _} = ctl(Socket, immediate, true),
 
     % Get bpf buf len

@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2012, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 %% specific interfaces.
 %%
 -module(packet).
+-include("packet.hrl").
 -export([
         socket/0, socket/1,
         iflist/0,
@@ -50,33 +51,6 @@
         filter/2, unfilter/1, unfilter/2,
         send/3
     ]).
-
-
--define(SIOCGIFINDEX, 16#8933).
--define(PF_PACKET, 17).
-
-% Options for retrieving device IP
--define(SIOCGIFADDR, 16#8915).
--define(PF_INET, 2).
-
-% Options for retrieving dev MAC address
--define(SIOCGIFHWADDR, 16#8927).
-
-% Options for promiscuous mode
--define(SOL_PACKET, 263).
--define(PACKET_ADD_MEMBERSHIP, 1).
--define(PACKET_DROP_MEMBERSHIP, 2).
--define(PACKET_MR_PROMISC, 1).
-
-% Options for binding to interfaces
--define(SOL_SOCKET, 1).
--define(SO_BINDTODEVICE, 25).
-
-% Options for BPF filtering
--define(SO_ATTACH_FILTER, 26).
--define(SO_DETACH_FILTER, 27).
-
--define(ETH_P_IP, 16#0800).
 
 
 %%-------------------------------------------------------------------------
@@ -104,9 +78,9 @@ arplookup(IPaddr) when is_list(IPaddr) ->
     MAC.
 
 arplookup_iter(FH, IPaddr) ->
-    arplookup_iter1(FH, IPaddr, file:read_line(FH)).
+    arplookup_iter_1(FH, IPaddr, file:read_line(FH)).
 
-arplookup_iter1(FH, IPaddr, {ok, Line}) ->
+arplookup_iter_1(FH, IPaddr, {ok, Line}) ->
     case string:tokens(Line, "\s\n") of
         [IPaddr, _HWType, _Flags, MAC|_] ->
             list_to_tuple([ erlang:list_to_integer(E, 16) ||
@@ -114,7 +88,7 @@ arplookup_iter1(FH, IPaddr, {ok, Line}) ->
         _ ->
             arplookup_iter(FH, IPaddr)
     end;
-arplookup_iter1(_FH, _IPaddr, eof) ->
+arplookup_iter_1(_FH, _IPaddr, eof) ->
     false.
 
 
@@ -128,9 +102,9 @@ gateway(Dev) ->
     gateway_res(gateway_addr(Dev)).
 
 gateway_res(false) -> false;
-gateway_res(IP) -> gateway_res1(arplookup(IP), IP).
-gateway_res1(false, _) -> false;
-gateway_res1(MAC, IP) -> {ok, MAC, IP}.
+gateway_res(IP) -> gateway_res_1(arplookup(IP), IP).
+gateway_res_1(false, _) -> false;
+gateway_res_1(MAC, IP) -> {ok, MAC, IP}.
 
 gateway_addr(Dev) ->
     {ok, FH} = file:open("/proc/net/route", [read,raw]),
@@ -139,9 +113,9 @@ gateway_addr(Dev) ->
     IP.
 
 gateway_addr_iter(FH, Dev) ->
-    gateway_addr_iter1(FH, Dev, file:read_line(FH)).
+    gateway_addr_iter_1(FH, Dev, file:read_line(FH)).
 
-gateway_addr_iter1(FH, Dev, {ok, Line}) ->
+gateway_addr_iter_1(FH, Dev, {ok, Line}) ->
     case string:tokens(Line, "\t") of
         [Dev, "00000000", IP, "0003"|_] ->
             gateway_addr_res(IP);
@@ -150,7 +124,7 @@ gateway_addr_iter1(FH, Dev, {ok, Line}) ->
         _ ->
             gateway_addr_iter(FH, Dev)
     end;
-gateway_addr_iter1(_FH, _Dev, eof) ->
+gateway_addr_iter_1(_FH, _Dev, eof) ->
     false.
 
 gateway_addr_res(IPHex) ->
