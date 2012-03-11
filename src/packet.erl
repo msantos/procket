@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2012, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 %% specific interfaces.
 %%
 -module(packet).
+-include("packet.hrl").
 -export([
         socket/0, socket/1,
         iflist/0,
@@ -50,33 +51,6 @@
         filter/2, unfilter/1, unfilter/2,
         send/3
     ]).
-
-
--define(SIOCGIFINDEX, 16#8933).
--define(PF_PACKET, 17).
-
-% Options for retrieving device IP
--define(SIOCGIFADDR, 16#8915).
--define(PF_INET, 2).
-
-% Options for retrieving dev MAC address
--define(SIOCGIFHWADDR, 16#8927).
-
-% Options for promiscuous mode
--define(SOL_PACKET, 263).
--define(PACKET_ADD_MEMBERSHIP, 1).
--define(PACKET_DROP_MEMBERSHIP, 2).
--define(PACKET_MR_PROMISC, 1).
-
-% Options for binding to interfaces
--define(SOL_SOCKET, 1).
--define(SO_BINDTODEVICE, 25).
-
-% Options for BPF filtering
--define(SO_ATTACH_FILTER, 26).
--define(SO_DETACH_FILTER, 27).
-
--define(ETH_P_IP, 16#0800).
 
 
 %%-------------------------------------------------------------------------
