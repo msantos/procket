@@ -5,6 +5,12 @@ procket uses a setuid helper so actions like binding low ports and
 requesting some sockets types can be done while Erlang is running as an
 unprivileged user.
 
+## Local modification
+
+(By Kenji Rikitake)
+
+* Added ICMPv6 support (preliminary, buggy on FreeBSD localhost I/F)
+* Tested on FreeBSD/amd64 9.0-RELEASE alc0 interface driver
 
 ## FEATURES
 
