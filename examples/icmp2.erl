@@ -86,7 +86,7 @@ loop(#state{n = N, seq = Seq}) when Seq >= N ->
 loop(#state{s = S, id = Id, seq = Seq, ip = IP, 
 	    family = Family, protocol = Protocol, n = N} = State) ->
     Packet = make_packet(Id, Seq, Family),
-    io:format("S = ~p, IP = ~p, Family = ~p, Protocol = ~p~n", [S, IP, Family, Protocol]),
+    % io:format("S = ~p, IP = ~p, Family = ~p, Protocol = ~p~n", [S, IP, Family, Protocol]),
     ok = gen_udp:send(S, IP, 0, Packet),
     case Family of
 	inet6 ->
@@ -96,7 +96,7 @@ loop(#state{s = S, id = Id, seq = Seq, ip = IP,
     end,
     receive
 	{udp, S, _IP, _Port, <<_SD:Skip/bytes, Data/binary>>} ->
-	    io:format("_IP=~p, _Port=~p, _SD = ~p, Data = ~p~n", [_IP, _Port, _SD, Data]),
+	    % io:format("_IP=~p, _Port=~p, _SD = ~p, Data = ~p~n", [_IP, _Port, _SD, Data]),
 	    {ICMP, <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>} = icmp(Data, Protocol),
 	    error_logger:info_report([
 				      {icmp_protocol, Protocol},
