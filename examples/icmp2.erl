@@ -97,7 +97,7 @@ loop(#state{s = S, id = Id, seq = Seq, ip = IP,
     receive
 	{udp, S, _IP, _Port, <<_SD:Skip/bytes, Data/binary>>} ->
 	    % io:format("_IP=~p, _Port=~p, _SD = ~p, Data = ~p~n", [_IP, _Port, _SD, Data]),
-	    {ICMP, <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>} = icmp(Data, Protocol),
+	    {ICMP, <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>} = icmp(Data),
 	    error_logger:info_report([
 				      {icmp_protocol, Protocol},
 				      {type, ICMP#icmp.type},
@@ -150,14 +150,20 @@ compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
 
-icmp(<<?ICMPV6_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>, icmp6) ->
+%% icmp(<<?ICMPV6_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>, icmp6) ->
+%%     {#icmp{
+%%             type = ?ICMPV6_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
+%%             sequence = Sequence
+%%        }, Payload};
+%% icmp(<<?ICMP_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>, icmp) ->
+%%     {#icmp{
+%%             type = ?ICMP_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
+%%             sequence = Sequence
+%%        }, Payload}.
+
+icmp(<<Type:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
     {#icmp{
-            type = ?ICMPV6_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
-            sequence = Sequence
-       }, Payload};
-icmp(<<?ICMP_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>, icmp) ->
-    {#icmp{
-            type = ?ICMP_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
+            type = Type, code = Code, checksum = Checksum, id = Id,
             sequence = Sequence
        }, Payload}.
 
