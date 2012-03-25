@@ -64,10 +64,10 @@ ping(IP, N) ->
     crypto:start(),
     Id = crypto:rand_uniform(0, 16#FFFF),
     {Family, Protocol, Addr} = 
-	case inet:getaddr(IP, inet6) of
+	case (catch inet:getaddr(IP, inet6)) of
 	    {ok, V6Addr} ->
 		{inet6, icmp6, V6Addr};
-	    _Else ->
+	    {error, _Else} ->
 		{inet, icmp, IP}
 	end,
     {ok, FD} = procket:open(0, [{protocol, Protocol}, {type, raw}, {family, Family}]),
