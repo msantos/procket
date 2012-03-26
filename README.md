@@ -10,6 +10,10 @@ unprivileged user.
 (By Kenji Rikitake)
 
 * Added ICMPv6 support (preliminary, buggy on FreeBSD localhost I/F)
+
+    Many localhost interfaces do not respond ICMP Echo Requests with
+    the proper Echo Reply code.
+
 * Tested on FreeBSD/amd64 9.0-RELEASE alc0 interface driver
 
 ## FEATURES
