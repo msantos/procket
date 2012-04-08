@@ -187,6 +187,9 @@ procket uses libancillary for passing file descriptors between processes:
 * socket notifications
 * writev support
 
+### Roman Gafiyatullin
+* support running from an OTP app and compressed bundles
+
 ### Kenji Rikitake
 
 * Added ICMPv6 support (preliminary, buggy on FreeBSD localhost I/F)
