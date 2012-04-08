@@ -304,6 +304,7 @@ family(inet6) ->
         {unix, darwin} -> 30;
         {unix, freebsd} -> 28
     end;
+family(netlink) -> 16;
 family(packet) -> 17;
 family(Proto) when Proto == local; Proto == unix; Proto == file -> 1;
 
@@ -315,6 +316,7 @@ family(10) ->
         {unix, linux} -> inet6;
         {unix, _} -> ccitt
     end;
+family(16) -> netlink;
 family(17) ->
     case os:type() of
         {unix, linux} -> packet;
