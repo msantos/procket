@@ -23,3 +23,7 @@ deps: $(REBAR)
 examples: eg
 eg:
 	@erlc -I deps -o ebin examples/*.erl
+
+setuid: all
+	sudo chown root priv/procket
+	sudo chmod 4750 priv/procket
