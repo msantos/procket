@@ -46,6 +46,7 @@
         bind/2,
         ioctl/3,
         setsockopt/4,
+        getsockname/2,
 
         alloc/1,
         buf/1,
@@ -140,6 +141,9 @@ writev(_,_) ->
     erlang:error(not_implemented).
 
 setsockopt(_,_,_,_) ->
+    erlang:error(not_implemented).
+
+getsockname(_,_) ->
     erlang:error(not_implemented).
 
 errno_id(_) ->
