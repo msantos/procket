@@ -1,4 +1,4 @@
-%% icmp2.erl: an example of ICMPv6 support, modified from icmp.erl
+%% icmp6.erl: an example of ICMPv6 support, modified from icmp.erl
 
 %% Copyright (c) 2012 Kenji Rikitake <kenji.rikitake@acm.org>
 %% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
@@ -31,7 +31,7 @@
 %% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
--module(icmp2).
+-module(icmp6).
 -export([ping/1, ping/2]).
 
 -record(icmp, {
