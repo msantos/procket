@@ -1,4 +1,3 @@
-
 REBAR=$(shell which rebar || echo ./rebar)
 
 all: dirs compile
@@ -21,3 +20,6 @@ clean: $(REBAR)
 deps: $(REBAR)
 	@$(REBAR) get-deps
 
+examples: eg
+eg:
+	@erlc -I deps -o ebin examples/*.erl

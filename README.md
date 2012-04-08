@@ -129,7 +129,7 @@ capabilities:
 
 To build the examples:
 
-    erlc -o ebin examples/*
+    make examples
 
 ### Simple echo server
 
