@@ -66,7 +66,7 @@ ping(IP, N) ->
     {Family, Protocol, Addr} = 
 	case (catch inet:getaddr(IP, inet6)) of
 	    {ok, V6Addr} ->
-		{inet6, icmp6, V6Addr};
+		{inet6, 'ipv6-icmp', V6Addr};
 	    {error, _Else} ->
 		{inet, icmp, IP}
 	end,
@@ -150,7 +150,8 @@ compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
 
-%% icmp(<<?ICMPV6_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>, icmp6) ->
+%% icmp(<<?ICMPV6_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, 
+%%      Id:16, Sequence:16, Payload/binary>>, 'ipv6-icmp') ->
 %%     {#icmp{
 %%             type = ?ICMPV6_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
 %%             sequence = Sequence
