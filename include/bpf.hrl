@@ -33,7 +33,7 @@
 %%% BPF ioctl structures and commands
 %%-------------------------------------------------------------------------
 
--define(SIZEOF_STRUCT_IFREQ, 32).
+-define(SIZEOF_STRUCT_IFREQ, bpf:sizeof(ifreq)).
 -define(SIZEOF_INT32_T, 4).
 -define(SIZEOF_U_INT, ?SIZEOF_INT32_T).
 
@@ -75,7 +75,7 @@
     (?SIZEOF_U_INT + ?SIZEOF_U_INT + 4)).
 
 %% #define BPF_ALIGNMENT sizeof(int32_t)
--define(BPF_ALIGNMENT, ?SIZEOF_INT32_T).
+-define(BPF_ALIGNMENT, bpf:alignment()).
 %% #define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
 -define(BPF_WORDALIGN(X), bpf:align(X)).
 
@@ -96,8 +96,8 @@
 -define(BIOCSRSIG, bpf:iow($B, 115, ?SIZEOF_U_INT)).
 -define(BIOCGHDRCMPLT, bpf:ior($B, 116, ?SIZEOF_U_INT)).
 -define(BIOCSHDRCMPLT, bpf:iow($B, 117, ?SIZEOF_U_INT)).
--define(BIOCGSEESENT, bpf:ior($B, 118, ?SIZEOF_U_INT)).
--define(BIOCSSEESENT, bpf:iow($B, 119, ?SIZEOF_U_INT)).
+-define(BIOCGSEESENT, bpf:ior($B, gseesent, ?SIZEOF_U_INT)).
+-define(BIOCSSEESENT, bpf:iow($B, sseesent, ?SIZEOF_U_INT)).
 -define(BIOCSDLT, bpf:iow($B, 120, ?SIZEOF_U_INT)).
 -define(BIOCGDLTLIST, bpf:iowr($B, 121, ?SIZEOF_STRUCT_BPF_DLTLIST)).
 
