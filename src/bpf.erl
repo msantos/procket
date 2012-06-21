@@ -48,7 +48,7 @@
 -export([
         pad/1, align/1,
         io/2, iow/3, ior/3, iowr/3, ioc/4,
-        sizeof/1
+        sizeof/1, alignment/0
     ]).
 
 
@@ -229,6 +229,15 @@ bool(<<0:32>>) -> false.
 %%
 %% On 32-bit, struct timeval32: 4 bytes tv_sec, 4 bytes tv_usec
 %% On 64-bit, struct timeval: 8 bytes tv_sec, 4 bytes tv_usec
+%%
+%% On NetBSD, the bh_tstamp is like the following.
+%%      struct bpf_timeval {
+%%              long tv_sec;
+%%              long tv_usec;
+%%      };
+%% So,
+%% On 32-bit, struct bpf_timeval: 4 bytes tv_sec, 4 bytes tv_usec
+%% On 64-bit, struct bpf_timeval: 8 bytes tv_sec, 8 bytes tv_usec
 
 pad(Len) ->
     align(Len) - Len.
@@ -253,10 +262,15 @@ buf_2(_Time, _Datalen, Error) ->
 
 hdr(Data) ->
     Size = erlang:system_info({wordsize, external}),
-
+    UsecSize = case os:type() of
+        {_, netbsd} ->
+            Size;
+        _ -> % OSX
+            4
+    end,
     case Data of
         <<Sec:Size/native-unsigned-integer-unit:8,
-        Usec:4/native-unsigned-integer-unit:8,
+        Usec:UsecSize/native-unsigned-integer-unit:8,
         Caplen:4/native-unsigned-integer-unit:8,
         Datalen:4/native-unsigned-integer-unit:8,
         Hdrlen:2/native-unsigned-integer-unit:8,
@@ -339,6 +353,16 @@ offset(?BPF_B) -> byte.
 %%% Internal functions
 %%-------------------------------------------------------------------------
 %% BSD ioctl request calculation (taken from ioccom.h)
+ioc(Inout, Group, Name, Len) when is_atom(Name) ->
+    List = case os:type() of
+        {_, netbsd} ->
+            [{gseesent, 120},
+             {sseesent, 121}];
+        _ -> % OSX
+            [{gseesent, 118},
+             {sseesent, 119}]
+    end,
+    ioc(Inout, Group, proplists:get_value(Name, List), Len);
 ioc(Inout, Group, Num, Len) ->
     procket_ioctl:ioc(Inout, Group, Num, Len).
 
@@ -355,8 +379,22 @@ iowr(G,N,T) ->
     ioc(procket_ioctl:inout(bsd), G, N, T).
 
 sizeof(timeval) ->
-    erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT.
+    erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT;
+sizeof(ifreq) ->
+    case os:type() of
+        {_, netbsd} ->
+            144;
+        _ -> % OSX
+            32
+    end.
 
+alignment() ->
+    case os:type() of
+        {_, netbsd} ->
+            erlang:system_info({wordsize, external});
+        _ -> % OSX
+            ?SIZEOF_INT32_T
+    end.
 
 init(Socket, Dev) ->
     % Set the interface for the bpf
