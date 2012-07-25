@@ -61,7 +61,6 @@
         ntohl/1,
         ntohs/1
     ]).
--export([make_args/2,progname/0]).
 
 -on_load(on_load/0).
 
@@ -165,12 +164,27 @@ open(Port, Options) when is_integer(Port), is_list(Options) ->
         _ ->
             [{tmpdir, false}] ++ Options
     end,
-    open_1(Port, Opt).
+    Result = open_1(Port, Opt),
+    case proplists:get_value(tmpdir, Options) of
+        false ->
+            ok;
+        Tmp2 ->
+            procket_mktmp:close(Tmp2)
+    end,
+    Result.
 
 open_1(Port, Options) ->
+    case open_1(Port, Options, false) of
+        {error, eacces} ->
+            open_1(Port, Options, true);
+        Result ->
+            Result
+    end.
+
+open_1(Port, Options, UseSudo) ->
     Pipe = proplists:get_value(pipe, Options),
     {ok, Sockfd} = fdopen(Pipe),
-    Cmd = make_args(Port, Options),
+    Cmd = make_args(Port, Options, UseSudo),
     case os:cmd(Cmd) of
         "0" ->
             FD = fdget(Sockfd),
@@ -183,13 +197,7 @@ open_1(Port, Options) ->
 
 cleanup(Sockfd, Pipe, Options) ->
     close(Sockfd),
-    ok = file:delete(Pipe),
-    case proplists:get_value(tmpdir, Options) of
-        false ->
-            ok;
-        Path ->
-            procket_mktmp:close(Path)
-    end.
+    ok = file:delete(Pipe).
 
 fdopen(Path) when is_list(Path) ->
     fdopen(list_to_binary(Path));
@@ -208,9 +216,15 @@ fdget(Socket) ->
     {ok, S} = accept(Socket),
     fdrecv(S).
 
-make_args(Port, Options) ->
+make_args(Port, Options, UseSudo) ->
     Args = reorder_args(Port, Options),
-    proplists:get_value(progname, Options, "sudo " ++ progname()) ++ " " ++
+    Prefix = case UseSudo of
+        true ->
+            "sudo ";
+        false ->
+            ""
+    end,
+    proplists:get_value(progname, Options, Prefix ++ progname()) ++ " " ++
     string:join([ get_switch(Arg) || Arg <- Args ], " ") ++
     " > /dev/null 2>&1; printf $?".
 
