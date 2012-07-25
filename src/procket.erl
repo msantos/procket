@@ -188,14 +188,14 @@ open_1(Port, Options, UseSudo) ->
     case os:cmd(Cmd) of
         "0" ->
             FD = fdget(Sockfd),
-            cleanup(Sockfd, Pipe, Options),
+            cleanup(Sockfd, Pipe),
             FD;
         Error ->
-            cleanup(Sockfd, Pipe, Options),
+            cleanup(Sockfd, Pipe),
             {error, errno_id(list_to_integer(Error))}
     end.
 
-cleanup(Sockfd, Pipe, Options) ->
+cleanup(Sockfd, Pipe) ->
     close(Sockfd),
     ok = file:delete(Pipe).
 
