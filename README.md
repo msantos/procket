@@ -198,3 +198,9 @@ procket uses libancillary for passing file descriptors between processes:
     the proper Echo Reply code.
 
 * Tested on FreeBSD/amd64 9.0-RELEASE alc0 interface driver
+
+### YAMAMOTO Takashi
+
+* BPF support for NetBSD
+
+* sudo fallback for setuid helper
