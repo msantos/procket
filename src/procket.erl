@@ -175,7 +175,7 @@ open(Port, Options) when is_integer(Port), is_list(Options) ->
 
 open_1(Port, Options) ->
     case open_1(Port, Options, false) of
-        {error, eacces} ->
+        {error, Error} when Error == eacces; Error == eperm ->
             open_1(Port, Options, true);
         Result ->
             Result
