@@ -34,8 +34,6 @@
 #include "ancillary.h"
 #include "procket.h"
 
-#define BACKLOG     5
-
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, int errnum);
 void alloc_free(ErlNifEnv *env, void *obj);
 
@@ -187,7 +185,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int l = -1;
     int s = -1;
-    int salen = 0;
+    ulong salen = 0;
     ErlNifBinary sa = {0};
     int flags = 0;
 
@@ -195,7 +193,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[0], &l))
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[1], &salen))
+    if (!enif_get_ulong(env, argv[1], &salen))
         return enif_make_badarg(env);
 
     if (!enif_alloc_binary(salen, &sa))
@@ -246,7 +244,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
     unsigned long len = 0;
-    int salen = 0;
+    ulong salen = 0;
     int flags = 0;
 
     ErlNifBinary buf = {0};
@@ -260,7 +258,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
     if (!enif_get_int(env, argv[2], &flags))
         return enif_make_badarg(env);
-    if (!enif_get_int(env, argv[3], &salen))
+    if (!enif_get_ulong(env, argv[3], &salen))
         return enif_make_badarg(env);
 
     if (!enif_alloc_binary(len, &buf))
@@ -754,7 +752,7 @@ static ErlNifFunc nif_funcs[] = {
     {"setsockopt", 4, nif_setsockopt},
 
     {"read", 2, nif_read},
-    {"write", 2, nif_write},
+    {"write_nif", 2, nif_write},
     {"writev", 2, nif_writev},
 
     {"alloc", 1, nif_alloc},

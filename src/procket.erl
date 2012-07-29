@@ -143,8 +143,14 @@ sendto(Socket, Buf, Flags) ->
 sendto(_,_,_,_) ->
     erlang:error(not_implemented).
 
-write(_,_) ->
+write(FD, Buf) when is_binary(Buf) ->
+    write_nif(FD, Buf);
+write(FD, Buf) when is_list(Buf) ->
+    writev(FD, Buf).
+
+write_nif(_,_) ->
     erlang:error(not_implemented).
+
 writev(_,_) ->
     erlang:error(not_implemented).
 

@@ -1,7 +1,7 @@
 
 procket is an Erlang library for socket creation and manipulation.
 
-procket uses a setuid helper so actions like binding low ports and
+procket can use a setuid helper so actions like binding low ports and
 requesting some sockets types can be done while Erlang is running as an
 unprivileged user.
 
@@ -26,7 +26,7 @@ Other features include:
 
 ## REQUIREMENTS
 
-procket may work with any version of Erlang after R14A but using
+procket should work with any version of Erlang after R14A but using
 the latest Erlang release is advisable.
 
 
@@ -45,17 +45,255 @@ the latest Erlang release is advisable.
 
 ## EXPORTS
 
-    open(Port, Options) -> {ok, FD} | {error, Reason} | {error, {Reason, Description}}
-    
+### DATA TYPES
+
+    protocol() = ip | icmp | tcp | udp | 'ipv6-icmp' | raw
+
+    type() = stream | dgram | raw
+
+    family() = unspec | inet | inet6 | netlink | packet
+
+
+### Accessing Socket/Devices Requiring Elevated Privileges
+
+    open(Port) -> {ok, FD} | {error, posix()}
+    open(Port, Options) -> {ok, FD} | {error, posix()}
+
         Types   Port = 0..65535
                 Options = [Opts]
-                Opts = {pipe, Path} | {protocol, Protocol} | {ip, IPAddress} |
-                        {progname, string()} | {interface, string()}
-                Protocol = tcp | udp
-                IPAddress = string() | tuple()
-                Reason = posix()
-                Description = string()
+                Opts = {protocol, Protocol} | {type, Type} | {family, Family}
+                    | {ip, IPAddress}
+                    | {dev, string()}
+                    | {progname, string()}
+                    | {interface, string()}
+                    | {pipe, string()}
+                Protocol = protocol() | integer()
+                Type = type() | integer()
+                Family = family() | integer()
+                IPAddress = inet:ip_address()
+                FD = integer()
 
+        Open a socket or device using the procket setuid helper. The
+        file descriptor is passed back over a Unix socket. open/2 will
+        fall back to running the setuid helper using sudo if the process
+        does not have the appropriate permissions.
+
+    dev(Dev) -> {ok, FD} | {error, posix()}
+
+        Types   Dev = string()
+
+        Wrapper around open/2. Opens a character device such as bpf,
+        tun or tap devices.
+
+
+### Unix Socket Interface
+
+    socket(Family, Type, Protocol) -> {ok, FD} | {error, posix()}
+
+        Types   Family = family() | integer()
+                Type = type() | integer()
+
+        See socket(2).
+
+    listen(Socket) -> ok | {error, posix()}
+    listen(Socket, Backlog) -> ok | {error, posix()}
+
+        Types   Socket = integer()
+                Backlog = integer()
+
+        See listen(2). listen/1 sets the backlog to 50.
+
+    connect(Socket, Sockaddr) -> ok | {error, posix()}
+
+        Types   Socket = integer()
+                Sockaddr = <<>> | binary()
+
+        See connect(2).
+
+        Sockaddr is a struct sockaddr whose layout is dependent on
+        platform. If Sockaddr is an empty binary, connect(2) will be
+        called with NULL as the second option.
+
+    accept(Socket) -> {ok, FD} | {error, posix()}
+    accept(Socket, Salen) -> {ok, FD, Sockaddr} | {error, posix()}
+
+        Types   Socket = integer()
+                Salen = 0 | non_neg_integer()
+                Sockaddr = binary()
+
+        See accept(2).
+
+        accept/1 returns the file descriptor associated with the new
+        connection.
+
+        accept/2 will allocate a struct sockaddr of size Salen bytes
+        that will hold the peer address. If the size is too small, the
+        returned binary will be zero padded to indicate the size required.
+
+    close(Socket) -> ok | {error, posix()}
+
+        Types   Socket = integer()
+
+        See close(2)
+
+    recv(Socket, Size) -> {ok, Buf} | {error, posix()}
+    recvfrom(Socket, Size) -> {ok, Buf} | {error, posix()}
+    recvfrom(Socket, Size, Flags, Salen) -> {ok, Buf, Sockaddr}
+
+        Types   Socket = integer()
+                Size = ulong()
+                Flags = integer()
+                Salen = 0 | ulong()
+                Buf = binary()
+                Sockaddr = binary()
+
+        See recv(2).
+
+    sendto(Socket, Buf) -> ok | {error, posix()}
+    sendto(Socket, Buf, Flags) -> ok | {error, posix()}
+    sendto(Socket, Buf, Flags, Sockaddr) -> ok | {error, posix()}
+
+        Types   Socket = integer()
+                Flags = integer()
+                Buf = binary()
+                Sockaddr = binary()
+
+        See sendto(2).
+
+    read(FD, Length) -> {ok, Buf} | {error, posix()}
+
+        Types   FD = integer()
+                Length = ulong()
+                Buf = binary()
+
+        See read(2).
+
+        The returned byte_size(Buf) is the actual number of bytes read.
+
+    write(FD, Buf) -> ok | {error, posix()}
+    writev(FD, Bufs) -> ok | {error, posix()}
+
+        Types   FD = integer()
+                Buf = Bufs | binary()
+                Bufs = [ binary() ]
+
+        See write(2) and writev(2).
+
+        If the second argument to write/2 is a list of binaries, writev/2
+        will be used.
+
+    bind(Socket, Sockaddr) -> ok | {error, posix()}
+
+        Types   Socket = integer()
+                Sockaddr = binary()
+
+        See bind(2).
+
+    setsockopt(Socket, Level, Optname, Optval) -> ok | {error, posix}
+
+        Types   Socket = integer()
+                Level = integer()
+                Optname = integer()
+                Optval = binary()
+
+        See setsockopt(2).
+
+    ioctl(FD, Request, Arg) -> {ok, Result} | {error, posix()}
+
+        Types   FD = integer()
+                Request = ulong()
+                Arg = binary() | integer()
+
+        See ioctl(2). Be careful with this function.
+
+        Request is an integer with the direction of the request encoded
+        into it (IN, OUT, IN/OUT). Result is a binary holding the result.
+        If the ioctl is IN only, the Result will be the same as Arg.
+
+        Arg is a structure dependent on the request.
+
+        See procket_ioctl.erl for some helper functions for dealing
+        with ioctl.
+
+        Caveats:
+            * Request is an integer on Linux and an unsigned long on OS X
+
+            * some ioctl requests require a structure with a pointer to
+              memory. Use alloc/1 to create these structures and buf/1 to
+              retrieve the data from them.
+
+            * some ioctl requests use an integer rather a pointer to
+              a structure. This means that it's possible to pass in an
+              arbitrary pointer as an integer as an argument to an ioctl
+              expecting a structure. Don't do this.
+
+    alloc(Struct) -> {ok, Arg, Resource} | {error, posix()}
+
+        Types   Struct = [ binary | {ptr, Length} | {ptr, binary()} ]
+                Arg = binary()
+                Length = ulong()
+                Resource = [resource()]
+
+        Create a structure containing pointers to memory that can be
+        passed as the third argument to ioctl/3.
+
+        The size of the allocated memory can be indicated either using
+        an integer or by passing in a binary of the appropriate size.
+        If an integer is used, the contents are zero'ed. If a binary is
+        used, the contents of the memory are copied from the binary.
+
+        Resource is a list of NIF resources (one for each piece of
+        allocated memory) requested in the struct. The memory will
+        automatically be freed by the resource.
+
+        It is up to the caller to ensure the structure has the proper
+        endianness and alignment for the platform.
+
+        For example, a struct bpf_program is used to set a filter on a
+        bpf character device:
+
+            struct bpf_program {
+                u_int bf_len;
+                struct bpf_insn *bf_insns;
+            };
+
+            struct bpf_insn {
+                u_short     code;
+                u_char      jt;
+                u_char      jf;
+                bpf_u_int32 k;
+            };
+
+        To allocate a binary in Erlang:
+
+            Insn = [
+                ?BPF_STMT(?BPF_LD+?BPF_H+?BPF_ABS, 12),                     % offset = Ethernet Type
+                ?BPF_JUMP(?BPF_JMP+?BPF_JEQ+?BPF_K, ?ETHERTYPE_IP, 0, 1),   % type = IP
+
+                ?BPF_STMT(?BPF_RET+?BPF_K, 16#FFFFFFFF),                    % return: entire packet
+                ?BPF_STMT(?BPF_RET+?BPF_K, 0)                               % return: drop packet
+            ],
+            {ok, Code, [Res]} = procket:alloc([
+                <<(length(Insn)):4/native-unsigned-integer-unit:8>>,
+                {ptr, list_to_binary(Insn)}
+            ]).
+
+        To use the ioctl and return the contents of the memory:
+
+            case procket:ioctl(Socket, ?BIOCSETF, Code) of
+                {ok, _} ->
+                    procket:buf(Res);
+                Error ->
+                    Error
+            end.
+
+    buf(Resource) -> {ok, Buf} | {error, enomem}
+
+        Types   Resource = resource()
+                Buf = binary()
+
+        Returns the contents of memory allocted using alloc/1. See the
+        example above.
 
 ## COMPILING
 
@@ -99,7 +337,7 @@ capabilities:
 
     $ erl -pa ebin
     Erlang R13B03 (erts-5.7.4) [source] [rq:1] [async-threads:0] [hipe] [kernel-poll:false]
-    
+
     Eshell V5.7.4  (abort with ^G)
     1> {ok, FD} = procket:open(53, [{protocol, udp},{type, dgram},{family, inet}]).
     {ok,9}
@@ -108,7 +346,7 @@ capabilities:
     3> receive M -> M end.
     {udp,#Port<0.929>,{127,0,0,1},47483,"hello\n"}
     4>
-    
+
     $ nc -u localhost 53
     hello
     ^C
