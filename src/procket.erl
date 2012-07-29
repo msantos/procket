@@ -30,6 +30,7 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(procket).
 -include("procket.hrl").
+-include_lib("kernel/include/file.hrl").
 
 -export([
         init/0,
@@ -61,6 +62,12 @@
         ntohl/1,
         ntohs/1
     ]).
+% for debugging
+-export([
+    get_progname/2,
+    make_cli_args/1,
+    progname/0
+    ]).
 
 -on_load(on_load/0).
 
@@ -72,7 +79,9 @@ on_load() ->
     erlang:load_nif(progname(), []).
 
 
-
+%%--------------------------------------------------------------------
+%%% NIF Stubs
+%%--------------------------------------------------------------------
 close(_) ->
     erlang:error(not_implemented).
 
@@ -149,55 +158,111 @@ errno_id(_) ->
     erlang:error(not_implemented).
 
 
+%%--------------------------------------------------------------------
+%%% Setuid helper
+%%--------------------------------------------------------------------
 dev(Dev) when is_list(Dev) ->
     open(0, [{dev, Dev}]).
 
 open(Port) ->
     open(Port, []).
 open(Port, Options) when is_integer(Port), is_list(Options) ->
-    Opt = case proplists:get_value(pipe, Options) of
+    Progname = get_progname(progname(), Options),
+    {Tmpdir, Pipe} = make_unix_socket_path(Options),
+    Cmd = make_cli_args([
+                {progname, Progname},
+                {port, Port},
+                {pipe, Pipe}
+                ] ++ Options),
+
+    Result = case fdopen(Pipe) of
+        {ok, FD} ->
+            Socket = exec(FD, Cmd),
+            close(FD),
+            Socket;
+        Error ->
+            Error
+    end,
+
+    cleanup_unix_socket(Tmpdir, Pipe),
+    Result.
+
+% Figure out how the procket helper should be called.
+get_progname(Progname, Options) ->
+    get_progname(progname, Progname, Options).
+
+% Caller has passed in a path?
+get_progname(progname, Default, Options) ->
+    case proplists:get_value(progname, Options) of
+        undefined ->
+            get_progname(setuid, Default, Options);
+        Progname ->
+            Progname
+    end;
+
+% Is the default executable setuid/setgid?
+get_progname(setuid, Progname, Options) ->
+    case file:read_file_info(Progname) of
+        {ok, #file_info{mode = Mode}} ->
+            if
+                % setuid
+                Mode band 16#800 =:= 16#800 ->
+                    Progname;
+                % setgid
+                Mode band 16#400 =:= 16#400 ->
+                    Progname;
+                true ->
+                    get_progname(dev, Progname, Options)
+            end
+    end;
+
+% Device requested and accessible?
+get_progname(dev, Progname, Options) ->
+    case proplists:get_value(dev, Options) of
+        undefined ->
+            get_progname(sudo, Progname, Options);
+        Dev ->
+            case file:read_file_info(Dev) of
+                {ok, #file_info{access = read_write}} ->
+                    Progname;
+                {ok, _} ->
+                    get_progname(sudo, Progname, Options);
+                Error ->
+                    Error
+            end
+    end;
+
+% Fall back to sudo
+get_progname(sudo, Progname, _Options) ->
+    "sudo " ++ Progname.
+
+% Run the setuid helper
+exec(FD, Cmd) ->
+    case os:cmd(Cmd) of
+        "0" ->
+            fdget(FD);
+        Error ->
+            {error, errno_id(list_to_integer(Error))}
+    end.
+
+% Unix socket handling: retrieves the fd from the setuid helper
+make_unix_socket_path(Options) ->
+    {Tmpdir, Socket} = case proplists:get_value(pipe, Options) of
         undefined ->
             Tmp = procket_mktmp:dirname(),
             ok = procket_mktmp:make_dir(Tmp),
             Path = Tmp ++ "/sock",
-            [{pipe, Path}, {tmpdir, Tmp}] ++ Options;
-        _ ->
-            [{tmpdir, false}] ++ Options
+            {Tmp, Path};
+        Path ->
+            {false, Path}
     end,
-    Result = open_1(Port, Opt),
-    case proplists:get_value(tmpdir, Options) of
-        false ->
-            ok;
-        Tmp2 ->
-            procket_mktmp:close(Tmp2)
-    end,
-    Result.
+    {Tmpdir, Socket}.
 
-open_1(Port, Options) ->
-    case open_1(Port, Options, false) of
-        {error, Error} when Error == eacces; Error == eperm ->
-            open_1(Port, Options, true);
-        Result ->
-            Result
-    end.
-
-open_1(Port, Options, UseSudo) ->
-    Pipe = proplists:get_value(pipe, Options),
-    {ok, Sockfd} = fdopen(Pipe),
-    Cmd = make_args(Port, Options, UseSudo),
-    case os:cmd(Cmd) of
-        "0" ->
-            FD = fdget(Sockfd),
-            cleanup(Sockfd, Pipe),
-            FD;
-        Error ->
-            cleanup(Sockfd, Pipe),
-            {error, errno_id(list_to_integer(Error))}
-    end.
-
-cleanup(Sockfd, Pipe) ->
-    close(Sockfd),
-    ok = file:delete(Pipe).
+cleanup_unix_socket(false, Pipe) ->
+    file:delete(Pipe);
+cleanup_unix_socket(Tmpdir, Pipe) ->
+    file:delete(Pipe),
+    procket_mktmp:close(Tmpdir).
 
 fdopen(Path) when is_list(Path) ->
     fdopen(list_to_binary(Path));
@@ -216,26 +281,18 @@ fdget(Socket) ->
     {ok, S} = accept(Socket),
     fdrecv(S).
 
-make_args(Port, Options, UseSudo) ->
-    Args = reorder_args(Port, Options),
-    Prefix = case UseSudo of
-        true ->
-            "sudo ";
-        false ->
-            ""
+% Construct the cli arguments for the helper
+make_cli_args(Options) ->
+    {[[{progname,Progname}|_],
+      IPaddrs], Rest} = proplists:split(Options, [progname, ip]),
+    IP = case IPaddrs of
+        [] -> [];
+        [Addr|_] -> Addr
     end,
-    proplists:get_value(progname, Options, Prefix ++ progname()) ++ " " ++
+    Args = Rest ++ [IP],
+    Progname ++ " " ++
     string:join([ get_switch(Arg) || Arg <- Args ], " ") ++
     " > /dev/null 2>&1; printf $?".
-
-reorder_args(Port, Options) ->
-    NewOpts = case proplists:lookup(ip, Options) of
-        none ->
-            Options;
-        IP ->
-            proplists:delete(ip, Options) ++ [IP]
-    end,
-    [{port, Port}] ++ NewOpts.
 
 get_switch({pipe, Arg}) ->
     "-u " ++ Arg;
@@ -309,8 +366,8 @@ progname_priv() ->
 progname() ->
     % Is there a proper way of getting App-Name in this context?
     case code:priv_dir( ?MODULE ) of
-        {error,bad_name} -> progname_ebin();
-        ________________ -> progname_priv()
+        {error, bad_name} -> progname_ebin();
+        _ -> progname_priv()
     end.
 
 %% Protocol family (aka domain)

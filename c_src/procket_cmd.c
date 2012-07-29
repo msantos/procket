@@ -455,7 +455,7 @@ usage(PROCKET_STATE *ps)
 {
     (void)fprintf(stderr, "%s, %s\n", __progname, PROCKET_VERSION);
     (void)fprintf(stderr,
-            "usage: %s <options> ipaddress>\n"
+            "usage: %s <options> <ipaddress>\n"
             "              -u <path>        path to Unix socket\n"
             "              -p <port>        port\n"
             "              -F <family>      family [default: PF_UNSPEC]\n"

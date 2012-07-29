@@ -64,9 +64,9 @@ Try running: make
 
 ## SETUID vs SUDO vs Capabilities
 
-The procket executable needs root privileges. Either allow your user to
-run procket using sudo or copy procket to somewhere owned by root and
-make it setuid.
+The procket helper executable needs root privileges. Either allow your
+user to run procket using sudo or copy procket to somewhere owned by
+root and make it setuid.
 
 * for sudo
 
@@ -79,10 +79,6 @@ make it setuid.
         sudo chown root:yourgroup /usr/local/bin/procket
         sudo chmod 750 /usr/local/bin/procket
         sudo chmod u+s /usr/local/bin/procket
-
-  Use procket:open/2 and pass in the progname option:
-
-        procket:open(22, [{progname, "/usr/local/bin/procket"}] ++ Opt).
 
 * use Linux capabilities: beam or the user running beam can be
 given whatever socket privileges are needed. For example, using file
