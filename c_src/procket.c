@@ -185,7 +185,7 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int l = -1;
     int s = -1;
-    ulong salen = 0;
+    unsigned long salen = 0;
     ErlNifBinary sa = {0};
     int flags = 0;
 
@@ -244,7 +244,7 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
     unsigned long len = 0;
-    ulong salen = 0;
+    unsigned long salen = 0;
     int flags = 0;
 
     ErlNifBinary buf = {0};
