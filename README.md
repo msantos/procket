@@ -134,7 +134,7 @@ the latest Erlang release is advisable.
 
         Types   Socket = integer()
 
-        See close(2)
+        See close(2).
 
     recv(Socket, Size) -> {ok, Buf} | {error, posix()}
     recvfrom(Socket, Size) -> {ok, Buf} | {error, posix()}
@@ -224,7 +224,7 @@ the latest Erlang release is advisable.
 
             * some ioctl requests use an integer rather a pointer to
               a structure. This means that it's possible to pass in an
-              arbitrary pointer as an integer as an argument to an ioctl
+              arbitrary pointer (an integer) as an argument to an ioctl
               expecting a structure. Don't do this.
 
     alloc(Struct) -> {ok, Arg, Resource} | {error, posix()}
@@ -237,10 +237,10 @@ the latest Erlang release is advisable.
         Create a structure containing pointers to memory that can be
         passed as the third argument to ioctl/3.
 
-        The size of the allocated memory can be indicated either using
-        an integer or by passing in a binary of the appropriate size.
+        The size of the allocated memory can be indicated by either
+        using an integer or passing in a binary of the appropriate size.
         If an integer is used, the contents are zero'ed. If a binary is
-        used, the contents of the memory are copied from the binary.
+        used, the memory is initialized to the contents of the binary.
 
         Resource is a list of NIF resources (one for each piece of
         allocated memory) requested in the struct. The memory will
