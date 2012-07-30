@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2011, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2012, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %% 
 %% Redistribution and use in source and binary forms, with or without
@@ -233,8 +233,8 @@ get_progname(dev, Progname, Options) ->
                     Progname;
                 {ok, _} ->
                     get_progname(sudo, Progname, Options);
-                Error ->
-                    Error
+                _Error ->
+                    get_progname(sudo, Progname, Options)
             end
     end;
 
