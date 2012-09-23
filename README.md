@@ -26,9 +26,7 @@ Other features include:
 
 ## REQUIREMENTS
 
-procket should work with any version of Erlang after R14A but using
-the latest Erlang release is advisable.
-
+procket works with any version of Erlang after R14A.
 
 ## CHANGES
 
@@ -36,11 +34,11 @@ the latest Erlang release is advisable.
 * IPv6 support
 
 ### V0.02:
-* procket:listen/1,2 has been renamed procket:open/1,2. procket:listen/2
-  is now a wrapper around listen(2)
+* procket:listen/1,2 was renamed procket:open/1,2. procket:listen/2 is
+  now a wrapper around listen(2)
 
 * procket:recvfrom/2 returns {error,eagain} when data is not available
-  (previously return nodata)
+  (previously returned nodata)
 
 
 ## EXPORTS
@@ -86,7 +84,7 @@ the latest Erlang release is advisable.
         tun or tap devices.
 
 
-### Unix Socket Interface
+### BSD Socket Interface
 
     socket(Family, Type, Protocol) -> {ok, FD} | {error, posix()}
 
@@ -313,10 +311,21 @@ root and make it setuid.
 
 * to make it setuid
 
+        # Default location
+        sudo chown root priv/procket
+        sudo chmod 4750 priv/procket
+
+  The procket setuid helper can also be placed in a system directory:
+
+        # System directory
         sudo cp priv/procket /usr/local/bin
         sudo chown root:yourgroup /usr/local/bin/procket
-        sudo chmod 750 /usr/local/bin/procket
-        sudo chmod u+s /usr/local/bin/procket
+        sudo chmod 4750 /usr/local/bin/procket
+
+  Then pass the progname argument to open/2:
+
+        {ok, FD} = procket:open(53, [{progname, "/usr/local/bin/procket"},
+                {protocol, udp},{type, dgram},{family, inet}]).
 
 * use Linux capabilities: beam or the user running beam can be
 given whatever socket privileges are needed. For example, using file
@@ -374,8 +383,10 @@ To build the examples:
     2> procket:recvfrom(S, 2048).
     {ok,<<0,21,175,89,8,38,0,3,82,3,39,36,8,0,69,0,0,52,242,
               0,0,0,52,6,188,81,209,...>>}
-    3> {ok, S1} = gen_udp:open(0, [binary, {fd, S}, {active, false}]).
-    4> gen_udp:recv(S1, 2048).
+    3> Port = erlang:open_port({fd, S, S}, [binary, stream]).
+    4> flush().
+    Shell got {#Port<0.1343>,
+              {data,<<224,105,149,59,163>>}}
 
 ### Bind to one or more interfaces
 

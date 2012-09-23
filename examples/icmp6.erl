@@ -63,7 +63,7 @@ ping(IP) ->
 ping(IP, N) ->
     crypto:start(),
     Id = crypto:rand_uniform(0, 16#FFFF),
-    {Family, Protocol, Addr} = 
+    {Family, Protocol, Addr} =
 	case (catch inet:getaddr(IP, inet6)) of
 	    {ok, V6Addr} ->
 		{inet6, 'ipv6-icmp', V6Addr};
@@ -83,16 +83,14 @@ ping(IP, N) ->
 
 loop(#state{n = N, seq = Seq}) when Seq >= N ->
     ok;
-loop(#state{s = S, id = Id, seq = Seq, ip = IP, 
+loop(#state{s = S, id = Id, seq = Seq, ip = IP,
 	    family = Family, protocol = Protocol, n = N} = State) ->
     Packet = make_packet(Id, Seq, Family),
     % io:format("S = ~p, IP = ~p, Family = ~p, Protocol = ~p~n", [S, IP, Family, Protocol]),
     ok = gen_udp:send(S, IP, 0, Packet),
-    case Family of
-	inet6 ->
-	    Skip = 0;
-	_inet ->
-	    Skip = 20
+    Skip = case Family of
+	inet6 -> 0;
+	_inet -> 20
     end,
     receive
 	{udp, S, _IP, _Port, <<_SD:Skip/bytes, Data/binary>>} ->
@@ -128,7 +126,7 @@ make_packet(Id, Seq, Family) ->
 		   ?ICMP_ECHO
 	   end,
 
-    CS = makesum(<<Type:8/integer-unsigned-big, 0:8, 0:16, 
+    CS = makesum(<<Type:8/integer-unsigned-big, 0:8, 0:16,
 		   Id:16, Seq:16, Mega:32, Sec:32, USec:32, Payload/binary>>),
     <<
       Type:8/integer-unsigned-big, % Type
@@ -150,7 +148,7 @@ compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
 
-%% icmp(<<?ICMPV6_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16, 
+%% icmp(<<?ICMPV6_ECHO_REPLY:8/integer-unsigned-big, 0:8, Checksum:16,
 %%      Id:16, Sequence:16, Payload/binary>>, 'ipv6-icmp') ->
 %%     {#icmp{
 %%             type = ?ICMPV6_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,

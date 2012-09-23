@@ -33,7 +33,7 @@
 -export([
         in/0, out/0, void/0,
         in/1, out/1, void/1,
-        ioc/4, 
+        ioc/4,
         io/2, ior/3,
         iow/3, iowr/3
     ]).
