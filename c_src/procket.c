@@ -740,24 +740,26 @@ static ErlNifFunc nif_funcs[] = {
     {"fdrecv", 1, nif_fdrecv},
 
     {"close", 1, nif_close},
+
     {"accept", 2, nif_accept},
     {"bind", 2, nif_bind},
     {"connect", 2, nif_connect},
-    {"listen", 2, nif_listen},
     {"getsockname", 2, nif_getsockname},
-    {"ioctl", 3, nif_ioctl},
-    {"socket_nif", 3, nif_socket},
-    {"recvfrom", 4, nif_recvfrom},
-    {"sendto", 4, nif_sendto},
-    {"setsockopt", 4, nif_setsockopt},
-
+    {"listen", 2, nif_listen},
     {"read", 2, nif_read},
     {"write_nif", 2, nif_write},
     {"writev", 2, nif_writev},
 
+    {"ioctl", 3, nif_ioctl},
+    {"socket_nif", 3, nif_socket},
+
+    {"recvfrom", 4, nif_recvfrom},
+    {"sendto", 4, nif_sendto},
+    {"setsockopt", 4, nif_setsockopt},
+
     {"alloc", 1, nif_alloc},
-    {"memcpy", 2, nif_memcpy},
     {"buf", 1, nif_buf},
+    {"memcpy", 2, nif_memcpy},
 
     {"errno_id", 1, nif_errno_id}
 };
