@@ -535,6 +535,48 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return atom_ok;
 }
 
+/* 0: int socket descriptor, 1: int level,
+ * 2: int optname, 3: void *optval
+ */
+    static ERL_NIF_TERM
+nif_getsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    int level = 0;
+    int optname = 0;
+    ErlNifBinary optval = {0};
+    socklen_t optlen = 0;
+
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &level))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[2], &optname))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[3], &optval))
+        return enif_make_badarg(env);
+
+    /* Make the binary mutable */
+    if (!enif_realloc_binary(&optval, optval.size))
+        return error_tuple(env, ENOMEM);
+
+    optlen = optval.size;
+
+    if (getsockopt(s, level, optname,
+                (optval.size == 0 ? NULL : optval.data), &optlen) < 0)
+        return error_tuple(env, errno);
+
+    PROCKET_REALLOC(optval, optlen);
+
+    return enif_make_tuple2(env,
+            atom_ok,
+            enif_make_binary(env, &optval));
+}
+
 
 // int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
     static ERL_NIF_TERM
@@ -745,6 +787,7 @@ static ErlNifFunc nif_funcs[] = {
     {"connect", 2, nif_connect},
     {"listen", 2, nif_listen},
     {"getsockname", 2, nif_getsockname},
+    {"getsockopt", 4, nif_getsockopt},
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
     {"recvfrom", 4, nif_recvfrom},

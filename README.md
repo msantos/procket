@@ -196,6 +196,21 @@ procket works with any version of Erlang after R14A.
 
         See setsockopt(2).
 
+    getsockopt(Socket, Level, Optname, Optval) -> {ok, Buf} | {error, posix}
+
+        Types   Socket = integer()
+                Level = integer()
+                Optname = integer()
+                Optval = binary()
+                Buf = binary()
+
+        See getsockopt(2). Similar to inet:getopts/2 but can be used
+        with file descriptors.
+
+        Retrieve a socket option for a file descriptor. Use an empty
+        binary to indicate no option value is supplied or will be
+        returned.
+
     ioctl(FD, Request, Arg) -> {ok, Result} | {error, posix()}
 
         Types   FD = integer()
