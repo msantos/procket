@@ -33,7 +33,6 @@
 -include_lib("kernel/include/file.hrl").
 
 -export([
-        init/0,
         open/1,open/2,
         dev/1,
         socket/3,
@@ -71,10 +70,6 @@
     ]).
 
 -on_load(on_load/0).
-
-
-init() ->
-    on_load().
 
 on_load() ->
     erlang:load_nif(progname(), []).
