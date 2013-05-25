@@ -609,6 +609,76 @@ nif_getsockname(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             enif_make_binary(env, &addr));
 }
 
+    static ERL_NIF_TERM
+nif_recvmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    ErlNifBinary msg = {0};
+    int flags = 0;
+
+    ssize_t n = 0;
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &msg))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[2], &flags))
+        return enif_make_badarg(env);
+
+    if (msg.size != sizeof(struct msghdr))
+        return enif_make_badarg(env);
+
+    /* Make the binary mutable */
+    if (!enif_realloc_binary(&msg, msg.size))
+        return error_tuple(env, ENOMEM);
+
+    n = recvmsg(s, (struct msghdr *)msg.data, flags);
+
+    if (n < 0)
+        return error_tuple(env, errno);
+
+    return enif_make_tuple2(env,
+            atom_ok,
+            enif_make_binary(env, &msg));
+}
+
+    static ERL_NIF_TERM
+nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    ErlNifBinary msg = {0};
+    int flags = 0;
+
+    ssize_t n = 0;
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_binary(env, argv[1], &msg))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[2], &flags))
+        return enif_make_badarg(env);
+
+    if (msg.size != sizeof(struct msghdr))
+        return enif_make_badarg(env);
+
+    /* Make the binary mutable */
+    if (!enif_realloc_binary(&msg, msg.size))
+        return error_tuple(env, ENOMEM);
+
+    n = sendmsg(s, (const struct msghdr *)msg.data, flags);
+
+    if (n < 0)
+        return error_tuple(env, errno);
+
+    return enif_make_tuple2(env,
+            atom_ok,
+            enif_make_binary(env, &msg));
+}
+
 
 /* Allocate structures for ioctl
  *
@@ -795,6 +865,8 @@ static ErlNifFunc nif_funcs[] = {
 
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
+    {"recvmsg", 3, nif_recvmsg},
+    {"sendmsg", 3, nif_sendmsg},
 
     {"recvfrom", 4, nif_recvfrom},
     {"sendto", 4, nif_sendto},
