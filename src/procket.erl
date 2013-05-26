@@ -128,11 +128,19 @@ socket_nif(_,_,_) ->
 
 ioctl(_,_,_) ->
     erlang:error(not_implemented).
-alloc(_) ->
-    erlang:error(not_implemented).
 buf(_) ->
     erlang:error(not_implemented).
 memcpy(_,_) ->
+    erlang:error(not_implemented).
+
+alloc(Struct) ->
+    case alloc_nif(Struct) of
+        {ok, Bin, Res} ->
+            {ok, Bin, lists:reverse(Res)};
+        N ->
+            N
+    end.
+alloc_nif(_) ->
     erlang:error(not_implemented).
 
 sendto(Socket, Buf) ->

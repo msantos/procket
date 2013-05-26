@@ -872,7 +872,7 @@ static ErlNifFunc nif_funcs[] = {
     {"sendto", 4, nif_sendto},
     {"setsockopt", 4, nif_setsockopt},
 
-    {"alloc", 1, nif_alloc},
+    {"alloc_nif", 1, nif_alloc},
     {"buf", 1, nif_buf},
     {"memcpy", 2, nif_memcpy},
 
