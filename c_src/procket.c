@@ -639,8 +639,9 @@ nif_recvmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (n < 0)
         return error_tuple(env, errno);
 
-    return enif_make_tuple2(env,
+    return enif_make_tuple3(env,
             atom_ok,
+            enif_make_ulong(env, n),
             enif_make_binary(env, &msg));
 }
 
@@ -674,8 +675,9 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (n < 0)
         return error_tuple(env, errno);
 
-    return enif_make_tuple2(env,
+    return enif_make_tuple3(env,
             atom_ok,
+            enif_make_ulong(env, n),
             enif_make_binary(env, &msg));
 }
 
