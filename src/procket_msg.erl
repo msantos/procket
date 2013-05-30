@@ -156,14 +156,18 @@ msghdr(#msghdr{name = Name, iov = Iov, control = Control, flags = Flags}) ->
             Alloc = [ Field || {Field, Value} <-
                 [{msg_name, Name}, {msg_iov, Vec}, {msg_control, Control}, {iov, Res}],
                 Value /= <<>>, Value /= [] ],
+            Pad0 = procket:wordalign(Size + 4),
+            Pad1 = procket:wordalign(Size + 4 + Pad0 + Size + Size + Size + Size + 4),
             Msg = [
                 ptr(Name, Size),
                 <<(byte_size(Name)):4/native-unsigned-integer-unit:8>>,
+                <<0:(Pad0 * 8)>>,
                 ptr(Vec, Size),
                 <<(length(Iov)):Size/native-unsigned-integer-unit:8>>,
                 ptr(Control, Size),
                 <<(byte_size(Control)):Size/native-unsigned-integer-unit:8>>,
-                <<Flags:4/native-unsigned-integer-unit:8>>
+                <<Flags:4/native-unsigned-integer-unit:8>>,
+                <<0:(Pad1 * 8)>>
             ],
             msghdr_1(Alloc, Msg, Res);
         Error ->
@@ -171,13 +175,18 @@ msghdr(#msghdr{name = Name, iov = Iov, control = Control, flags = Flags}) ->
     end;
 msghdr(Buf) when is_binary(Buf) ->
     Size = erlang:system_info({wordsize, external}),
+    Pad0 = procket:wordalign(Size + 4) * 8,
+    Pad1 = procket:wordalign(Size + 4 + procket:wordalign(Size + 4)
+        + Size + Size + Size + Size + 4) * 8,
     <<Name:Size/bytes,
       NameLen:4/native-unsigned-integer-unit:8,
+      _:Pad0,
       Iov:Size/bytes,
       IovLen:Size/native-unsigned-integer-unit:8,
       Control:Size/bytes,
       ControlLen:Size/native-unsigned-integer-unit:8,
-      Flags:4/native-unsigned-integer-unit:8>> = Buf,
+      Flags:4/native-unsigned-integer-unit:8,
+      _:Pad1>> = Buf,
 
     #msghdr{
         name = Name,
