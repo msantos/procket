@@ -72,22 +72,33 @@ loop(#state{s = S, id = Id, seq = Seq, ip = IP, n = N} = State) ->
     ok = gen_udp:send(S, IP, 0, Packet),
     receive
         {udp, S, _IP, _Port, <<_:20/bytes, Data/binary>>} ->
-            {ICMP, <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>} = icmp(Data),
-            error_logger:info_report([
-                    {type, ICMP#icmp.type},
-                    {code, ICMP#icmp.code},
-                    {checksum, ICMP#icmp.checksum},
-                    {id, ICMP#icmp.id},
-                    {sequence, ICMP#icmp.sequence},
-                    {payload, Payload},
-                    {time, timer:now_diff(erlang:now(), {Mega, Sec, Micro})}
-                ]),
-            sleep(N, Seq)
+            Seq1 = filter(Seq, icmp(Data)),
+            sleep(N, Seq1),
+            loop(State#state{seq = Seq1})
     after
         5000 ->
             error_logger:error_report([{noresponse, Packet}])
-    end,
-    loop(State#state{seq = Seq + 1}).
+    end.
+
+filter(Seq, {#icmp{
+        type = ?ICMP_ECHO_REPLY,
+        code = Code,
+        checksum = Checksum,
+        id = Id,
+        sequence = Sequence
+        }, <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>}) ->
+    error_logger:info_report([
+        {type, ?ICMP_ECHO_REPLY},
+        {code, Code},
+        {checksum, Checksum},
+        {id, Id},
+        {sequence, Sequence},
+        {payload, Payload},
+        {time, timer:now_diff(erlang:now(), {Mega, Sec, Micro})}
+    ]),
+    Seq + 1;
+filter(Seq, _) ->
+    Seq.
 
 make_packet(Id, Seq) ->
     {Mega,Sec,USec} = erlang:now(),
@@ -121,7 +132,12 @@ icmp(<<?ICMP_ECHO_REPLY:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>
     {#icmp{
             type = ?ICMP_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
             sequence = Sequence
+        }, Payload};
+icmp(<<?ICMP_ECHO:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
+    {#icmp{
+            type = ?ICMP_ECHO, code = 0, checksum = Checksum, id = Id,
+            sequence = Sequence
         }, Payload}.
 
-sleep(N,S) when N =:= S + 1 -> ok;
+sleep(N,N) -> ok;
 sleep(_,_) -> timer:sleep(1000).
