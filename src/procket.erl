@@ -227,7 +227,7 @@ get_progname(dev, Progname, Options) ->
         undefined ->
             get_progname(sudo, Progname, Options);
         Dev ->
-            case file:read_file_info(Dev) of
+            case file:read_file_info("/dev/" ++ Dev) of
                 {ok, #file_info{access = read_write}} ->
                     Progname;
                 {ok, _} ->
