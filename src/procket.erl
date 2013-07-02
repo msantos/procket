@@ -49,6 +49,9 @@
         getsockopt/4,
         getsockname/2,
 
+        recvmsg/3,
+        sendmsg/3,
+
         alloc/1,
         buf/1,
         memcpy/2,
@@ -125,11 +128,19 @@ socket_nif(_,_,_) ->
 
 ioctl(_,_,_) ->
     erlang:error(not_implemented).
-alloc(_) ->
-    erlang:error(not_implemented).
 buf(_) ->
     erlang:error(not_implemented).
 memcpy(_,_) ->
+    erlang:error(not_implemented).
+
+alloc(Struct) ->
+    case alloc_nif(Struct) of
+        {ok, Bin, Res} ->
+            {ok, Bin, lists:reverse(Res)};
+        N ->
+            N
+    end.
+alloc_nif(_) ->
     erlang:error(not_implemented).
 
 sendto(Socket, Buf) ->
@@ -148,6 +159,11 @@ write_nif(_,_) ->
     erlang:error(not_implemented).
 
 writev(_,_) ->
+    erlang:error(not_implemented).
+
+recvmsg(_,_,_) ->
+    erlang:error(not_implemented).
+sendmsg(_,_,_) ->
     erlang:error(not_implemented).
 
 setsockopt(_,_,_,_) ->
