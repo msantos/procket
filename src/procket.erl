@@ -448,6 +448,7 @@ protocol(ip) -> 0;
 protocol(icmp) -> 1;
 protocol(tcp) -> 6;
 protocol(udp) -> 17;
+protocol(ipv6) -> 41;
 protocol(icmp6) -> 58;
 protocol('ipv6-icmp') -> 58;
 protocol(raw) -> 255;
@@ -456,6 +457,7 @@ protocol(0) -> ip;
 protocol(1) -> icmp;
 protocol(6) -> tcp;
 protocol(17) -> udp;
+protocol(41) -> ipv6;
 protocol(58) -> 'ipv6-icmp';
 protocol(255) -> raw.
 

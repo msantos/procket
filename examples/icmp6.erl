@@ -57,6 +57,7 @@
 -define(ICMP_ECHO, 8).
 -define(ICMPV6_ECHO_REPLY, 129).
 -define(ICMPV6_ECHO, 128).
+-define(IPPROTO_IPV6, 41).
 
 ping(IP) ->
     ping(IP, 1).
@@ -71,6 +72,11 @@ ping(IP, N) ->
 		{inet, icmp, IP}
 	end,
     {ok, FD} = procket:open(0, [{protocol, Protocol}, {type, raw}, {family, Family}]),
+    % Set the hop limit to 255
+    ok = procket:setsockopt(FD, ?IPPROTO_IPV6,
+        ipv6_unicast_hops(), <<255:4/native-unsigned-integer-unit:8>>),
+    ok = procket:setsockopt(FD, ?IPPROTO_IPV6,
+        ipv6_multicast_hops(), <<255:4/native-unsigned-integer-unit:8>>),
     {ok, S} = gen_udp:open(0, [binary, {fd, FD}, Family]),
     loop(#state{
             s = S,
@@ -168,3 +174,9 @@ icmp(<<Type:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
 
 sleep(N,S) when N =:= S + 1 -> ok;
 sleep(_,_) -> timer:sleep(1000).
+
+ipv6_unicast_hops() ->
+    proplists:get_value(os:type(), [{{unix,linux}, 16}], 4).
+
+ipv6_multicast_hops() ->
+    proplists:get_value(os:type(), [{{unix,linux}, 18}], 10).
