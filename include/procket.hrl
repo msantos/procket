@@ -30,7 +30,7 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 
 -define(UNIX_PATH_MAX, 108).
--define(BACKLOG, 50).
+-define(BACKLOG, 128).
 
 -define(IFNAMSIZ, 16).      % Max length of an interface device name including NULL
 
