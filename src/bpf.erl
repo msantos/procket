@@ -367,16 +367,16 @@ ioc(Inout, Group, Num, Len) ->
     procket_ioctl:ioc(Inout, Group, Num, Len).
 
 io(G,N) ->
-    ioc(procket_ioctl:void(bsd), G, N, 0).
+    procket_ioctl:io(G,N).
 
 iow(G,N,T) ->
-    ioc(procket_ioctl:in(bsd), G, N, T).
+    procket_ioctl:iow(G,N,T).
 
 ior(G,N,T) ->
-    ioc(procket_ioctl:out(bsd), G, N, T).
+    procket_ioctl:ior(G,N,T).
 
 iowr(G,N,T) ->
-    ioc(procket_ioctl:inout(bsd), G, N, T).
+    procket_ioctl:iowr(G,N,T).
 
 sizeof(timeval) ->
     erlang:system_info({wordsize, external}) + ?SIZEOF_U_INT;
