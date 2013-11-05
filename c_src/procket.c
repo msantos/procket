@@ -92,6 +92,18 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     return (0);
 }
 
+/* Stubs for reload and upgrade */
+    static int
+reload(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM info)
+{
+    return 0;
+}
+
+    static int
+upgrade(ErlNifEnv* env, void** priv_data, void** old_data, ERL_NIF_TERM info)
+{
+  return 0;
+}
 
 /* Retrieve the file descriptor from the forked privileged process */
 /* 0: connected Unix socket */
@@ -881,4 +893,4 @@ static ErlNifFunc nif_funcs[] = {
     {"errno_id", 1, nif_errno_id}
 };
 
-ERL_NIF_INIT(procket, nif_funcs, load, NULL, NULL, NULL)
+ERL_NIF_INIT(procket, nif_funcs, load, reload, upgrade, NULL)
