@@ -82,10 +82,10 @@ on_load() ->
 %%% NIF Stubs
 %%--------------------------------------------------------------------
 close(_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 fdrecv(_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 accept(Socket) ->
     case accept(Socket, 0) of
@@ -93,18 +93,18 @@ accept(Socket) ->
         Error -> Error
     end.
 accept(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 bind(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 connect(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 listen(Socket) when is_integer(Socket) ->
     listen(Socket, ?BACKLOG).
 listen(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 recv(Socket,Size) ->
     recvfrom(Socket,Size).
@@ -114,24 +114,24 @@ recvfrom(Socket,Size) ->
         Error -> Error
     end.
 recvfrom(_,_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 read(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 socket(Family, Type, Protocol) ->
     socket_nif(maybe_atom(family, Family),
         maybe_atom(type, Type),
         maybe_atom(protocol, Protocol)).
 socket_nif(_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 ioctl(_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 buf(_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 memcpy(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 alloc(Struct) ->
     case alloc_nif(Struct) of
@@ -141,14 +141,14 @@ alloc(Struct) ->
             N
     end.
 alloc_nif(_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 sendto(Socket, Buf) ->
     sendto(Socket, Buf, 0, <<>>).
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
 sendto(_,_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 write(FD, Buf) when is_binary(Buf) ->
     write_nif(FD, Buf);
@@ -156,27 +156,27 @@ write(FD, Buf) when is_list(Buf) ->
     writev(FD, Buf).
 
 write_nif(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 writev(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 recvmsg(_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 sendmsg(_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 setsockopt(_,_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 getsockopt(_,_,_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 getsockname(_,_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 errno_id(_) ->
-    erlang:error(not_implemented).
+    erlang:nif_error(not_implemented).
 
 
 %%--------------------------------------------------------------------
