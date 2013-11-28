@@ -282,15 +282,10 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if ( (bufsz = recvfrom(sockfd, buf.data, buf.size, flags,
         (sa.size == 0 ? NULL : (struct sockaddr *)sa.data),
         (socklen_t *)&salen)) == -1) {
+        int err = errno;
         enif_release_binary(&buf);
         enif_release_binary(&sa);
-        switch (errno) {
-            case EAGAIN:
-            case EINTR:
-                return enif_make_tuple2(env, atom_error, atom_eagain);
-            default:
-                return error_tuple(env, errno);
-        }
+        return error_tuple(env, err);
     }
 
     PROCKET_REALLOC(buf, bufsz);
@@ -354,13 +349,7 @@ nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if ( (bufsz = read(fd, buf.data, buf.size)) == -1) {
         int err = errno;
         enif_release_binary(&buf);
-        switch (err) {
-            case EAGAIN:
-            case EINTR:
-                return enif_make_tuple2(env, atom_error, atom_eagain);
-            default:
-                return error_tuple(env, err);
-        }
+        return error_tuple(env, err);
     }
 
     PROCKET_REALLOC(buf, bufsz);
