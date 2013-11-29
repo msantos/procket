@@ -100,9 +100,14 @@ reload(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM info)
 }
 
     static int
-upgrade(ErlNifEnv* env, void** priv_data, void** old_data, ERL_NIF_TERM info)
+upgrade(ErlNifEnv* env, void** priv_data, void** old_priv_data, ERL_NIF_TERM info)
 {
   return 0;
+}
+
+    void
+unload(ErlNifEnv* env, void* priv_data)
+{
 }
 
 /* Retrieve the file descriptor from the forked privileged process */
