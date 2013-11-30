@@ -33,7 +33,7 @@
 #include "ancillary.h"
 
 
-#define BACKLOG     50  /* default backlog for TCP connections */
+#define BACKLOG     128  /* default backlog for TCP connections */
 
 int procket_open_fd(PROCKET_STATE *ps);
 int procket_check_devname(char *dev, size_t len);
