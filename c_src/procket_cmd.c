@@ -456,6 +456,7 @@ usage(PROCKET_STATE *ps)
     (void)fprintf(stderr, "%s, %s\n", __progname, PROCKET_VERSION);
     (void)fprintf(stderr,
             "usage: %s <options> <ipaddress>\n"
+            "              -b <backlog>     listen socket backlog [default:%d]\n"
             "              -u <path>        path to Unix socket\n"
             "              -p <port>        port\n"
             "              -F <family>      family [default: PF_UNSPEC]\n"
@@ -466,7 +467,7 @@ usage(PROCKET_STATE *ps)
 #endif
             "              -d <name>        open device\n"
             "              -v               verbose mode\n",
-            __progname
+            __progname, BACKLOG
             );
 
     exit(-1);

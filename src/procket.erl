@@ -315,6 +315,9 @@ make_cli_args(Options) ->
     string:join([ get_switch(Arg) || Arg <- Args ], " ") ++
     " > /dev/null 2>&1; printf $?".
 
+get_switch({backlog, Arg}) ->
+    "-b " ++ Arg;
+
 get_switch({pipe, Arg}) ->
     "-u " ++ Arg;
 
