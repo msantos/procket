@@ -68,7 +68,7 @@
 % for debugging
 -export([
     get_progname/2,
-    make_cli_args/1,
+    getopts/1,
     progname/0
     ]).
 
@@ -190,7 +190,7 @@ open(Port) ->
 open(Port, Options) when is_integer(Port), is_list(Options) ->
     Progname = get_progname(progname(), Options),
     {Tmpdir, Pipe} = make_unix_socket_path(Options),
-    Cmd = make_cli_args([
+    Cmd = getopts([
                 {progname, Progname},
                 {port, Port},
                 {pipe, Pipe}
@@ -303,7 +303,7 @@ fdget(Socket) ->
     fdrecv(S).
 
 % Construct the cli arguments for the helper
-make_cli_args(Options) ->
+getopts(Options) ->
     {[[{progname,Progname}|_],
       IPaddrs], Rest} = proplists:split(Options, [progname, ip]),
     IP = case IPaddrs of
@@ -312,55 +312,58 @@ make_cli_args(Options) ->
     end,
     Args = Rest ++ [IP],
     Progname ++ " " ++
-    string:join([ get_switch(Arg) || Arg <- Args ], " ") ++
+    string:join([ optarg(Arg) || Arg <- Args ], " ") ++
     " > /dev/null 2>&1; printf $?".
 
-get_switch({backlog, Arg}) ->
-    "-b " ++ Arg;
+optarg({backlog, Arg}) ->
+    switch("-b", Arg);
 
-get_switch({pipe, Arg}) ->
-    "-u " ++ Arg;
+optarg({pipe, Arg}) ->
+    switch("-u", Arg);
 
-get_switch({protocol, Proto}) when is_atom(Proto) ->
-    get_switch({protocol, protocol(Proto)});
-get_switch({protocol, Proto}) when is_integer(Proto) ->
-    "-P " ++ integer_to_list(Proto);
+optarg({protocol, Proto}) when is_atom(Proto) ->
+    optarg({protocol, protocol(Proto)});
+optarg({protocol, Proto}) when is_integer(Proto) ->
+    switch("-P", Proto);
 
-get_switch({type, Type}) when is_atom(Type) ->
-    get_switch({type, type(Type)});
-get_switch({type, Type}) when is_integer(Type) ->
-    "-T " ++ integer_to_list(Type);
+optarg({type, Type}) when is_atom(Type) ->
+    optarg({type, type(Type)});
+optarg({type, Type}) when is_integer(Type) ->
+    switch("-T", Type);
 
-get_switch({family, Family}) when is_atom(Family) ->
-    get_switch({family, family(Family)});
-get_switch({family, Family}) when is_integer(Family) ->
-    "-F " ++ integer_to_list(Family);
+optarg({family, Family}) when is_atom(Family) ->
+    optarg({family, family(Family)});
+optarg({family, Family}) when is_integer(Family) ->
+    switch("-F", Family);
 
-get_switch({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
-get_switch({ip, Arg}) when is_list(Arg) -> Arg;
+optarg({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
+optarg({ip, Arg}) when is_list(Arg) -> Arg;
 
-get_switch({port, Port}) when is_integer(Port) ->
-    "-p " ++ integer_to_list(Port);
+optarg({port, Port}) when is_integer(Port) ->
+    switch("-p", Port);
 
-get_switch({interface, Name}) when is_list(Name) ->
+optarg({interface, Name}) when is_list(Name) ->
     case is_interface(Name) of
         true ->
-            "-I " ++ Name;
+            switch("-I", Name);
         false ->
             throw({bad_interface, Name})
     end;
 
-get_switch({dev, Dev}) when is_list(Dev) ->
+optarg({dev, Dev}) when is_list(Dev) ->
     case is_device(Dev) of
         true ->
-            "-d " ++ Dev;
+            switch("-d", Dev);
         false ->
             throw({bad_device, Dev})
     end;
 
 % Ignore any other arguments
-get_switch(_Arg) ->
+optarg(_Arg) ->
     "".
+
+switch(Switch, Arg) ->
+    lists:concat([Switch, " ", Arg]).
 
 is_interface(Name) when is_list(Name) ->
     % An interface name is expected to consist of a reasonable
