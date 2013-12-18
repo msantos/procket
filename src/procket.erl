@@ -196,17 +196,12 @@ open(Port, Options) when is_integer(Port), is_list(Options) ->
                 {pipe, Pipe}
                 ] ++ Options),
 
-    Result = case fdopen(Pipe) of
-        {ok, FD} ->
-            Socket = exec(FD, Cmd),
-            close(FD),
-            Socket;
-        Error ->
-            Error
-    end,
+    {ok, FD} = fdopen(Pipe),
+    Socket = exec(FD, Cmd),
+    close(FD),
 
     cleanup_unix_socket(Tmpdir, Pipe),
-    Result.
+    Socket.
 
 % Figure out how the procket helper should be called.
 get_progname(Progname, Options) ->
