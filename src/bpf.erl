@@ -353,28 +353,37 @@ offset(?BPF_B) -> byte.
 %%% Internal functions
 %%-------------------------------------------------------------------------
 %% BSD ioctl request calculation (taken from ioccom.h)
+define(gseesent) ->
+    proplists:get_value(os:type(), [
+        {{unix,netbsd}, 120}
+    ], 118);
+define(sseesent) ->
+    proplists:get_value(os:type(), [
+        {{unix,netbsd}, 121}
+    ], 119).
+
 ioc(Inout, Group, Name, Len) when is_atom(Name) ->
-    List = case os:type() of
-        {_, netbsd} ->
-            [{gseesent, 120},
-             {sseesent, 121}];
-        _ -> % OSX
-            [{gseesent, 118},
-             {sseesent, 119}]
-    end,
-    ioc(Inout, Group, proplists:get_value(Name, List), Len);
+    ioc(Inout, Group, define(Name), Len);
 ioc(Inout, Group, Num, Len) ->
     procket_ioctl:ioc(Inout, Group, Num, Len).
 
+io(G,N) when is_atom(N) ->
+    io(G,define(N));
 io(G,N) ->
     procket_ioctl:io(G,N).
 
+iow(G,N,T) when is_atom(N) ->
+    iow(G,define(N),T);
 iow(G,N,T) ->
     procket_ioctl:iow(G,N,T).
 
+ior(G,N,T) when is_atom(N) ->
+    ior(G,define(N),T);
 ior(G,N,T) ->
     procket_ioctl:ior(G,N,T).
 
+iowr(G,N,T) when is_atom(N) ->
+    iowr(G,define(N),T);
 iowr(G,N,T) ->
     procket_ioctl:iowr(G,N,T).
 
