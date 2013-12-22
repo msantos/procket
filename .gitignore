@@ -1,2 +1,6 @@
 *.[oa]
 *.beam
+.depsolver_plt
+deps/
+ebin/
+priv/
