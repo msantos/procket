@@ -311,36 +311,36 @@ getopts(Options) ->
     " > /dev/null 2>&1; printf $?".
 
 optarg({backlog, Arg}) ->
-    switch("-b", Arg);
+    switch("b", Arg);
 
 optarg({pipe, Arg}) ->
-    switch("-u", Arg);
+    switch("u", Arg);
 
 optarg({protocol, Proto}) when is_atom(Proto) ->
     optarg({protocol, protocol(Proto)});
 optarg({protocol, Proto}) when is_integer(Proto) ->
-    switch("-P", Proto);
+    switch("P", Proto);
 
 optarg({type, Type}) when is_atom(Type) ->
     optarg({type, type(Type)});
 optarg({type, Type}) when is_integer(Type) ->
-    switch("-T", Type);
+    switch("T", Type);
 
 optarg({family, Family}) when is_atom(Family) ->
     optarg({family, family(Family)});
 optarg({family, Family}) when is_integer(Family) ->
-    switch("-F", Family);
+    switch("F", Family);
 
 optarg({ip, Arg}) when is_tuple(Arg) -> inet_parse:ntoa(Arg);
 optarg({ip, Arg}) when is_list(Arg) -> Arg;
 
 optarg({port, Port}) when is_integer(Port) ->
-    switch("-p", Port);
+    switch("p", Port);
 
 optarg({interface, Name}) when is_list(Name) ->
     case is_interface(Name) of
         true ->
-            switch("-I", Name);
+            switch("I", Name);
         false ->
             throw({bad_interface, Name})
     end;
@@ -348,7 +348,7 @@ optarg({interface, Name}) when is_list(Name) ->
 optarg({dev, Dev}) when is_list(Dev) ->
     case is_device(Dev) of
         true ->
-            switch("-d", Dev);
+            switch("d", Dev);
         false ->
             throw({bad_device, Dev})
     end;
@@ -358,7 +358,7 @@ optarg(_Arg) ->
     "".
 
 switch(Switch, Arg) ->
-    lists:concat([Switch, " ", Arg]).
+    lists:concat(["-", Switch, " ", Arg]).
 
 is_interface(Name) when is_list(Name) ->
     % An interface name is expected to consist of a reasonable
