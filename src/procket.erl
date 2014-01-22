@@ -342,7 +342,7 @@ optarg({interface, Name}) when is_list(Name) ->
         true ->
             switch("I", Name);
         false ->
-            erlang:error({bad_interface, Name})
+            erlang:error({badarg, Name})
     end;
 
 optarg({dev, Dev}) when is_list(Dev) ->
@@ -350,7 +350,7 @@ optarg({dev, Dev}) when is_list(Dev) ->
         true ->
             switch("d", Dev);
         false ->
-            erlang:error({bad_device, Dev})
+            erlang:error({badarg, Dev})
     end;
 
 % Ignore any other arguments
