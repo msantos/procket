@@ -324,6 +324,12 @@ root and make it setuid.
         sudo visudo
         youruser ALL=NOPASSWD: /path/to/procket/priv/procket
 
+        # if sudoers has enabled "Default requiretty", you will need to set
+        # one of these options too:
+
+        Defaults!/path/to/procket/priv/procket !requiretty
+        Defaults:youruser !requiretty
+
 * to make it setuid
 
         # Default location
