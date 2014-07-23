@@ -1,5 +1,3 @@
-
-CC=gcc
 CMD_DIR= $(dir$(lastword $(MAKEFILE_LIST)))../priv
 CMD_PATH= $(CMD_DIR)/procket
 
