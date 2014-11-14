@@ -57,7 +57,6 @@ name(Template) ->
     template(Template, ?ALPHANUM).
 
 template(Name, Chars) ->
-    crypto:start(),
     template(lists:reverse(Name), [], Chars).
 template([$X|Rest], Acc, Chars) ->
     template(Rest,
