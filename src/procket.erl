@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2013, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2014, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,6 @@
     ]).
 % for debugging
 -export([
-    get_progname/2,
     getopts/1,
     progname/0
     ]).
@@ -188,77 +187,44 @@ dev(Dev) when is_list(Dev) ->
 open(Port) ->
     open(Port, []).
 open(Port, Options) when is_integer(Port), is_list(Options) ->
-    Progname = get_progname(progname(), Options),
     {Tmpdir, Pipe} = make_unix_socket_path(Options),
+    {ok, FD} = fdopen(Pipe),
+
     Cmd = getopts([
-                {progname, Progname},
                 {port, Port},
                 {pipe, Pipe}
                 ] ++ Options),
 
-    {ok, FD} = fdopen(Pipe),
     Socket = exec(FD, Cmd),
     close(FD),
 
     cleanup_unix_socket(Tmpdir, Pipe),
     Socket.
 
-% Figure out how the procket helper should be called.
-get_progname(Progname, Options) ->
-    get_progname(progname, Progname, Options).
-
-% Caller has passed in a path?
-get_progname(progname, Default, Options) ->
-    case proplists:get_value(progname, Options) of
-        undefined ->
-            get_progname(setuid, Default, Options);
-        Progname ->
-            Progname
-    end;
-
-% Is the default executable setuid/setgid?
-get_progname(setuid, Progname, Options) ->
-    case file:read_file_info(Progname) of
-        {ok, #file_info{mode = Mode}} ->
-            if
-                % setuid
-                Mode band 16#800 =:= 16#800 ->
-                    Progname;
-                % setgid
-                Mode band 16#400 =:= 16#400 ->
-                    Progname;
-                true ->
-                    get_progname(dev, Progname, Options)
-            end
-    end;
-
-% Device requested and accessible?
-get_progname(dev, Progname, Options) ->
-    case proplists:get_value(dev, Options) of
-        undefined ->
-            get_progname(sudo, Progname, Options);
-        Dev ->
-            case file:read_file_info("/dev/" ++ Dev) of
-                {ok, #file_info{access = read_write}} ->
-                    Progname;
-                {ok, _} ->
-                    get_progname(sudo, Progname, Options);
-                _Error ->
-                    get_progname(sudo, Progname, Options)
-            end
-    end;
-
-% Fall back to sudo
-get_progname(sudo, Progname, _Options) ->
-    "sudo " ++ Progname.
-
 % Run the setuid helper
 exec(FD, Cmd) ->
-    case os:cmd(Cmd) of
-        "0" ->
+    exec(FD, Cmd, {error,enoent}).
+
+exec(_FD, [], Errno) ->
+    Errno;
+exec(FD, [Cmd|Rest], _LastErrno) ->
+    Proc = open_port({spawn, Cmd}, [exit_status]),
+    ExitValue = receive
+        {Proc, {exit_status, 0}} ->
+            ok;
+        {Proc, {exit_status, 127}} ->
+            {error,enoent};
+        {Proc, {exit_status, Status}} ->
+            {error, errno_id(Status)}
+    end,
+
+    case ExitValue of
+        ok ->
             fdget(FD);
-        Error ->
-            {error, errno_id(list_to_integer(Error))}
+        {error,N} = Errno when N =:= eacces; N =:= enoent; N =:= eperm ->
+            exec(FD, Rest, Errno);
+        Errno ->
+            Errno
     end.
 
 % Unix socket handling: retrieves the fd from the setuid helper
@@ -299,16 +265,16 @@ fdget(Socket) ->
 
 % Construct the cli arguments for the helper
 getopts(Options) ->
-    {[[{progname,Progname}|_],
-      IPaddrs], Rest} = proplists:split(Options, [progname, ip]),
-    IP = case IPaddrs of
-        [] -> [];
-        [Addr|_] -> Addr
-    end,
-    Args = Rest ++ [IP],
-    Progname ++ " " ++
-    string:join([ optarg(Arg) || Arg <- Args ], " ") ++
-    " > /dev/null 2>&1; printf $?".
+    Exec = proplists:get_value(exec, Options, ["", "sudo"]),
+    Progname = proplists:get_value(progname, Options, progname()),
+
+    Args = join([ optarg(Arg) || Arg <- Options ]),
+    Redirect = "> /dev/null 2>&1",
+
+    [ join([E, Progname, Args, Redirect]) || E <- Exec ].
+
+join(StringList) ->
+    string:join([ N || N <- StringList, N =/= ""], " ").
 
 optarg({backlog, Arg}) ->
     switch("b", Arg);

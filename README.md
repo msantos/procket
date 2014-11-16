@@ -62,6 +62,7 @@ procket works with any version of Erlang after R14A.
                 Opts = {protocol, Protocol} | {type, Type} | {family, Family}
                     | {ip, IPAddress}
                     | {dev, string()}
+                    | {exec, [string()]}
                     | {progname, string()}
                     | {interface, string()}
                     | {pipe, string()}
@@ -72,9 +73,15 @@ procket works with any version of Erlang after R14A.
                 FD = integer()
 
         Open a socket or device using the procket setuid helper. The
-        file descriptor is passed back over a Unix socket. open/2 will
-        fall back to running the setuid helper using sudo if the process
-        does not have the appropriate permissions.
+        file descriptor is passed back over a Unix socket.
+
+        The default behaviour of open/1,2 is to attempt to open the
+        socket twice: first by running the procket setuid helper and, if this
+        fails because the process does not have the appropriate permissions,
+        running the setuid helper again using "sudo". The default behaviour
+        can be changed by using the 'exec' option:
+
+            procket:open(Port, [{exec, ["", "sudo"]}]).
 
     dev(Dev) -> {ok, FD} | {error, posix()}
 
