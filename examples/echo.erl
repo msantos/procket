@@ -47,13 +47,13 @@ start(Port, Options) ->
     Family = proplists:get_value(family, Options, inet),
     {ok, Fd} = procket:open(Port, Options),
     io:format("Listening on: ~p/~p~n", [Port, Protocol]),
-    listen(Protocol, Family, Fd, Port).
+    listen(Protocol, Family, Fd).
 
-listen(tcp, Family, Fd, Port) ->
-    {ok, S} = gen_tcp:listen(Port, [binary, Family, {fd, Fd}]),
+listen(tcp, Family, Fd) ->
+    {ok, S} = gen_tcp:listen(0, [binary, Family, {fd, Fd}]),
     accept(S);
-listen(udp, Family, Fd, Port) ->
-    {ok, S} = gen_udp:open(Port, [binary, Family, {fd, Fd}]),
+listen(udp, Family, Fd) ->
+    {ok, S} = gen_udp:open(0, [binary, Family, {fd, Fd}]),
     recv(S).
 
 accept(LS) ->
