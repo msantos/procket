@@ -241,9 +241,9 @@ make_unix_socket_path(Options) ->
     {Tmpdir, Socket}.
 
 cleanup_unix_socket(false, Pipe) ->
-    file:delete(Pipe);
+    prim_file:delete(Pipe);
 cleanup_unix_socket(Tmpdir, Pipe) ->
-    file:delete(Pipe),
+    prim_file:delete(Pipe),
     procket_mktmp:close(Tmpdir).
 
 fdopen(Path) when is_list(Path) ->

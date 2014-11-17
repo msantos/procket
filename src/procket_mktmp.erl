@@ -66,12 +66,12 @@ template(Name, Rand, _) when length(Rand) >= 6 ->
     lists:reverse(Name) ++ Rand.
 
 make_dir(Path) ->
-    case file:make_dir(Path) of
+    case prim_file:make_dir(Path) of
         ok ->
-            file:write_file_info(Path, #file_info{mode = ?S_IRWXU});
+            prim_file:write_file_info(Path, #file_info{mode = ?S_IRWXU});
         Error ->
             Error
     end.
 
 close(Path) ->
-    file:del_dir(Path).
+    prim_file:del_dir(Path).
