@@ -154,6 +154,22 @@ procket works with any version of Erlang after R14A.
 
         See recv(2).
 
+    recvmsg(Socket, Size, CtrlDataSize, Flags) -> {ok, Buf, Sockaddr, CtrlData, Flags} |
+                                                  {error, posix()}
+
+        Types   Socket = integer()
+                Size = ulong()
+                CtrlDataSize = ulong()
+                Flags = integer()
+                Buf = binary()
+                Sockaddr = binary()
+                CtrlData = [{integer(), integer(), binary()}]
+
+        See recvmsg(2) and cmsg(3).
+
+        The control data, if any, is returned as a list of 3-tuples consisting of the cmsg
+        level, type and data fields.
+
     sendto(Socket, Buf) -> ok | {error, posix()}
     sendto(Socket, Buf, Flags) -> ok | {error, posix()}
     sendto(Socket, Buf, Flags, Sockaddr) -> ok | {error, posix()}
@@ -164,6 +180,21 @@ procket works with any version of Erlang after R14A.
                 Sockaddr = binary()
 
         See sendto(2).
+
+    sendmsg(Socket, Buf, Flags, Sockaddr, CtrlData) -> ok | {error, posix()}
+
+        Types   Socket = integer()
+                Size = ulong()
+                CtrlDataSize = ulong()
+                Flags = integer()
+                Buf = binary()
+                Sockaddr = binary()
+                CtrlData = [{integer(), integer(), binary()}]
+
+        See sendmsg(2) and cmsg(3).
+
+        The control data, if any, is sent as a list of 3-tuples consisting of the cmsg
+        level, type and data fields.
 
     read(FD, Length) -> {ok, Buf} | {error, posix()}
 

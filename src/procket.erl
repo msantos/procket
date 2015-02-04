@@ -49,8 +49,8 @@
         getsockopt/4,
         getsockname/2,
 
-        recvmsg/3,
-        sendmsg/3,
+        recvmsg/4,
+        sendmsg/5,
 
         alloc/1,
         buf/1,
@@ -160,9 +160,9 @@ write_nif(_,_) ->
 writev(_,_) ->
     erlang:nif_error(not_implemented).
 
-recvmsg(_,_,_) ->
+recvmsg(_,_,_,_) ->
     erlang:nif_error(not_implemented).
-sendmsg(_,_,_) ->
+sendmsg(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
 
 setsockopt(_,_,_,_) ->
