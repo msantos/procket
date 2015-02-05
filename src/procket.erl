@@ -52,6 +52,8 @@
         recvmsg/4,
         sendmsg/5,
 
+        family/1,
+
         alloc/1,
         buf/1,
         memcpy/2,
@@ -365,7 +367,9 @@ family(inet6) ->
     case os:type() of
         {unix, linux} -> 10;
         {unix, darwin} -> 30;
-        {unix, freebsd} -> 28
+        {unix, freebsd} -> 28;
+        {unix, netbsd} -> 24;
+        {unix, openbsd} -> 24
     end;
 family(netlink) -> 16;
 family(packet) -> 17;

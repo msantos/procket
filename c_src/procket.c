@@ -656,6 +656,7 @@ nif_recvmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_alloc_binary(sizeof(struct sockaddr_storage), &src_addr))
         return error_tuple(env, ENOMEM);
 
+    memset(src_addr.data, 0, sizeof(struct sockaddr_storage));
 
     iov[0].iov_base=buf.data;
     iov[0].iov_len=buf.size;
@@ -778,9 +779,15 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         cdata_list = tail;
     }
 
-    // allocate enough control data space, if any
-    if (!(cdata = malloc(cdata_size))) {
-        return error_tuple(env, ENOMEM);
+    if (cdata_size > 0) {
+        // allocate enough control data space, if any
+        if (!(cdata = malloc(cdata_size))) {
+            return error_tuple(env, ENOMEM);
+        }
+    } else {
+        // freebsd throws einval if the cdata length is 0
+        // but the pointer isn't NULL
+        cdata = NULL;
     }
 
     // set up the iov and msghdr stuff
