@@ -36,6 +36,8 @@
 
 -define(PORT, 2097).
 
+-define(SIZEOF_SOCKADDR, 128).
+
 start() ->
     {ok, FD} = procket:socket(inet6, dgram, udp),
     %% set IPV6_RECVPKTINFO
@@ -54,43 +56,18 @@ start() ->
 loop(FD) ->
     %% recv a packet up to 512 bytes long, along with 512 bytes of control
     %% data
-    case procket:recvmsg(FD, 512, 512, 0) of
+    case procket:recvmsg(FD, 512, 0, 512, ?SIZEOF_SOCKADDR) of
         {error, eagain} ->
             loop(FD);
-        {ok, Buf, From0, CtrlData, Flags} ->
+        {ok, Buf, Flags, CtrlData, From} ->
             io:format("Buffer ~p, From ~p, Ctrldata ~p Flags ~p~n", [Buf,
-                                                                     From0,
+                                                                     From,
                                                                      CtrlData,
                                                                      Flags]),
-            From = fixup_from(From0),
             %% echo the packet back, but set the destination address to the
             %% 'from' of the previous packet, and send the previous message's
             %% control data so that the source address is set to the
             %% destination address of the previous packet
-            ok = procket:sendmsg(FD, Buf, 0, From, fixup_control_data(CtrlData)),
+            ok = procket:sendmsg(FD, Buf, 0, CtrlData, From),
             loop(FD)
     end.
-
-%% on the BSDs, use the 'length' field in the sockaddr_storage field to
-%% trim it to length. FreeBSD throws einval if you pass overlong data as the
-%% destination address to sendmsg.
-fixup_from(From0) ->
-    case erlang:system_info(os_type) of
-        {unix,BSD} when BSD == darwin;
-                BSD == openbsd;
-                BSD == netbsd;
-                BSD == freebsd ->
-            <<Length:8/integer-unsigned,_/binary>> = From0,
-            binary:part(From0, 0, Length);
-        {unix,_} ->
-            From0
-    end.
-
-%% on freebsd, the PKTINFO control data that comes back from recvmsg
-%% is 4 bytes too long. I don't know why.
-fixup_control_data(CData) ->
-    lists:map(fun({41, 46, In6Pktinfo}) ->
-                {41, 46, binary:part(In6Pktinfo, 0, 20)};
-            (E) -> E
-        end, CData).
-

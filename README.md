@@ -154,12 +154,15 @@ procket works with any version of Erlang after R14A.
 
         See recv(2).
 
-    recvmsg(Socket, Size, CtrlDataSize, Flags) -> {ok, Buf, Sockaddr, CtrlData, Flags} |
+    recvmsg(Socket, Size, Flags, CtrlDataSize) -> {ok, Buf, Flags, CtrlData} |
+                                                  {error, posix()}
+    recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) -> {ok, Buf, Flags, CtrlData, Sockaddr} |
                                                   {error, posix()}
 
         Types   Socket = integer()
                 Size = ulong()
                 CtrlDataSize = ulong()
+                SockaddrSize = ulong()
                 Flags = integer()
                 Buf = binary()
                 Sockaddr = binary()
@@ -181,7 +184,8 @@ procket works with any version of Erlang after R14A.
 
         See sendto(2).
 
-    sendmsg(Socket, Buf, Flags, Sockaddr, CtrlData) -> ok | {error, posix()}
+    sendmsg(Socket, Buf, Flags, CtrlData) -> ok | {error, posix()}
+    sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) -> ok | {error, posix()}
 
         Types   Socket = integer()
                 Size = ulong()

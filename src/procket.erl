@@ -49,8 +49,8 @@
         getsockopt/4,
         getsockname/2,
 
-        recvmsg/4,
-        sendmsg/5,
+        recvmsg/4, recvmsg/5,
+        sendmsg/4, sendmsg/5,
 
         family/1,
 
@@ -162,8 +162,24 @@ write_nif(_,_) ->
 writev(_,_) ->
     erlang:nif_error(not_implemented).
 
-recvmsg(_,_,_,_) ->
+recvmsg(Socket,Size,Flags,CtrlDataSize) ->
+    case recvmsg(Socket,Size,Flags,CtrlDataSize,0) of
+        {ok, Buf, Flags, CtrlData, <<>>} ->
+            {ok, Buf, Flags, CtrlData};
+        {error,_} = Error ->
+            Error
+    end.
+recvmsg(Socket,Size,Flags,CtrlDataSize,SockaddrSize) ->
+    case recvmsg_nif(Socket,Size,Flags,CtrlDataSize,SockaddrSize) of
+        {ok, Buf, Flags, CtrlData, Sockaddr} ->
+            {ok, Buf, Flags, lists:reverse(CtrlData), Sockaddr};
+        N ->
+            N
+    end.
+recvmsg_nif(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
+sendmsg(Socket,Buf,Flags,CtrlData) ->
+    sendmsg(Socket,Buf,Flags,CtrlData,<<>>).
 sendmsg(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
 

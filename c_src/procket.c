@@ -621,11 +621,12 @@ nif_recvmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int s = -1;
     ErlNifBinary buf = {0};
     ErlNifBinary src_addr = {0};
-    char *ctrldata;
+    char *ctrldata = NULL;
     ERL_NIF_TERM ctrldatalist;
     int flags = 0;
-    int bufsize = 0;
-    int ctrlsize = 0;
+    unsigned long bufsize = 0;
+    unsigned long ctrlsize = 0;
+    unsigned long sasize = 0;
 
     struct iovec iov[1];
     struct msghdr message;
@@ -636,32 +637,36 @@ nif_recvmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[0], &s))
         return enif_make_badarg(env);
 
-    if (!enif_get_int(env, argv[1], &bufsize))
-        return enif_make_badarg(env);
-
-    if (!enif_get_int(env, argv[1], &ctrlsize))
+    if (!enif_get_ulong(env, argv[1], &bufsize))
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[2], &flags))
         return enif_make_badarg(env);
 
+    if (!enif_get_ulong(env, argv[3], &ctrlsize))
+        return enif_make_badarg(env);
+
+    if (!enif_get_ulong(env, argv[4], &sasize))
+        return enif_make_badarg(env);
+
     if (!enif_alloc_binary(bufsize, &buf))
         return error_tuple(env, ENOMEM);
 
-    if (!(ctrldata = malloc(ctrlsize))) {
+    if (ctrlsize > 0 && !(ctrldata = malloc(ctrlsize))) {
         enif_release_binary(&buf);
         return error_tuple(env, ENOMEM);
     }
 
-    if (!enif_alloc_binary(sizeof(struct sockaddr_storage), &src_addr))
+    if (!enif_alloc_binary(sasize, &src_addr)) {
+        enif_release_binary(&buf);
+        free(ctrldata);
         return error_tuple(env, ENOMEM);
+    }
 
-    memset(src_addr.data, 0, sizeof(struct sockaddr_storage));
-
-    iov[0].iov_base=buf.data;
+    iov[0].iov_base = (buf.size == 0 ? NULL : buf.data);
     iov[0].iov_len=buf.size;
 
-    message.msg_name=src_addr.data;
+    message.msg_name = (src_addr.size == 0 ? NULL : src_addr.data);
     message.msg_namelen=src_addr.size;
     message.msg_iov=iov;
     message.msg_iovlen=1;
@@ -671,49 +676,54 @@ nif_recvmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     n = recvmsg(s, &message, flags);
 
     if (n < 0) {
+        int err = errno;
         enif_release_binary(&buf);
         enif_release_binary(&src_addr);
         free(ctrldata);
-        return error_tuple(env, errno);
+        return error_tuple(env, err);
     }
 
-    /* resize the binary to the actual size of the received packet */
-    enif_realloc_binary(&buf, n);
+    /* resize the binary to the actual size of the received packet
+     *
+     * XXX On error, the macro will return ENOMEM here, leaking buf,
+     * XXX src_addr and ctrldata. Since the VM has OOM'ed, it will probably
+     * XXX crash anyway.
+     */
+    PROCKET_REALLOC(buf, n);
+    PROCKET_REALLOC(src_addr, message.msg_namelen);
 
     ctrldatalist = enif_make_list(env, 0);
 
-    cmsg = CMSG_FIRSTHDR(&message);
-    if (cmsg) {
-        do {
-            size_t len = cmsg->cmsg_len - sizeof(cmsg->cmsg_len) - sizeof(cmsg->cmsg_level) - sizeof(cmsg->cmsg_type);
-            ErlNifBinary cdata = {0};
+    for (cmsg = CMSG_FIRSTHDR(&message); cmsg != NULL;
+            cmsg = CMSG_NXTHDR(&message, cmsg)) {
+        size_t len = cmsg->cmsg_len - CMSG_LEN(0);
+        ErlNifBinary cdata = {0};
 
-            if (!enif_alloc_binary(len, &cdata)) {
-                enif_release_binary(&buf);
-                enif_release_binary(&src_addr);
-                free(ctrldata);
-                /* as far as I can tell, the calls to
-                 * enif_make_binary(env, &cdata) made binaries that are now owned by
-                 * the caller and we don't need to clean them up. I hope. */
-                return error_tuple(env, ENOMEM);
-            }
+        if (!enif_alloc_binary(len, &cdata)) {
+            enif_release_binary(&buf);
+            enif_release_binary(&src_addr);
+            free(ctrldata);
+            return error_tuple(env, ENOMEM);
+        }
 
-            memcpy(cdata.data, CMSG_DATA(cmsg), len);
+        memcpy(cdata.data, CMSG_DATA(cmsg), len);
 
-            ctrldatalist = enif_make_list_cell(env,
-                    enif_make_tuple3(env,
-                        enif_make_int(env, cmsg->cmsg_level),
-                        enif_make_int(env, cmsg->cmsg_type),
-                        enif_make_binary(env, &cdata)), ctrldatalist);
-        } while ((cmsg = CMSG_NXTHDR(&message, cmsg)));
+        ctrldatalist = enif_make_list_cell(env,
+                enif_make_tuple3(env,
+                    enif_make_int(env, cmsg->cmsg_level),
+                    enif_make_int(env, cmsg->cmsg_type),
+                    enif_make_binary(env, &cdata)), ctrldatalist);
     }
+
+    free(ctrldata);
 
     return enif_make_tuple5(env,
             atom_ok,
             enif_make_binary(env, &buf), /* Data packet */
-            enif_make_binary(env, &src_addr), /* source address, as a sockaddr_storage */
+            enif_make_int(env, message.msg_flags), /* the message flags, eg. MSG_EOR, MSG_OOB, etc. */
             ctrldatalist, /* array of 3-tuples of {cmsg->cmsg_level, cmsg->cmsg_type, cmsg->cmsg_data} */
-            enif_make_uint(env, message.msg_flags)); /* the message flags, eg. MSG_EOR, MSG_OOB, etc. */
+            enif_make_binary(env, &src_addr) /* source address, as a sockaddr_storage */
+            );
 }
 
     static ERL_NIF_TERM
@@ -729,7 +739,7 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     ERL_NIF_TERM cdata_list, head, tail;
 
-    char *cdata;
+    char *cdata = NULL;
     struct iovec iov[1];
     struct msghdr message;
     struct cmsghdr *cmsg;
@@ -744,13 +754,13 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_get_int(env, argv[2], &flags))
         return enif_make_badarg(env);
 
-    if (!enif_inspect_binary(env, argv[3], &sa))
+    if (!enif_is_list(env, argv[3]))
         return enif_make_badarg(env);
 
-    if (!enif_is_list(env, argv[4]))
+    if (!enif_inspect_binary(env, argv[4], &sa))
         return enif_make_badarg(env);
 
-    cdata_list = argv[4];
+    cdata_list = argv[3];
 
     // figure out how much control data we'll need to send
     while(enif_get_list_cell(env, cdata_list, &head, &tail)) {
@@ -781,20 +791,18 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     if (cdata_size > 0) {
         // allocate enough control data space, if any
+        // freebsd throws einval if the cdata length is 0
+        // but the pointer isn't NULL
         if (!(cdata = malloc(cdata_size))) {
             return error_tuple(env, ENOMEM);
         }
-    } else {
-        // freebsd throws einval if the cdata length is 0
-        // but the pointer isn't NULL
-        cdata = NULL;
     }
 
     // set up the iov and msghdr stuff
-    iov[0].iov_base=buf.data;
+    iov[0].iov_base=(buf.size == 0 ? NULL : buf.data);
     iov[0].iov_len=buf.size;
 
-    message.msg_name=sa.data;
+    message.msg_name=(sa.size == 0 ? NULL : sa.data);
     message.msg_namelen=sa.size;
     message.msg_iov=iov;
     message.msg_iovlen=1;
@@ -804,7 +812,7 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     // loop over the control data again, this time filling in the data in the
     // msghdr
-    cdata_list = argv[4];
+    cdata_list = argv[3];
 
     cmsg = CMSG_FIRSTHDR(&message);
 
@@ -1024,7 +1032,7 @@ static ErlNifFunc nif_funcs[] = {
 
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
-    {"recvmsg", 4, nif_recvmsg},
+    {"recvmsg_nif", 5, nif_recvmsg},
     {"sendmsg", 5, nif_sendmsg},
 
     {"recvfrom", 4, nif_recvfrom},
