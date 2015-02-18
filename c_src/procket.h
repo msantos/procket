@@ -55,6 +55,9 @@
 
 #include <sys/uio.h>
 
+#if defined(__sun) && defined(__SVR4)
+#include <stropts.h>
+#endif
 
 #define PROCKET_VERSION   "0.04"
 #ifndef UNIX_PATH_MAX

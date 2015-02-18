@@ -385,7 +385,8 @@ family(inet6) ->
         {unix, darwin} -> 30;
         {unix, freebsd} -> 28;
         {unix, netbsd} -> 24;
-        {unix, openbsd} -> 24
+        {unix, openbsd} -> 24;
+        {unix, sunos} -> 26
     end;
 family(netlink) -> 16;
 family(packet) -> 17;
@@ -420,9 +421,21 @@ family(30) ->
 
 
 %% Socket type
-type(stream) -> 1;
-type(dgram) -> 2;
-type(raw) -> 3;
+type(stream) ->
+    case os:type() of
+        {unix,sunos} -> 2;
+        {unix,_} -> 1
+    end;
+type(dgram) ->
+    case os:type() of
+        {unix,sunos} -> 1;
+        {unix,_} -> 2
+    end;
+type(raw) ->
+    case os:type() of
+        {unix,sunos} -> 4;
+        {unix,_} -> 3
+    end;
 
 type(1) -> stream;
 type(2) -> dgram;

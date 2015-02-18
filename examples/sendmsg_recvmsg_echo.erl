@@ -36,20 +36,22 @@
 
 -define(PORT, 2097).
 
--define(SIZEOF_SOCKADDR, 128).
+-define(SIZEOF_SOCKADDR, sizeof(sockaddr)).
 
 start() ->
     {ok, FD} = procket:socket(inet6, dgram, udp),
     %% set IPV6_RECVPKTINFO
     RecvPktInfo = case os:type() of
         {unix, linux} -> 49;
+        {unix, sunos} -> 18;
         {unix, _} -> 36
     end,
     ok = procket:setsockopt(FD, 41, RecvPktInfo, <<1:32>>),
     Family = procket:family(inet6),
     io:format("inet family ~p~n", [Family]),
     %% bind to :: on port ?PORT
-    SA = list_to_binary([procket:sockaddr_common(Family, 28), <<?PORT:16/integer-unsigned-big, 0:192>>]),
+    SA = list_to_binary([procket:sockaddr_common(Family, ?SIZEOF_SOCKADDR),
+            <<?PORT:16/integer-unsigned-big, 0:((?SIZEOF_SOCKADDR - (2+2))*8)>>]),
     ok = procket:bind(FD, SA),
     loop(FD).
 
@@ -70,4 +72,10 @@ loop(FD) ->
             %% destination address of the previous packet
             ok = procket:sendmsg(FD, Buf, 0, CtrlData, From),
             loop(FD)
+    end.
+
+sizeof(sockaddr) ->
+    case os:type() of
+        {unix,sunos} -> 32;
+        {unix,_} -> 28
     end.
