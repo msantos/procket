@@ -50,7 +50,7 @@ start() ->
     Family = procket:family(inet6),
     io:format("inet family ~p~n", [Family]),
     %% bind to :: on port ?PORT
-    SA = list_to_binary([procket:sockaddr_common(Family, ?SIZEOF_SOCKADDR),
+    SA = list_to_binary([procket:sockaddr_common(inet6, ?SIZEOF_SOCKADDR),
             <<?PORT:16/integer-unsigned-big, 0:((?SIZEOF_SOCKADDR - (2+2))*8)>>]),
     ok = procket:bind(FD, SA),
     loop(FD).

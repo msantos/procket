@@ -431,7 +431,8 @@ maybe_atom(protocol, Value) -> protocol(Value).
 %%
 
 % struct sockaddr
-sockaddr_common(Family, Length) ->
+sockaddr_common(Family0, Length) ->
+    Family = maybe_atom(family, Family0),
     case erlang:system_info(os_type) of
         {unix,BSD} when BSD == darwin;
             BSD == openbsd;
