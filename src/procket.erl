@@ -390,35 +390,7 @@ family(inet6) ->
     end;
 family(netlink) -> 16;
 family(packet) -> 17;
-family(Proto) when Proto == local; Proto == unix; Proto == file -> 1;
-
-family(0) -> unspec;
-family(1) -> unix;
-family(2) -> inet;
-family(10) ->
-    case os:type() of
-        {unix, linux} -> inet6;
-        {unix, _} -> ccitt
-    end;
-family(16) -> netlink;
-family(17) ->
-    case os:type() of
-        {unix, linux} -> packet;
-        {unix, _} -> route
-    end;
-family(28) ->
-    case os:type() of
-        % linux: not defined
-        {unix, freebsd} -> inet6;
-        {unix, darwin} -> isdn
-    end;
-family(30) ->
-    case os:type() of
-        {unix, linux} -> tipc;
-        {unix, freebsd} -> atm;
-        {unix, darwin} -> inet6
-    end.
-
+family(Proto) when Proto == local; Proto == unix; Proto == file -> 1.
 
 %% Socket type
 type(stream) ->
@@ -435,12 +407,7 @@ type(raw) ->
     case os:type() of
         {unix,sunos} -> 4;
         {unix,_} -> 3
-    end;
-
-type(1) -> stream;
-type(2) -> dgram;
-type(3) -> raw.
-
+    end.
 
 % Select a protocol within the family (0 means use the default
 % protocol in the family)
@@ -451,15 +418,7 @@ protocol(udp) -> 17;
 protocol(ipv6) -> 41;
 protocol(icmp6) -> 58;
 protocol('ipv6-icmp') -> 58;
-protocol(raw) -> 255;
-
-protocol(0) -> ip;
-protocol(1) -> icmp;
-protocol(6) -> tcp;
-protocol(17) -> udp;
-protocol(41) -> ipv6;
-protocol(58) -> 'ipv6-icmp';
-protocol(255) -> raw.
+protocol(raw) -> 255.
 
 maybe_atom(_Type, Value) when is_integer(Value) -> Value;
 maybe_atom(family, Value) -> family(Value);
