@@ -267,9 +267,9 @@ cleanup_unix_socket(Tmpdir, Pipe) ->
 fdopen(Path) when is_list(Path) ->
     fdopen(list_to_binary(Path));
 fdopen(Path) when is_binary(Path), byte_size(Path) < ?UNIX_PATH_MAX ->
-    {ok, Socket} = socket(?PF_LOCAL, ?SOCK_STREAM, 0),
+    {ok, Socket} = socket(family(local), type(stream), 0),
     Len = byte_size(Path),
-    Sun = <<(sockaddr_common(?PF_LOCAL, Len))/binary,
+    Sun = <<(sockaddr_common(family(local), Len))/binary,
         Path/binary,
         0:((unix_path_max()-Len)*8)
         >>,
