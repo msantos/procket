@@ -274,7 +274,7 @@ fdopen(Path) when is_binary(Path), byte_size(Path) < ?UNIX_PATH_MAX ->
         0:((unix_path_max()-Len)*8)
         >>,
     ok = bind(Socket, Sun),
-    ok = listen(Socket, ?BACKLOG),
+    ok = listen(Socket, 0),
     {ok, Socket}.
 
 fdget(Socket) ->
