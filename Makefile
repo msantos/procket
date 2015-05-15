@@ -1,4 +1,4 @@
-REBAR=$(shell which rebar || echo ./rebar)
+REBAR = $(shell test -e `which rebar` 2>/dev/null && which rebar || echo "./rebar")
 DEPSOLVER_PLT=$(CURDIR)/.depsolver_plt
 
 all: dirs compile
@@ -43,3 +43,5 @@ typer: $(DEPSOLVER_PLT)
 
 distclean: clean
 	@rm $(DEPSOLVER_PLT)
+
+print-%: ; @echo $*=$($*)
