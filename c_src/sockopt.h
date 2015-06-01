@@ -100,21 +100,25 @@ int level_lookup(char *level_name, int level_size, int *level_value)
             *level_value = IPPROTO_IPIP;
             return 1;
         }
+#ifdef IPPROTO_DCCP
         else if (strncmp("IPPROTO_DCCP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_DCCP;
             return 1;
         }
+#endif
         else if (strncmp("IPPROTO_RSVP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_RSVP;
             return 1;
         }
+#ifdef IPPROTO_COMP
         else if (strncmp("IPPROTO_COMP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_COMP;
             return 1;
         }
+#endif
         else if (strncmp("IPPROTO_SCTP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_SCTP;
@@ -140,6 +144,7 @@ int level_lookup(char *level_name, int level_size, int *level_value)
         }
     }
 #endif
+#ifdef IPPROTO_UDPLITE
     else if (level_size == 15)
     {
         if (strncmp("IPPROTO_UDPLITE", level_name, level_size) == 0)
@@ -148,7 +153,7 @@ int level_lookup(char *level_name, int level_size, int *level_value)
             return 1;
         }
     }
-
+#endif
     *level_value = -1;
     return 0;
 }
@@ -196,46 +201,58 @@ int optname_lookup(char *option_name, int option_size, int *option_value)
     }
     else if (option_size == 11)
     {
+        if (strncmp("SO_SNDTIMEO", option_name, option_size) == 0)
+        {
+            *option_value = SO_SNDTIMEO;
+            return 1;
+        }
+#ifdef SO_PASSCRED
         if (strncmp("SO_PASSCRED", option_name, option_size) == 0)
         {
             *option_value = SO_PASSCRED;
             return 1;
         }
+#endif
+#ifdef SO_PEERCRED
         else if (strncmp("SO_PEERCRED", option_name, option_size) == 0)
         {
             *option_value = SO_PEERCRED;
             return 1;
         }
+#endif
+#ifdef SO_RCVLOAWAT
         else if (strncmp("SO_RCVLOWAT", option_name, option_size) == 0)
         {
             *option_value = SO_RCVLOWAT;
             return 1;
         }
+#endif
+#ifdef SO_SNDLOWAT
         else if (strncmp("SO_SNDLOWAT", option_name, option_size) == 0)
         {
             *option_value = SO_SNDLOWAT;
             return 1;
         }
+#endif
         else if (strncmp("SO_RCVTIMEO", option_name, option_size) == 0)
         {
             *option_value = SO_RCVTIMEO;
             return 1;
         }
-        else if (strncmp("SO_SNDTIMEO", option_name, option_size) == 0)
-        {
-            *option_value = SO_SNDTIMEO;
-            return 1;
-        }
+#ifdef SO_NO_CHECK
         else if (strncmp("SO_NO_CHECK", option_name, option_size) == 0)
         {
             *option_value = SO_NO_CHECK;
             return 1;
         }
+#endif
+#ifdef SO_PRIORITY
         else if (strncmp("SO_PRIORITY", option_name, option_size) == 0)
         {
             *option_value = SO_PRIORITY;
             return 1;
         }
+#endif
     }
     else if (option_size == 12)
     {
@@ -264,11 +281,13 @@ int optname_lookup(char *option_name, int option_size, int *option_value)
             *option_value = SO_OOBINLINE;
             return 1;
         }
+#ifdef SO_BSDCOMPAT
         else if (strncmp("SO_BSDCOMPAT", option_name, option_size) == 0)
         {
             *option_value = SO_BSDCOMPAT;
             return 1;
         }
+#endif
 #ifdef SO_REUSEPORT
         else if (strncmp("SO_REUSEPORT", option_name, option_size) == 0)
         {
@@ -279,16 +298,20 @@ int optname_lookup(char *option_name, int option_size, int *option_value)
     }
     else if (option_size == 14)
     {
+#ifdef SO_SNDBUFFORCE
         if (strncmp("SO_SNDBUFFORCE", option_name, option_size) == 0)
         {
             *option_value = SO_SNDBUFFORCE;
             return 1;
         }
-        else if (strncmp("SO_RCVBUFFORCE", option_name, option_size) == 0)
+#endif
+#ifdef SO_RCVBUFFORCE
+        if (strncmp("SO_RCVBUFFORCE", option_name, option_size) == 0)
         {
             *option_value = SO_RCVBUFFORCE;
             return 1;
         }
+#endif
     }
     else if (option_size == 16)
     {
