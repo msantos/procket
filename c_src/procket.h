@@ -68,7 +68,6 @@
 
 extern char *__progname;
 
-
 typedef struct {
     int fdtype;             /* fd type requested */
     char *path;             /* path to pipe file */
@@ -83,5 +82,3 @@ typedef struct {
     int protocol;           /* socket protocol: IPPROTO_TCP */
     int backlog;            /* Listen backlog */
 } PROCKET_STATE;
-
-
