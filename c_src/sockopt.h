@@ -131,11 +131,13 @@ int level_lookup(char *level_name, int level_size, int *level_value)
     }
     else if (level_size == 14)
     {
+#ifdef IPPROTO_BEETPH
         if (strncmp("IPPROTO_BEETPH", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_BEETPH;
             return 1;
         }
+#endif
     }
     else if (level_size == 15)
     {
@@ -266,12 +268,14 @@ int optname_lookup(char *option_name, int option_size, int *option_value)
             *option_value = SO_BSDCOMPAT;
             return 1;
         }
+#ifdef SO_REUSEPORT
         else if (strncmp("SO_REUSEPORT", option_name, option_size) == 0)
         {
             *option_value = SO_REUSEPORT;
             return 1;
         }
     }
+#endif
     else if (option_size == 14)
     {
         if (strncmp("SO_SNDBUFFORCE", option_name, option_size) == 0)
