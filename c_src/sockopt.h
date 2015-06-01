@@ -129,16 +129,17 @@ int level_lookup(char *level_name, int level_size, int *level_value)
             return 1;
         }
     }
+#ifdef IPPROTO_BEETPH
     else if (level_size == 14)
     {
-#ifdef IPPROTO_BEETPH
+
         if (strncmp("IPPROTO_BEETPH", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_BEETPH;
             return 1;
         }
-#endif
     }
+#endif
     else if (level_size == 15)
     {
         if (strncmp("IPPROTO_UDPLITE", level_name, level_size) == 0)
@@ -274,8 +275,8 @@ int optname_lookup(char *option_name, int option_size, int *option_value)
             *option_value = SO_REUSEPORT;
             return 1;
         }
-    }
 #endif
+    }
     else if (option_size == 14)
     {
         if (strncmp("SO_SNDBUFFORCE", option_name, option_size) == 0)
