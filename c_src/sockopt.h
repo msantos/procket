@@ -14,11 +14,13 @@ int level_lookup(char *level_name, int level_size, int *level_value)
             *level_value = IPPROTO_IP;
             return 1;
         }
+#ifdef IPPROTO_TP
         if (strncmp("IPPROTO_TP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_TP;
             return 1;
         }
+#endif
         if (strncmp("IPPROTO_AH", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_AH;
@@ -52,21 +54,25 @@ int level_lookup(char *level_name, int level_size, int *level_value)
             *level_value = IPPROTO_IDP;
             return 1;
         }
+#ifdef IPPROTO_GRE
         if (strncmp("IPPROTO_GRE", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_GRE;
             return 1;
         }
+#endif
         if (strncmp("IPPROTO_ESP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_ESP;
             return 1;
         }
+#ifdef IPPROTO_MTP
         if (strncmp("IPPROTO_MTP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_MTP;
             return 1;
         }
+#endif
         if (strncmp("IPPROTO_PIM", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_PIM;
@@ -95,11 +101,13 @@ int level_lookup(char *level_name, int level_size, int *level_value)
             *level_value = IPPROTO_IGMP;
             return 1;
         }
+#ifdef IPPROTO_IPIP
         if (strncmp("IPPROTO_IPIP", level_name, level_size) == 0)
         {
             *level_value = IPPROTO_IPIP;
             return 1;
         }
+#endif
 #ifdef IPPROTO_DCCP
         if (strncmp("IPPROTO_DCCP", level_name, level_size) == 0)
         {

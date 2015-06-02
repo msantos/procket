@@ -33,6 +33,10 @@
   #define __APPLE_USE_RFC_3542  /* For IPV6_RECVPKTINFO */
 #endif
 
+#ifdef __sun__
+  #define __EXTENSIONS__ /* For IPV6_RECVPKTINFO */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
