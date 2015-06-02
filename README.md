@@ -232,8 +232,8 @@ procket works with any version of Erlang after R14A.
     setsockopt(Socket, Level, Optname, Optval) -> ok | {error, posix}
 
         Types   Socket = integer()
-                Level = integer()
-                Optname = integer()
+                Level = integer() | atom()
+                Optname = integer() | atom()
                 Optval = binary()
 
         See setsockopt(2).
@@ -241,8 +241,8 @@ procket works with any version of Erlang after R14A.
     getsockopt(Socket, Level, Optname, Optval) -> {ok, Buf} | {error, posix}
 
         Types   Socket = integer()
-                Level = integer()
-                Optname = integer()
+                Level = integer() | atom()
+                Optname = integer() | atom()
                 Optval = binary()
                 Buf = binary()
 
