@@ -33,6 +33,7 @@
 #include "erl_driver.h"
 #include "ancillary.h"
 #include "procket.h"
+#include "sockopt.h"
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, int errnum);
 void alloc_free(ErlNifEnv *env, void *obj);
@@ -527,10 +528,58 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[1], &level))
-        return enif_make_badarg(env);
+    {
+        unsigned atom_length;
+        if (enif_get_atom_length(env, argv[1], &atom_length, ERL_NIF_LATIN1))
+        {
+            char *atom_buf = enif_alloc(atom_length);
+            if (enif_get_atom(env, argv[1], atom_buf, atom_length+1, ERL_NIF_LATIN1))
+            {
+                if (!level_lookup(atom_buf, atom_length, &level))
+                {
+                    enif_free(atom_buf);
+                    return enif_make_badarg(env);
+                }
+                enif_free(atom_buf);
+            }
+            else
+            {
+                enif_free(atom_buf);
+                return enif_make_badarg(env);
+            }
+        }
+        else
+        {
+            return enif_make_badarg(env);
+        }
+    }
 
     if (!enif_get_int(env, argv[2], &optname))
-        return enif_make_badarg(env);
+    {
+        unsigned atom_length2;
+        if (enif_get_atom_length(env, argv[2], &atom_length2, ERL_NIF_LATIN1))
+        {
+            char *atom_buf2 = enif_alloc(atom_length2);
+            if (enif_get_atom(env, argv[2], atom_buf2, atom_length2+1, ERL_NIF_LATIN1))
+            {
+                if (!optname_lookup(atom_buf2, atom_length2, &optname))
+                {
+                    enif_free(atom_buf2);
+                    return enif_make_badarg(env);
+                }
+                enif_free(atom_buf2);
+            }
+            else
+            {
+                enif_free(atom_buf2);
+                return enif_make_badarg(env);
+            }
+        }
+        else
+        {
+            return enif_make_badarg(env);
+        }
+    }
 
     if (!enif_inspect_binary(env, argv[3], &optval))
         return enif_make_badarg(env);
@@ -553,15 +602,62 @@ nif_getsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     ErlNifBinary optval = {0};
     socklen_t optlen = 0;
 
-
     if (!enif_get_int(env, argv[0], &s))
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[1], &level))
-        return enif_make_badarg(env);
+    {
+        unsigned atom_length;
+        if (enif_get_atom_length(env, argv[1], &atom_length, ERL_NIF_LATIN1))
+        {
+            char *atom_buf = enif_alloc(atom_length);
+            if (enif_get_atom(env, argv[1], atom_buf, atom_length+1, ERL_NIF_LATIN1))
+            {
+                if (!level_lookup(atom_buf, atom_length, &level))
+                {
+                    enif_free(atom_buf);
+                    return enif_make_badarg(env);
+                }
+                enif_free(atom_buf);
+            }
+            else
+            {
+                enif_free(atom_buf);
+                return enif_make_badarg(env);
+            }
+        }
+        else
+        {
+            return enif_make_badarg(env);
+        }
+    }
 
     if (!enif_get_int(env, argv[2], &optname))
-        return enif_make_badarg(env);
+    {
+        unsigned atom_length2;
+        if (enif_get_atom_length(env, argv[2], &atom_length2, ERL_NIF_LATIN1))
+        {
+            char *atom_buf2 = enif_alloc(atom_length2);
+            if (enif_get_atom(env, argv[2], atom_buf2, atom_length2+1, ERL_NIF_LATIN1))
+            {
+                if (!optname_lookup(atom_buf2, atom_length2, &optname))
+                {
+                    enif_free(atom_buf2);
+                    return enif_make_badarg(env);
+                }
+                enif_free(atom_buf2);
+            }
+            else
+            {
+                enif_free(atom_buf2);
+                return enif_make_badarg(env);
+            }
+        }
+        else
+        {
+            return enif_make_badarg(env);
+        }
+    }
 
     if (!enif_inspect_binary(env, argv[3], &optval))
         return enif_make_badarg(env);

@@ -29,6 +29,14 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifdef __APPLE__
+  #define __APPLE_USE_RFC_3542  /* For IPV6_RECVPKTINFO */
+#endif
+
+#ifdef __sun__
+  #define __EXTENSIONS__ /* For IPV6_RECVPKTINFO */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +47,6 @@
 
 #include <sys/types.h>
 #include <netdb.h>
-
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -68,7 +75,6 @@
 
 extern char *__progname;
 
-
 typedef struct {
     int fdtype;             /* fd type requested */
     char *path;             /* path to pipe file */
@@ -83,5 +89,3 @@ typedef struct {
     int protocol;           /* socket protocol: IPPROTO_TCP */
     int backlog;            /* Listen backlog */
 } PROCKET_STATE;
-
-
