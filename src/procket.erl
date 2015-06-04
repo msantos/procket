@@ -59,6 +59,9 @@
         memcpy/2,
         wordalign/1, wordalign/2,
 
+        socket_level/1,
+        socket_optname/1,
+
         errno_id/1
     ]).
 -export([
@@ -183,13 +186,51 @@ sendmsg(Socket,Buf,Flags,CtrlData) ->
 sendmsg(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
 
-setsockopt(_,_,_,_) ->
-    erlang:nif_error(not_implemented).
+setsockopt(Socket,Level,Optname,Optval) when is_atom(Level) ->
+    case socket_level(Level) of
+        undefined ->
+            {error,unsupported};
+        N ->
+            setsockopt(Socket, N, Optname, Optval)
+    end;
+setsockopt(Socket,Level,Optname,Optval) when is_atom(Optname) ->
+    case socket_optname(Optname) of
+        undefined ->
+            {error,unsupported};
+        N ->
+            setsockopt(Socket, Level, N, Optval)
+    end;
+setsockopt(Socket,Level,Optname,Optval) ->
+    setsockopt_nif(Socket, Level, Optname, Optval).
 
-getsockopt(_,_,_,_) ->
+getsockopt(Socket,Level,Optname,Optval) when is_atom(Level) ->
+    case socket_level(Level) of
+        undefined ->
+            {error,unsupported};
+        N ->
+            getsockopt(Socket, N, Optname, Optval)
+    end;
+getsockopt(Socket,Level,Optname,Optval) when is_atom(Optname) ->
+    case socket_optname(Optname) of
+        undefined ->
+            {error,unsupported};
+        N ->
+            getsockopt(Socket, Level, N, Optval)
+    end;
+getsockopt(Socket,Level,Optname,Optval) ->
+    getsockopt_nif(Socket, Level, Optname, Optval).
+
+setsockopt_nif(_,_,_,_) ->
+    erlang:nif_error(not_implemented).
+getsockopt_nif(_,_,_,_) ->
     erlang:nif_error(not_implemented).
 
 getsockname(_,_) ->
+    erlang:nif_error(not_implemented).
+
+socket_level(_) ->
+    erlang:nif_error(not_implemented).
+socket_optname(_) ->
     erlang:nif_error(not_implemented).
 
 errno_id(_) ->

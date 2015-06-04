@@ -33,7 +33,7 @@
 #include "erl_driver.h"
 #include "ancillary.h"
 #include "procket.h"
-#include "sockopt.h"
+#include "procket_constants.h"
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, int errnum);
 void alloc_free(ErlNifEnv *env, void *obj);
@@ -41,6 +41,7 @@ void alloc_free(ErlNifEnv *env, void *obj);
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_eagain;
+static ERL_NIF_TERM atom_undefined;
 
 static ErlNifResourceType *PROCKET_ALLOC_RESOURCE;
 
@@ -84,6 +85,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     atom_ok = enif_make_atom(env, "ok");
     atom_error = enif_make_atom(env, "error");
     atom_eagain = enif_make_atom(env, "eagain");
+    atom_undefined = enif_make_atom(env, "undefined");
 
     if ( (PROCKET_ALLOC_RESOURCE = enif_open_resource_type(env, NULL,
         "procket_alloc_resource", alloc_free,
@@ -528,58 +530,10 @@ nif_setsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[1], &level))
-    {
-        unsigned atom_length;
-        if (enif_get_atom_length(env, argv[1], &atom_length, ERL_NIF_LATIN1))
-        {
-            char *atom_buf = enif_alloc(atom_length);
-            if (enif_get_atom(env, argv[1], atom_buf, atom_length+1, ERL_NIF_LATIN1))
-            {
-                if (!level_lookup(atom_buf, atom_length, &level))
-                {
-                    enif_free(atom_buf);
-                    return enif_make_badarg(env);
-                }
-                enif_free(atom_buf);
-            }
-            else
-            {
-                enif_free(atom_buf);
-                return enif_make_badarg(env);
-            }
-        }
-        else
-        {
-            return enif_make_badarg(env);
-        }
-    }
+        return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[2], &optname))
-    {
-        unsigned atom_length2;
-        if (enif_get_atom_length(env, argv[2], &atom_length2, ERL_NIF_LATIN1))
-        {
-            char *atom_buf2 = enif_alloc(atom_length2);
-            if (enif_get_atom(env, argv[2], atom_buf2, atom_length2+1, ERL_NIF_LATIN1))
-            {
-                if (!optname_lookup(atom_buf2, atom_length2, &optname))
-                {
-                    enif_free(atom_buf2);
-                    return enif_make_badarg(env);
-                }
-                enif_free(atom_buf2);
-            }
-            else
-            {
-                enif_free(atom_buf2);
-                return enif_make_badarg(env);
-            }
-        }
-        else
-        {
-            return enif_make_badarg(env);
-        }
-    }
+        return enif_make_badarg(env);
 
     if (!enif_inspect_binary(env, argv[3], &optval))
         return enif_make_badarg(env);
@@ -606,58 +560,10 @@ nif_getsockopt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[1], &level))
-    {
-        unsigned atom_length;
-        if (enif_get_atom_length(env, argv[1], &atom_length, ERL_NIF_LATIN1))
-        {
-            char *atom_buf = enif_alloc(atom_length);
-            if (enif_get_atom(env, argv[1], atom_buf, atom_length+1, ERL_NIF_LATIN1))
-            {
-                if (!level_lookup(atom_buf, atom_length, &level))
-                {
-                    enif_free(atom_buf);
-                    return enif_make_badarg(env);
-                }
-                enif_free(atom_buf);
-            }
-            else
-            {
-                enif_free(atom_buf);
-                return enif_make_badarg(env);
-            }
-        }
-        else
-        {
-            return enif_make_badarg(env);
-        }
-    }
+        return enif_make_badarg(env);
 
     if (!enif_get_int(env, argv[2], &optname))
-    {
-        unsigned atom_length2;
-        if (enif_get_atom_length(env, argv[2], &atom_length2, ERL_NIF_LATIN1))
-        {
-            char *atom_buf2 = enif_alloc(atom_length2);
-            if (enif_get_atom(env, argv[2], atom_buf2, atom_length2+1, ERL_NIF_LATIN1))
-            {
-                if (!optname_lookup(atom_buf2, atom_length2, &optname))
-                {
-                    enif_free(atom_buf2);
-                    return enif_make_badarg(env);
-                }
-                enif_free(atom_buf2);
-            }
-            else
-            {
-                enif_free(atom_buf2);
-                return enif_make_badarg(env);
-            }
-        }
-        else
-        {
-            return enif_make_badarg(env);
-        }
-    }
+        return enif_make_badarg(env);
 
     if (!enif_inspect_binary(env, argv[3], &optval))
         return enif_make_badarg(env);
@@ -1074,6 +980,39 @@ nif_memcpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return atom_ok;
 }
 
+    static ERL_NIF_TERM
+nif_socket_level(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    char buf[256] = {0};
+    const struct procket_define *p = NULL;
+
+    if (!enif_get_atom(env, argv[0], buf, sizeof(buf), ERL_NIF_LATIN1))
+        return enif_make_badarg(env);
+
+    for (p = procket_socket_level; p->key != NULL; p++) {
+        if (!strcmp(buf, p->key))
+            return enif_make_int(env, p->val);
+    }
+
+    return atom_undefined;
+}
+
+    static ERL_NIF_TERM
+nif_socket_optname(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    char buf[256] = {0};
+    const struct procket_define *p = NULL;
+
+    if (!enif_get_atom(env, argv[0], buf, sizeof(buf), ERL_NIF_LATIN1))
+        return enif_make_badarg(env);
+
+    for (p = procket_socket_optname; p->key != NULL; p++) {
+        if (!strcmp(buf, p->key))
+            return enif_make_int(env, p->val);
+    }
+
+    return atom_undefined;
+}
 
 /* 0: errno */
     static ERL_NIF_TERM
@@ -1120,7 +1059,7 @@ static ErlNifFunc nif_funcs[] = {
     {"bind", 2, nif_bind},
     {"connect", 2, nif_connect},
     {"getsockname", 2, nif_getsockname},
-    {"getsockopt", 4, nif_getsockopt},
+    {"getsockopt_nif", 4, nif_getsockopt},
     {"listen", 2, nif_listen},
     {"read", 2, nif_read},
     {"write_nif", 2, nif_write},
@@ -1133,11 +1072,14 @@ static ErlNifFunc nif_funcs[] = {
 
     {"recvfrom", 4, nif_recvfrom},
     {"sendto", 4, nif_sendto},
-    {"setsockopt", 4, nif_setsockopt},
+    {"setsockopt_nif", 4, nif_setsockopt},
 
     {"alloc_nif", 1, nif_alloc},
     {"buf", 1, nif_buf},
     {"memcpy", 2, nif_memcpy},
+
+    {"socket_level", 1, nif_socket_level},
+    {"socket_optname", 1, nif_socket_optname},
 
     {"errno_id", 1, nif_errno_id}
 };

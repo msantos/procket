@@ -229,22 +229,32 @@ procket works with any version of Erlang after R14A.
 
         See bind(2).
 
-    setsockopt(Socket, Level, Optname, Optval) -> ok | {error, posix}
+    setsockopt(Socket, Level, Optname, Optval) -> ok | Error
 
         Types   Socket = integer()
                 Level = integer() | atom()
                 Optname = integer() | atom()
                 Optval = binary()
+                Error = {error, posix() | unsupported}
 
         See setsockopt(2).
 
-    getsockopt(Socket, Level, Optname, Optval) -> {ok, Buf} | {error, posix}
+        Level and Optname can either be an integer or an atom with the
+        same name as the definitions in the system header files, e.g.,
+        'IPPROTO_IPIP', 'SO_REUSEPORT'. Note these are uppercase atoms
+        and so must be quoted.
+
+        If an atom is used as an argument and is not supported by the OS,
+        setsockopt/4 will return {error,unsupported}.
+
+    getsockopt(Socket, Level, Optname, Optval) -> {ok, Buf} | Error
 
         Types   Socket = integer()
                 Level = integer() | atom()
                 Optname = integer() | atom()
                 Optval = binary()
                 Buf = binary()
+                Error = {error, posix() | unsupported}
 
         See getsockopt(2). Similar to inet:getopts/2 but can be used
         with file descriptors.
@@ -252,6 +262,8 @@ procket works with any version of Erlang after R14A.
         Retrieve a socket option for a file descriptor. Use an empty
         binary to indicate no option value is supplied or will be
         returned.
+
+        Also see setsockopt/4.
 
     ioctl(FD, Request, Arg) -> {ok, Result} | {error, posix()}
 
