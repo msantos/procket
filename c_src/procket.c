@@ -981,6 +981,28 @@ nif_memcpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
     static ERL_NIF_TERM
+nif_socket_levels(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    const struct procket_define *p = NULL;
+    ERL_NIF_TERM list = {0};
+
+    list = enif_make_list(env, 0);
+
+    for (p = procket_socket_level; p->key != NULL; p++) {
+        list = enif_make_list_cell(
+                env,
+                enif_make_tuple2(
+                    env,
+                    enif_make_atom(env, p->key),
+                    enif_make_uint(env, p->val)
+                    ),
+                list);
+    }
+
+    return list;
+}
+
+    static ERL_NIF_TERM
 nif_socket_level(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     char buf[256] = {0};
@@ -995,6 +1017,28 @@ nif_socket_level(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     }
 
     return atom_undefined;
+}
+
+    static ERL_NIF_TERM
+nif_socket_optnames(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    const struct procket_define *p = NULL;
+    ERL_NIF_TERM list = {0};
+
+    list = enif_make_list(env, 0);
+
+    for (p = procket_socket_optname; p->key != NULL; p++) {
+        list = enif_make_list_cell(
+                env,
+                enif_make_tuple2(
+                    env,
+                    enif_make_atom(env, p->key),
+                    enif_make_uint(env, p->val)
+                    ),
+                list);
+    }
+
+    return list;
 }
 
     static ERL_NIF_TERM
@@ -1078,6 +1122,8 @@ static ErlNifFunc nif_funcs[] = {
     {"buf", 1, nif_buf},
     {"memcpy", 2, nif_memcpy},
 
+    {"socket_level", 0, nif_socket_levels},
+    {"socket_optname", 0, nif_socket_optnames},
     {"socket_level", 1, nif_socket_level},
     {"socket_optname", 1, nif_socket_optname},
 

@@ -59,8 +59,8 @@
         memcpy/2,
         wordalign/1, wordalign/2,
 
-        socket_level/1,
-        socket_optname/1,
+        socket_level/0, socket_level/1,
+        socket_optname/0, socket_optname/1,
 
         errno_id/1
     ]).
@@ -228,7 +228,12 @@ getsockopt_nif(_,_,_,_) ->
 getsockname(_,_) ->
     erlang:nif_error(not_implemented).
 
+socket_level() ->
+    erlang:nif_error(not_implemented).
 socket_level(_) ->
+    erlang:nif_error(not_implemented).
+
+socket_optname() ->
     erlang:nif_error(not_implemented).
 socket_optname(_) ->
     erlang:nif_error(not_implemented).
