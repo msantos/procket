@@ -61,6 +61,7 @@
 
         socket_level/0, socket_level/1,
         socket_optname/0, socket_optname/1,
+        socket_protocol/0, socket_protocol/1,
 
         errno_id/1
     ]).
@@ -187,7 +188,8 @@ sendmsg(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
 
 setsockopt(Socket,Level,Optname,Optval) when is_atom(Level) ->
-    case socket_level(Level) of
+    case socket_constant_foreach(Level,
+            [fun socket_level/1, fun socket_protocol/1]) of
         undefined ->
             {error,unsupported};
         N ->
@@ -204,7 +206,8 @@ setsockopt(Socket,Level,Optname,Optval) ->
     setsockopt_nif(Socket, Level, Optname, Optval).
 
 getsockopt(Socket,Level,Optname,Optval) when is_atom(Level) ->
-    case socket_level(Level) of
+    case socket_constant_foreach(Level,
+            [fun socket_level/1, fun socket_protocol/1]) of
         undefined ->
             {error,unsupported};
         N ->
@@ -238,9 +241,23 @@ socket_optname() ->
 socket_optname(_) ->
     erlang:nif_error(not_implemented).
 
+socket_protocol() ->
+    erlang:nif_error(not_implemented).
+socket_protocol(_) ->
+    erlang:nif_error(not_implemented).
+
 errno_id(_) ->
     erlang:nif_error(not_implemented).
 
+socket_constant_foreach(_Constant, []) ->
+    undefined;
+socket_constant_foreach(Constant, [Fun|Funs]) ->
+    case Fun(Constant) of
+        undefined ->
+            socket_constant_foreach(Constant, Funs);
+        N when is_integer(N) ->
+            N
+    end.
 
 %%--------------------------------------------------------------------
 %%% Setuid helper

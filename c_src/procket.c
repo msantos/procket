@@ -1058,6 +1058,45 @@ nif_socket_optname(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return atom_undefined;
 }
 
+    static ERL_NIF_TERM
+nif_socket_protocols(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    const struct procket_define *p = NULL;
+    ERL_NIF_TERM list = {0};
+
+    list = enif_make_list(env, 0);
+
+    for (p = procket_socket_protocol; p->key != NULL; p++) {
+        list = enif_make_list_cell(
+                env,
+                enif_make_tuple2(
+                    env,
+                    enif_make_atom(env, p->key),
+                    enif_make_uint(env, p->val)
+                    ),
+                list);
+    }
+
+    return list;
+}
+
+    static ERL_NIF_TERM
+nif_socket_protocol(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    char buf[256] = {0};
+    const struct procket_define *p = NULL;
+
+    if (!enif_get_atom(env, argv[0], buf, sizeof(buf), ERL_NIF_LATIN1))
+        return enif_make_badarg(env);
+
+    for (p = procket_socket_protocol; p->key != NULL; p++) {
+        if (!strcmp(buf, p->key))
+            return enif_make_int(env, p->val);
+    }
+
+    return atom_undefined;
+}
+
 /* 0: errno */
     static ERL_NIF_TERM
 nif_errno_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
@@ -1124,8 +1163,10 @@ static ErlNifFunc nif_funcs[] = {
 
     {"socket_level", 0, nif_socket_levels},
     {"socket_optname", 0, nif_socket_optnames},
+    {"socket_protocol", 0, nif_socket_protocols},
     {"socket_level", 1, nif_socket_level},
     {"socket_optname", 1, nif_socket_optname},
+    {"socket_protocol", 1, nif_socket_protocol},
 
     {"errno_id", 1, nif_errno_id}
 };

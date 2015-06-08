@@ -3,7 +3,7 @@ struct procket_define {
     int val;
 };
 
-const struct procket_define procket_socket_level[] = {
+const struct procket_define procket_socket_protocol[] = {
 #ifdef IPPROTO_AH
     {"IPPROTO_AH", IPPROTO_AH},
 #endif
@@ -259,6 +259,10 @@ const struct procket_define procket_socket_level[] = {
 #ifdef IPPROTO_XTP
     {"IPPROTO_XTP", IPPROTO_XTP},
 #endif
+    {NULL, -1}
+};
+
+const struct procket_define procket_socket_level[] = {
 #ifdef SOL_AAL
     {"SOL_AAL", SOL_AAL},
 #endif
