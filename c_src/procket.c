@@ -818,7 +818,7 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     cmsg = CMSG_FIRSTHDR(&message);
 
-    while(enif_get_list_cell(env, cdata_list, &head, &tail)) {
+    while(cmsg && enif_get_list_cell(env, cdata_list, &head, &tail)) {
         const ERL_NIF_TERM* fields;
         int arity;
         unsigned char *cmsg_data;
