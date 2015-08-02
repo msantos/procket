@@ -175,30 +175,36 @@ procket works with any version of Erlang after R14A.
 
     sendto(Socket, Buf) -> ok | {error, posix()}
     sendto(Socket, Buf, Flags) -> ok | {error, posix()}
-    sendto(Socket, Buf, Flags, Sockaddr) -> ok | {error, posix()}
+    sendto(Socket, Buf, Flags, Sockaddr) -> ok | {ok, Size} | {error, posix()}
 
         Types   Socket = integer()
                 Flags = integer()
                 Buf = binary()
                 Sockaddr = binary()
+                Size = non_neg_integer()
 
         See sendto(2).
 
+        In the case of a partial write, sendto/4 will return the number
+        of bytes written.
+
     sendmsg(Socket, Buf, Flags, CtrlData) -> ok | {error, posix()}
-    sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) -> ok | {error, posix()}
+    sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) -> ok | {ok, Size} | {error, posix()}
 
         Types   Socket = integer()
-                Size = ulong()
-                CtrlDataSize = ulong()
-                Flags = integer()
                 Buf = binary()
-                Sockaddr = binary()
+                Flags = integer()
                 CtrlData = [{integer(), integer(), binary()}]
+                Sockaddr = binary()
+                Size = non_neg_integer()
 
         See sendmsg(2) and cmsg(3).
 
         The control data, if any, is sent as a list of 3-tuples consisting of the cmsg
         level, type and data fields.
+
+        In the case of a partial write, sendmsg/5 will return the number
+        of bytes written.
 
     read(FD, Length) -> {ok, Buf} | {error, posix()}
 
@@ -210,17 +216,29 @@ procket works with any version of Erlang after R14A.
 
         The returned byte_size(Buf) is the actual number of bytes read.
 
-    write(FD, Buf) -> ok | {error, posix()}
-    writev(FD, Bufs) -> ok | {error, posix()}
+    write(FD, Buf) -> ok | {ok, Size} | {error, posix()}
+    writev(FD, Bufs) -> ok | {ok, Size} | {error, posix()}
 
         Types   FD = integer()
                 Buf = Bufs | binary()
                 Bufs = [ binary() ]
+                Size = non_neg_integer()
 
         See write(2) and writev(2).
 
-        If the second argument to write/2 is a list of binaries, writev/2
-        will be used.
+        write/2 and writev/2 will return 'ok' if the complete buffer was
+        written and {ok,non_neg_integer()} in the case of a partial write:
+
+            write_exact(FD, Buf) ->
+                case procket:write(FD, Buf) of
+                    ok ->
+                        ok;
+                    {ok, N} ->
+                        <<_:N/bytes, Rest/binary>> = Buf,
+                        write_exact(FD, Rest);
+                    Error ->
+                        Error
+                end.
 
     bind(Socket, Sockaddr) -> ok | {error, posix()}
 

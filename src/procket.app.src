@@ -2,4 +2,4 @@
     [{description, "Low level socket operations"},
      {applications, [crypto]},
      {registered, []},
-     {vsn, "0.6.1"}]}.
+     {vsn, "0.7.0"}]}.

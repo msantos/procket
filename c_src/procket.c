@@ -310,6 +310,7 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
     int flags = 0;
+    ssize_t n = 0;
 
     ErlNifBinary buf = {0};
     ErlNifBinary sa = {0};
@@ -326,12 +327,14 @@ nif_sendto(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[3], &sa))
         return enif_make_badarg(env);
 
-    if (sendto(sockfd, buf.data, buf.size, flags,
-        (sa.size == 0 ? NULL : (struct sockaddr *)sa.data),
-        sa.size) == -1)
+    n = sendto(sockfd, buf.data, buf.size, flags,
+            (sa.size == 0 ? NULL : (struct sockaddr *)sa.data),
+            sa.size);
+
+    if (n < 0)
         return error_tuple(env, errno);
 
-    return atom_ok;
+    return enif_make_tuple2(env, atom_ok, enif_make_int64(env, n));
 }
 
 
@@ -371,6 +374,7 @@ nif_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 nif_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int fd = -1;
+    ssize_t n = 0;
 
     ErlNifBinary buf = {0};
 
@@ -380,10 +384,12 @@ nif_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[1], &buf))
         return enif_make_badarg(env);
 
-    if (write(fd, buf.data, buf.size) == -1)
+    n = write(fd, buf.data, buf.size);
+
+    if (n < 0)
         return error_tuple(env, errno);
 
-    return atom_ok;
+    return enif_make_tuple2(env, atom_ok, enif_make_int64(env, n));
 }
 
 #define IOVMAX 256
@@ -397,6 +403,7 @@ nif_writev(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     struct iovec iovs[IOVMAX];
     int fd = -1;
     unsigned iovcnt;
+    ssize_t n = 0;
 
     if (!enif_get_int(env, argv[0], &fd))
         return enif_make_badarg(env);
@@ -422,10 +429,12 @@ nif_writev(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         iov->iov_len = buf.size;
     }
 
-    if (writev(fd, iovs, iovcnt) == -1)
+    n = writev(fd, iovs, iovcnt);
+
+    if (n < 0)
         return error_tuple(env, errno);
 
-    return atom_ok;
+    return enif_make_tuple2(env, atom_ok, enif_make_int64(env, n));
 }
 
 /* 0: socket descriptor, 1: struct sockaddr */
@@ -845,7 +854,7 @@ nif_sendmsg(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (n < 0)
         return error_tuple(env, errno);
 
-    return atom_ok;
+    return enif_make_tuple2(env, atom_ok, enif_make_int64(env, n));
 }
 
 
@@ -1146,15 +1155,15 @@ static ErlNifFunc nif_funcs[] = {
     {"listen", 2, nif_listen},
     {"read", 2, nif_read},
     {"write_nif", 2, nif_write},
-    {"writev", 2, nif_writev},
+    {"writev_nif", 2, nif_writev},
 
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
     {"recvmsg_nif", 5, nif_recvmsg},
-    {"sendmsg", 5, nif_sendmsg},
+    {"sendmsg_nif", 5, nif_sendmsg},
 
     {"recvfrom", 4, nif_recvfrom},
-    {"sendto", 4, nif_sendto},
+    {"sendto_nif", 4, nif_sendto},
     {"setsockopt_nif", 4, nif_setsockopt},
 
     {"alloc_nif", 1, nif_alloc},

@@ -41,8 +41,9 @@
         accept/1,accept/2,
         close/1,
         recv/2,recvfrom/2,recvfrom/4,
-        sendto/2, sendto/3,sendto/4,
-        read/2, write/2, writev/2,
+        sendto/2, sendto/3, sendto/4,
+        read/2,
+        write/2, writev/2,
         bind/2,
         ioctl/3,
         setsockopt/4,
@@ -152,18 +153,42 @@ sendto(Socket, Buf) ->
     sendto(Socket, Buf, 0, <<>>).
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
-sendto(_,_,_,_) ->
+sendto(Socket, Buf, Flags, Sockaddr) ->
+    Size = byte_size(Buf),
+    case sendto_nif(Socket, Buf, Flags, Sockaddr) of
+        {ok, Size} ->
+            ok;
+        Reply ->
+            Reply
+    end.
+
+sendto_nif(_,_,_,_) ->
     erlang:nif_error(not_implemented).
 
 write(FD, Buf) when is_binary(Buf) ->
-    write_nif(FD, Buf);
+    Size = byte_size(Buf),
+    case write_nif(FD, Buf) of
+        {ok, Size} ->
+            ok;
+        Reply ->
+            Reply
+    end;
 write(FD, Buf) when is_list(Buf) ->
     writev(FD, Buf).
 
 write_nif(_,_) ->
     erlang:nif_error(not_implemented).
 
-writev(_,_) ->
+writev(FD, Buf) ->
+    Size = iolist_size(Buf),
+    case writev_nif(FD, Buf) of
+        {ok, Size} ->
+            ok;
+        Reply ->
+            Reply
+    end.
+
+writev_nif(_,_) ->
     erlang:nif_error(not_implemented).
 
 recvmsg(Socket,Size,Flags,CtrlDataSize) ->
@@ -182,9 +207,19 @@ recvmsg(Socket,Size,Flags,CtrlDataSize,SockaddrSize) ->
     end.
 recvmsg_nif(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
+
 sendmsg(Socket,Buf,Flags,CtrlData) ->
     sendmsg(Socket,Buf,Flags,CtrlData,<<>>).
-sendmsg(_,_,_,_,_) ->
+sendmsg(Socket,Buf,Flags,CtrlData,Sockaddr) ->
+    Size = byte_size(Buf),
+    case sendmsg_nif(Socket,Buf,Flags,CtrlData,Sockaddr) of
+        {ok, Size} ->
+            ok;
+        Reply ->
+            Reply
+    end.
+
+sendmsg_nif(_,_,_,_,_) ->
     erlang:nif_error(not_implemented).
 
 setsockopt(Socket,Level,Optname,Optval) when is_atom(Level) ->
