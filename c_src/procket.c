@@ -108,11 +108,6 @@ upgrade(ErlNifEnv* env, void** priv_data, void** old_priv_data, ERL_NIF_TERM inf
   return 0;
 }
 
-    void
-unload(ErlNifEnv* env, void* priv_data)
-{
-}
-
 /* Retrieve the file descriptor from the forked privileged process */
 /* 0: connected Unix socket */
     static ERL_NIF_TERM
