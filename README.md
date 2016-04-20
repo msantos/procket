@@ -443,7 +443,7 @@ capabilities:
     Eshell V5.7.4  (abort with ^G)
     1> {ok, FD} = procket:open(53, [{protocol, udp},{type, dgram},{family, inet}]).
     {ok,9}
-    2> {ok, S} = gen_udp:open(53, [{fd,FD}]).
+    2> {ok, S} = gen_udp:open(0, [{fd,FD}]).
     {ok,#Port<0.929>}
     3> receive M -> M end.
     {udp,#Port<0.929>,{127,0,0,1},47483,"hello\n"}
