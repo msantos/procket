@@ -476,8 +476,6 @@ progname() ->
 
 %% Protocol family (aka domain)
 family(unspec) -> 0;
-family(unix) -> 1;
-family(local) -> 1;
 family(inet) -> 2;
 family(inet6) ->
     case os:type() of
