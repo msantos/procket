@@ -476,6 +476,8 @@ progname() ->
 
 %% Protocol family (aka domain)
 family(unspec) -> 0;
+family(unix) -> 1;
+family(local) -> 1;
 family(inet) -> 2;
 family(inet6) ->
     case os:type() of
@@ -506,6 +508,7 @@ type(raw) ->
         {unix,sunos} -> 4;
         {unix,_} -> 3
     end.
+type(seqpacket) -> 5;
 
 % Select a protocol within the family (0 means use the default
 % protocol in the family)
