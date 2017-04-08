@@ -16,7 +16,7 @@ Other features include:
 
 * support for the BSD raw socket interface
 
-* generate and snoop packets using PF_PACKET sockets on Linux
+* generate and snoop packets using PF\_PACKET sockets on Linux
 
 * generate and snoop packets using the BPF interface on BSDs like Mac OS X
 
@@ -28,18 +28,6 @@ Other features include:
 
 procket works with any version of Erlang after R14A.
 
-## CHANGES
-
-### V0.04:
-* IPv6 support
-
-### V0.02:
-* procket:listen/1,2 was renamed procket:open/1,2. procket:listen/2 is
-  now a wrapper around listen(2)
-
-* procket:recvfrom/2 returns {error,eagain} when data is not available
-  (previously returned nodata)
-
 
 ## EXPORTS
 
@@ -47,9 +35,9 @@ procket works with any version of Erlang after R14A.
 
     protocol() = ip | icmp | tcp | udp | 'ipv6-icmp' | raw
 
-    type() = stream | dgram | raw
+    type() = stream | dgram | raw | seqpacket
 
-    family() = unspec | inet | inet6 | netlink | packet
+    family() = unspec | inet | inet6 | netlink | packet | local | unix | file
 
 
 ### Accessing Socket/Devices Requiring Elevated Privileges
@@ -511,7 +499,7 @@ procket uses libancillary for passing file descriptors between processes:
     * Support passive and active modes.
     * Hold state for the socket, so the caller does not need to, e.g.,
       use ifindex/2.
-    * same interface for PF_PACKET and BPF
+    * same interface for PF\_PACKET and BPF
 
 
 ## CONTRIBUTORS
