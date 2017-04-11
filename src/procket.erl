@@ -505,8 +505,8 @@ type(raw) ->
     case os:type() of
         {unix,sunos} -> 4;
         {unix,_} -> 3
-    end.
-type(seqpacket) -> 5;
+    end;
+type(seqpacket) -> 5.
 
 % Select a protocol within the family (0 means use the default
 % protocol in the family)
