@@ -156,7 +156,7 @@ iflist() ->
 %% for packet:send/3.
 %%-------------------------------------------------------------------------
 ifindex(Socket, Dev) ->
-    {ok, <<_Ifname:16/bytes, Ifr:8, _/binary>>} = procket:ioctl(Socket,
+    {ok, <<_Ifname:16/bytes, Ifr:32/native, _/binary>>} = procket:ioctl(Socket,
         ?SIOCGIFINDEX,
         list_to_binary([
                 Dev, <<0:((15*8) - (length(Dev)*8)), 0:8, 0:128>>
