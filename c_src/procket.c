@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2017, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include "procket_constants.h"
 
 static ERL_NIF_TERM error_tuple(ErlNifEnv *env, int errnum);
-void alloc_free(ErlNifEnv *env, void *obj);
+void procket_alloc_free(ErlNifEnv *env, void *obj);
 
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
@@ -45,10 +45,10 @@ static ERL_NIF_TERM atom_undefined;
 
 static ErlNifResourceType *PROCKET_ALLOC_RESOURCE;
 
-typedef struct _alloc_state {
+typedef struct _procket_alloc_state {
     size_t size;
     void *buf;
-} ALLOC_STATE;
+} PROCKET_ALLOC_STATE;
 
 /* Grow or shrink a binary.
  *
@@ -88,7 +88,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     atom_undefined = enif_make_atom(env, "undefined");
 
     if ( (PROCKET_ALLOC_RESOURCE = enif_open_resource_type(env, NULL,
-        "procket_alloc_resource", alloc_free,
+        "procket_alloc_resource", procket_alloc_free,
         ERL_NIF_RT_CREATE, NULL)) == NULL)
         return -1;
 
@@ -893,7 +893,7 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             (void)memcpy(req.data+index, bin.data, bin.size);
         }
         else if (enif_get_tuple(env, head, &arity, &array)) {
-            ALLOC_STATE *p = NULL;
+            PROCKET_ALLOC_STATE *p = NULL;
             ERL_NIF_TERM res = {0};
             size_t val = 0;
             ErlNifBinary initial = {0};
@@ -909,7 +909,7 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
             val = (initial.size > 0) ? initial.size : val;
 
-            p = enif_alloc_resource(PROCKET_ALLOC_RESOURCE, sizeof(ALLOC_STATE));
+            p = enif_alloc_resource(PROCKET_ALLOC_RESOURCE, sizeof(PROCKET_ALLOC_STATE));
 
             if (p == NULL)
                 return error_tuple(env, ENOMEM);
@@ -948,7 +948,7 @@ nif_alloc(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     static ERL_NIF_TERM
 nif_buf(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    ALLOC_STATE *p = NULL;
+    PROCKET_ALLOC_STATE *p = NULL;
 
     ErlNifBinary buf = {0};
 
@@ -969,7 +969,7 @@ nif_buf(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     static ERL_NIF_TERM
 nif_memcpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    ALLOC_STATE *p = NULL;
+    PROCKET_ALLOC_STATE *p = NULL;
     ErlNifBinary buf = {0};
 
 
@@ -1124,9 +1124,9 @@ error_tuple(ErlNifEnv *env, int errnum)
 
 
     void
-alloc_free(ErlNifEnv *env, void *obj)
+procket_alloc_free(ErlNifEnv *env, void *obj)
 {
-    ALLOC_STATE *p = obj;
+    PROCKET_ALLOC_STATE *p = obj;
 
     if (p->buf == NULL)
         return;
