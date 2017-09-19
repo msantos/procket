@@ -132,6 +132,16 @@ socket(Family, Type, Protocol) ->
 socket_nif(_,_,_) ->
     erlang:nif_error(not_implemented).
 
+setns(Options) ->
+    case proplists:get_value(netns,Options, []) of
+        [] -> ok;
+        NS when is_list(NS) ->
+            setns_nif(erlang:list_to_binary(NS)),
+            proplists:delete(netns, Options)
+    end.
+setns_nif(_) ->
+    erlang:nif_error(not_implemented).
+
 ioctl(_,_,_) ->
     erlang:nif_error(not_implemented).
 buf(_) ->
@@ -303,13 +313,15 @@ dev(Dev) when is_list(Dev) ->
 open(Port) ->
     open(Port, []).
 open(Port, Options) when is_integer(Port), is_list(Options) ->
-    {Tmpdir, Pipe} = make_unix_socket_path(Options),
+    Options_1 = setns(Options),
+    error_logger:info_msg("Options ~p", [Options_1]),
+    {Tmpdir, Pipe} = make_unix_socket_path(Options_1),
     {ok, FD} = fdopen(Pipe),
 
     Cmd = getopts([
                 {port, Port},
                 {pipe, Pipe}
-                ] ++ Options),
+                ] ++ Options_1),
 
     Socket = exec(FD, Cmd),
     close(FD),
