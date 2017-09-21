@@ -82,6 +82,7 @@ typedef struct {
     char *port;             /* Port */
     char *ifname;           /* network interface name */
     char *dev;              /* Open a character device */
+    char *ns;               /* Open a namespace */
     int verbose;            /* Debug messages */
     int s;                  /* socket fd */
     int family;             /* socket family: PF_INET */

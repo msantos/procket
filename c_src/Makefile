@@ -51,6 +51,8 @@ CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 LDLIBS += -L$(C_SRC_DIR) -lancillary -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
 LDFLAGS += -shared
 
+PROCKET_CFLAGS += $(PROCKET_DEFINE)
+
 # Verbosity.
 
 c_verbose_0 = @echo " C     " $(?F);

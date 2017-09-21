@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2017, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,17 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifdef HAVE_SETNS
+#define _GNU_SOURCE
+#include <sched.h>
+#endif
+
 #include "procket.h"
 #include "ancillary.h"
 
-
 #define BACKLOG     128  /* default backlog for TCP connections */
 
+int procket_open_ns(PROCKET_STATE *ps);
 int procket_open_fd(PROCKET_STATE *ps);
 int procket_check_devname(char *dev, size_t len);
 int procket_pipe(PROCKET_STATE *ps);
@@ -72,7 +77,7 @@ main(int argc, char *argv[])
 
     ps->fdtype = PROCKET_FD_SOCKET;
 
-    while ( (ch = getopt(argc, argv, "b:d:F:hI:p:P:T:u:v")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:d:F:hI:N:p:P:T:u:v")) != -1) {
         switch (ch) {
             case 'b':   /* listen backlog */
                 ps->backlog = atoi(optarg);
@@ -124,6 +129,12 @@ main(int argc, char *argv[])
 
                 ps->fdtype = PROCKET_FD_CHARDEV;
                 break;
+            case 'N':   /* namespace */
+                ps->ns = strdup(optarg);
+
+                if (ps->ns == NULL)
+                    error_result(ps, errno);
+                break;
             case 'v':
                 ps->verbose++;
                 break;
@@ -149,6 +160,9 @@ main(int argc, char *argv[])
             error_result(ps, ENAMETOOLONG);
     }
 
+    if (procket_open_ns(ps) < 0)
+        error_result(ps, errno);
+
     if (procket_open_fd(ps) < 0)
         error_result(ps, errno);
 
@@ -161,6 +175,26 @@ main(int argc, char *argv[])
     exit(0);
 }
 
+    int
+procket_open_ns(PROCKET_STATE *ps)
+{
+#ifdef HAVE_SETNS
+    int fd = 0;
+
+    if (ps->ns == NULL)
+        return 0;
+
+    fd = open(ps->ns, O_RDONLY);
+
+    if (fd < 0)
+        return -1;
+
+    if (setns(fd, 0 /* join all namespaces */) < 0)
+        return -1;
+#endif
+
+    return 0;
+}
 
     int
 procket_open_fd(PROCKET_STATE *ps)

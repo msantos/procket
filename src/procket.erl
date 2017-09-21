@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2015, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2017, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -434,6 +434,9 @@ optarg({dev, Dev}) when is_list(Dev) ->
         false ->
             erlang:error(badarg, [{dev, Dev}])
     end;
+
+optarg({namespace, NS}) when is_list(NS) ->
+    switch("N", NS);
 
 % Ignore any other arguments
 optarg(_Arg) ->

@@ -54,6 +54,7 @@ procket works with any version of Erlang after R14A.
                     | {progname, string()}
                     | {interface, string()}
                     | {pipe, string()}
+                    | {namespace, string()}
                 Protocol = protocol() | integer()
                 Type = type() | integer()
                 Family = family() | integer()
@@ -70,6 +71,10 @@ procket works with any version of Erlang after R14A.
         can be changed by using the 'exec' option:
 
             procket:open(Port, [{exec, ["", "sudo"]}]).
+
+        Linux only: the `{namespace, string()}` option causes the procket
+        setuid helper to open the socket in a pre-configured namespace. By
+        default, all namespaces are joined by the helper.
 
     dev(Dev) -> {ok, FD} | {error, posix()}
 
