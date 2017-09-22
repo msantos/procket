@@ -74,7 +74,7 @@ $(C_SRC_OUTPUT): privdir ancillary cmd $(OBJECTS)
 	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
 
 %.o: %.c
-	$(COMPILE_C) $(OUTPUT_OPTION) $<
+	$(COMPILE_C) $(PROCKET_DEFINE) $(OUTPUT_OPTION) $<
 
 %.o: %.cc
 	$(COMPILE_CPP) $(OUTPUT_OPTION) $<

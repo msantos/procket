@@ -53,6 +53,8 @@
         recvmsg/4, recvmsg/5,
         sendmsg/4, sendmsg/5,
 
+        setns/1,
+
         family/1,
 
         alloc/1,
@@ -132,13 +134,8 @@ socket(Family, Type, Protocol) ->
 socket_nif(_,_,_) ->
     erlang:nif_error(not_implemented).
 
-setns(Options) ->
-    case proplists:get_value(netns,Options, []) of
-        [] -> ok;
-        NS when is_list(NS) ->
-            setns_nif(erlang:list_to_binary(NS)),
-            proplists:delete(netns, Options)
-    end.
+setns(NS) ->
+    setns_nif(NS).
 setns_nif(_) ->
     erlang:nif_error(not_implemented).
 
@@ -313,15 +310,13 @@ dev(Dev) when is_list(Dev) ->
 open(Port) ->
     open(Port, []).
 open(Port, Options) when is_integer(Port), is_list(Options) ->
-    Options_1 = setns(Options),
-    error_logger:info_msg("Options ~p", [Options_1]),
-    {Tmpdir, Pipe} = make_unix_socket_path(Options_1),
+    {Tmpdir, Pipe} = make_unix_socket_path(Options),
     {ok, FD} = fdopen(Pipe),
 
     Cmd = getopts([
                 {port, Port},
                 {pipe, Pipe}
-                ] ++ Options_1),
+                ] ++ Options),
 
     Socket = exec(FD, Cmd),
     close(FD),

@@ -46,7 +46,7 @@
 -export([start/0]).
 
 start() ->
-    {ok, Fd} = procket:open(0, [{netns,"/var/run/netns/blue"},
+    {ok, Fd} = procket:open(0, [{namespace,"/var/run/netns/blue"},
             {protocol, 16#0008}, {type, raw}, {family, packet}]),
     ok = packet:bind(Fd, packet:ifindex(Fd,"veth1")),
     erlang:open_port({fd, Fd, Fd}, [binary, stream]),
