@@ -29,6 +29,8 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#define _GNU_SOURCE
+#include <sched.h>
 #include "erl_nif.h"
 #include "erl_driver.h"
 #include "ancillary.h"
@@ -134,6 +136,24 @@ nif_fdrecv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             enif_make_int(env, s));
 }
 
+static ERL_NIF_TERM
+nif_setns(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int fd;
+    ErlNifBinary buf = {0};
+
+    if (!enif_inspect_binary(env, argv[0], &buf))
+        return enif_make_badarg(env);
+
+    fd = open((const char*)buf.data, O_RDONLY);  /* Get descriptor for namespace */
+    if (fd < 0)
+        return error_tuple(env, errno);
+
+    if (setns(fd, 0) == -1)
+        return error_tuple(env, errno);
+
+    return atom_ok;
+}
 
 /*  0: procotol, 1: type, 2: family */
     static ERL_NIF_TERM
@@ -1154,6 +1174,7 @@ static ErlNifFunc nif_funcs[] = {
 
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
+    {"setns_nif", 1, nif_setns},
     {"recvmsg_nif", 5, nif_recvmsg},
     {"sendmsg_nif", 5, nif_sendmsg},
 
