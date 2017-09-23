@@ -1,0 +1,75 @@
+TMPDIR = os:getenv("TMPDIR", "/tmp"),
+
+Compile = fun(Name0, Prog) ->
+    Name = filename:join(TMPDIR, Name0),
+    ok = file:write_file(Name, Prog, [write, exclusive]),
+    Cmd = erlang:open_port({spawn, ["${CC-cc} -o /dev/null ", Name]},
+            [stream, exit_status]),
+    Status = receive
+        {Cmd, {exit_status, 0}} ->
+            true;
+        {Cmd, {exit_status, _}} ->
+            false
+    end,
+    ok = file:delete(Name),
+    Status
+end,
+
+Test = fun(Name, Prog, Supported, Unsupported) ->
+    case Compile(Name, Prog) of
+        true ->
+            Supported;
+        false ->
+            Unsupported
+    end
+end,
+
+Only = fun(OS, Name, Prog, Supported, Unsupported) ->
+    case os:type() of
+        OS ->
+            Test(Name, Prog, Supported, Unsupported);
+        _ ->
+            Unsupported
+    end
+end,
+
+Linux = fun(Name, Prog, Supported, Unsupported) ->
+    Only({unix,linux}, Name, Prog, Supported, Unsupported)
+end,
+
+Append = fun(Str, Flag) ->
+    string:join(sets:to_list(sets:add_element(Flag,
+                    sets:from_list(string:tokens(Str, " ")))), " ")
+end,
+
+Setenv = fun(_Key, "") ->
+                true;
+            (Key, Val) ->
+                Cur = os:getenv(Key, ""),
+                os:putenv(Key, Append(Cur, Val))
+end,
+
+%%
+%% Tests
+%%
+
+% Linux: support for setns(2)
+Setns = fun(Config) ->
+    Prog = "
+#define _GNU_SOURCE
+#include <sched.h>
+int main(int argc, char *argv[]) {
+    (void)setns(0,0);
+    return 0;
+}",
+    Flag = Linux("test_setns.c", Prog, "-DHAVE_SETNS", ""),
+    true = Setenv("PROCKET_DEFINE", Flag),
+    Config
+end,
+
+lists:foldl(fun(Fun, Cfg) ->
+        Fun(Cfg)
+    end,
+    CONFIG,
+    [Setns]
+).
