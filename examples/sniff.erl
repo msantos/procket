@@ -39,6 +39,12 @@
 %% ifconfig veth0 10.1.1.100/24 up
 %% ping 10.1.1.1 # This should be successful
 
+%% ip netns add red
+%% ip link add veth2 type veth peer name veth3
+%% ip link set veth3 netns red
+%% ip netns exec red ifconfig veth3 20.1.1.1/24 up
+%% ifconfig veth2 20.1.1.100/24 up
+
 %% Then execute the example as follows:
 %%      sudo erl -pa _build/default/lib/procket/ebin/ -pa ebin -s sniff start
 
@@ -46,9 +52,13 @@
 -export([start/0]).
 
 start() ->
-    {ok, Fd} = procket:open(0, [{namespace,"/var/run/netns/blue"},
+	spawn(fun() -> start_sniff_on("/var/run/netns/blue", "veth1") end),
+	spawn(fun() -> start_sniff_on("/var/run/netns/red",  "veth3") end).
+
+start_sniff_on(Ns, IfName) ->
+    {ok, Fd} = procket:open(0, [{namespace,Ns},
             {protocol, 16#0008}, {type, raw}, {family, packet}]),
-    ok = packet:bind(Fd, packet:ifindex(Fd,"veth1")),
+    ok = packet:bind(Fd, packet:ifindex(Fd,IfName)),
     erlang:open_port({fd, Fd, Fd}, [binary, stream]),
     loop().
 
@@ -59,11 +69,11 @@ loop() ->
             loop()
     after
         5000 ->
-            error_logger:info_msg("Loop timeout",[])
+            loop()
     end.
 
 filter({_,{data,Data}}) ->
-    error_logger:info_msg("Data ~p", [Data]),
+    error_logger:info_msg("~p: Data ~p", [self(), Data]),
     Data;
 filter(Data) ->
     ok.
