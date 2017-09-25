@@ -145,9 +145,13 @@ nif_setns(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 #ifdef HAVE_SETNS
     int fd;
     ErlNifBinary buf = {0};
+    int nstype = 0;
     int errnum = 0;
 
-    if (!enif_inspect_binary(env, argv[0], &buf))
+    if (!enif_inspect_iolist_as_binary(env, argv[0], &buf))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &nstype))
         return enif_make_badarg(env);
 
     PROCKET_REALLOC(buf, buf.size+1);
@@ -157,7 +161,7 @@ nif_setns(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (fd < 0)
         return error_tuple(env, errno);
 
-    if (setns(fd, 0) == -1) {
+    if (setns(fd, nstype) == -1) {
         errnum = errno;
         (void)close(fd);
         return error_tuple(env, errnum);
@@ -1190,7 +1194,7 @@ static ErlNifFunc nif_funcs[] = {
 
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
-    {"setns_nif", 1, nif_setns},
+    {"setns", 2, nif_setns},
     {"recvmsg_nif", 5, nif_recvmsg},
     {"sendmsg_nif", 5, nif_sendmsg},
 

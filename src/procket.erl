@@ -53,7 +53,7 @@
         recvmsg/4, recvmsg/5,
         sendmsg/4, sendmsg/5,
 
-        setns/1,
+        setns/1, setns/2,
 
         family/1,
 
@@ -135,8 +135,8 @@ socket_nif(_,_,_) ->
     erlang:nif_error(not_implemented).
 
 setns(NS) ->
-    setns_nif(NS).
-setns_nif(_) ->
+    setns(NS, 0).
+setns(_, _) ->
     erlang:nif_error(not_implemented).
 
 ioctl(_,_,_) ->
