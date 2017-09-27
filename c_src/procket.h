@@ -78,6 +78,7 @@ extern char *__progname;
 typedef struct {
     int fdtype;             /* fd type requested */
     char *path;             /* path to pipe file */
+    size_t pathlen;         /* path length (does not include trailing NULL) */
     char *address;          /* IP address */
     char *port;             /* Port */
     char *ifname;           /* network interface name */

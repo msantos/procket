@@ -91,7 +91,9 @@ main(int argc, char *argv[])
                 if (ps->path == NULL)
                     error_result(ps, errno);
 
-                if (strlen(ps->path) >= UNIX_PATH_MAX)
+                ps->pathlen = strlen(ps->path);
+
+                if (ps->pathlen >= UNIX_PATH_MAX)
                     error_result(ps, ENAMETOOLONG);
                 break;
             case 'p':   /* port */
@@ -366,8 +368,7 @@ procket_pipe(PROCKET_STATE *ps)
     struct sockaddr_un sa = {0};
     int s = -1;
 
-
-    (void)memcpy(sa.sun_path, ps->path, sizeof(sa.sun_path)-1);
+    (void)memcpy(sa.sun_path, ps->path, MIN(ps->pathlen, UNIX_PATH_MAX-1));
 
     sa.sun_family = PF_LOCAL;
 
