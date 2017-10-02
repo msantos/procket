@@ -60,7 +60,7 @@ template(Name, Chars) ->
     template(lists:reverse(Name), [], Chars).
 template([$X|Rest], Acc, Chars) ->
     template(Rest,
-        [lists:nth(crypto:rand_uniform(1, length(Chars)+1), Chars)|Acc],
+        [lists:nth(rand:uniform(length(Chars)+1), Chars)|Acc],
         Chars);
 template(Name, Rand, _) when length(Rand) >= 6 ->
     lists:reverse(Name) ++ Rand.
