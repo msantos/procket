@@ -62,8 +62,13 @@ int main(int argc, char *argv[]) {
     (void)setns(0,0);
     return 0;
 }",
-    Flag = Linux("test_setns.c", Prog, "-DHAVE_SETNS", ""),
-    true = Setenv("PROCKET_DEFINE", Flag),
+    case os:getenv("CROSSCOMPILE") of
+        false ->
+            Flag = Linux("test_setns.c", Prog, "-DHAVE_SETNS", ""),
+            true = Setenv("PROCKET_DEFINE", Flag);
+        _ ->
+            true
+    end,
     Config
 end,
 
