@@ -62,8 +62,7 @@
 ping(IP) ->
     ping(IP, 1).
 ping(IP, N) ->
-    crypto:start(),
-    Id = crypto:rand_uniform(0, 16#FFFF),
+    Id = rand:uniform(16#FFFF),
     {Family, Protocol, Addr} =
 	case (catch inet:getaddr(IP, inet6)) of
 	    {ok, V6Addr} ->
