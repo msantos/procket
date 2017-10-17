@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2015, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2017, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -60,7 +60,7 @@ template(Name, Chars) ->
     template(lists:reverse(Name), [], Chars).
 template([$X|Rest], Acc, Chars) ->
     template(Rest,
-        [lists:nth(rand:uniform(length(Chars)+1), Chars)|Acc],
+        [lists:nth(rand:uniform(length(Chars)), Chars)|Acc],
         Chars);
 template(Name, Rand, _) when length(Rand) >= 6 ->
     lists:reverse(Name) ++ Rand.
