@@ -42,7 +42,7 @@
         arplookup/1,
         gateway/0, gateway/1, gateway_addr/1,
         default_interface/0,
-        ifindex/2,
+        ifindex/2, ifname/2,
         ipv4address/2,
         macaddress/2,
         promiscuous/2,
@@ -163,6 +163,14 @@ ifindex(Socket, Dev) ->
             ])),
     Ifr.
 
+%%-------------------------------------------------------------------------
+%% The network device associated with the interface index.
+%%-------------------------------------------------------------------------
+ifname(Socket, Ifr) ->
+    Body = <<0:16/unit:8, Ifr:32/native, 0:20/unit:8>>,
+    {ok, Return} = procket:ioctl(Socket, ?SIOCGIFNAME, Body),
+    <<Dev:16/bytes, _Ifr:8, _Rest/binary>> = Return,
+    trim_padding(Dev).
 
 %%-------------------------------------------------------------------------
 %% procket:sendto/4 with defaults set
@@ -321,3 +329,14 @@ checksum(Hdr) ->
 compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
 compl(N,S) -> compl(N+S).
+
+trim_padding(B) ->
+    trim_padding(B, erlang:byte_size(B) - 1).
+
+trim_padding(_B, -1) ->
+    <<>>;
+trim_padding(B, Idx) ->
+    case binary:at(B, Idx) of
+        0 -> trim_padding(B, Idx - 1);
+        _ -> binary:part(B, 0, Idx + 1)
+    end.
