@@ -370,7 +370,7 @@ procket works with any version of Erlang after R14A.
         Types   Resource = resource()
                 Buf = binary()
 
-        Returns the contents of memory allocted using alloc/1. See the
+        Returns the contents of memory allocated using alloc/1. See the
         example above.
 
 ## COMPILING
