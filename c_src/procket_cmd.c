@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2017, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2018, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -236,6 +236,21 @@ procket_check_devname(char *dev, size_t len)
 procket_open_socket(PROCKET_STATE *ps)
 {
     switch (ps->protocol) {
+        case IPPROTO_ICMP:
+            /* getaddrinfo(3): node for SOCK_RAW must not be NULL */
+            if (ps->address == NULL) {
+              char *ipaddr = ps->family == AF_INET6 ? "::" : "0.0.0.0";
+              ps->address = strdup(ipaddr);
+              if (ps->address == NULL)
+                return -1;
+            }
+
+            /* getaddrinfo(3): port for SOCK_RAW must NULL */
+            free(ps->port);
+            ps->port = NULL;
+
+            /* fall through */
+
         case IPPROTO_TCP:
         case IPPROTO_UDP:
             if (procket_lookup_socket(ps) < 0)
