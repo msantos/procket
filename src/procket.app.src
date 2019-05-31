@@ -1,6 +1,6 @@
 {application, procket,
     [{description, "Low level socket operations"},
-     {applications, []},
+     {applications, [kernel,stdlib]},
      {registered, []},
      {vsn, "0.9.3"},
 
