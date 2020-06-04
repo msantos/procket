@@ -2,7 +2,7 @@
     [{description, "Low level socket operations"},
      {applications, [kernel,stdlib]},
      {registered, []},
-     {vsn, "0.9.3"},
+     {vsn, "0.9.4"},
 
      {licenses, ["BSD-3"]},
      {maintainers, ["Michael Santos"]},
