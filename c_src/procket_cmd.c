@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2018, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2020, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -347,10 +347,7 @@ procket_create_socket(PROCKET_STATE *ps)
 
 #ifdef SO_BINDTODEVICE
     if (ps->ifname) {
-        struct ifreq ifr;
-
-        (void)snprintf(ifr.ifr_name, IFNAMSIZ, "%s", ps->ifname);
-        if (setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
+        if (setsockopt(ps->s, SOL_SOCKET, SO_BINDTODEVICE, ps->ifname, strlen(ps->ifname)) < 0)
             return -1;
     }
 #endif
