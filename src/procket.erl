@@ -66,7 +66,9 @@
         socket_optname/0, socket_optname/1,
         socket_protocol/0, socket_protocol/1,
 
-        errno_id/1
+        errno_id/1,
+        
+        set_sock_nonblock/1
     ]).
 -export([
         unix_path_max/0,
@@ -289,6 +291,9 @@ socket_protocol(_) ->
     erlang:nif_error(not_implemented).
 
 errno_id(_) ->
+    erlang:nif_error(not_implemented).
+
+set_sock_nonblock(_) ->
     erlang:nif_error(not_implemented).
 
 socket_constant_foreach(_Constant, []) ->
