@@ -1177,6 +1177,29 @@ procket_alloc_free(ErlNifEnv *env, void *obj)
 }
 
 
+    static ERL_NIF_TERM
+nif_set_sock_nonblock(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int s = -1;
+    int flags = 0;
+
+    if (!enif_get_int(env, argv[0], &s))
+        return enif_make_badarg(env);
+
+    if (s < 0)
+        return error_tuple(env, errno);
+
+    flags = fcntl(s, F_GETFL, 0);
+
+    if (flags < 0)
+        return error_tuple(env, errno);
+
+    if (fcntl(s, F_SETFL, flags|O_NONBLOCK) < 0)
+        return error_tuple(env, errno);
+
+    return atom_ok;
+}
+
 static ErlNifFunc nif_funcs[] = {
     {"fdrecv", 1, nif_fdrecv},
 
@@ -1213,7 +1236,9 @@ static ErlNifFunc nif_funcs[] = {
     {"socket_optname", 1, nif_socket_optname},
     {"socket_protocol", 1, nif_socket_protocol},
 
-    {"errno_id", 1, nif_errno_id}
+    {"errno_id", 1, nif_errno_id},
+
+    {"set_sock_nonblock", 1, nif_set_sock_nonblock}
 };
 
 ERL_NIF_INIT(procket, nif_funcs, load, reload, upgrade, NULL)
