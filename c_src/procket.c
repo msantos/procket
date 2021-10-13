@@ -97,7 +97,7 @@ load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
         ERL_NIF_RT_CREATE, NULL)) == NULL)
         return -1;
 
-    return (0);
+    return 0;
 }
 
 /* Stubs for reload and upgrade */
@@ -168,6 +168,32 @@ nif_setns(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     }
 
     (void)close(fd);
+
+    return atom_ok;
+#else
+    return error_tuple(env, ENOTSUP);
+#endif
+}
+
+    static ERL_NIF_TERM
+nif_setns_by_fd(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+#ifdef HAVE_SETNS
+    int fd;
+    int nstype = 0;
+    int errnum = 0;
+
+    if (!enif_get_int(env, argv[0], &fd))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &nstype))
+        return enif_make_badarg(env);
+
+    if (setns(fd, nstype) == -1) {
+        errnum = errno;
+        (void)close(fd);
+        return error_tuple(env, errnum);
+    }
 
     return atom_ok;
 #else
@@ -274,13 +300,40 @@ nif_accept(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             enif_make_binary(env, &sa));
 }
 
+/* 0: resource to open, 1: open mode */
+    static ERL_NIF_TERM
+nif_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    int fd = -1;
+    int flag = 0;
+    ErlNifBinary buf = {0};
+
+    if (argc != 2)
+        return enif_make_badarg(env);
+
+    if (!enif_inspect_iolist_as_binary(env, argv[0], &buf))
+        return enif_make_badarg(env);
+
+    if (!enif_get_int(env, argv[1], &flag))
+        return enif_make_badarg(env);
+
+    PROCKET_REALLOC(buf, buf.size+1);
+    buf.data[buf.size-1] = '\0';
+
+    fd = open((const char*)buf.data, flag);  /* Get descriptor */
+    if (fd < 0)
+        return error_tuple(env, errno);
+
+    return enif_make_tuple2(env,
+           atom_ok,
+           enif_make_int(env, fd));
+}
 
 /* 0: file descriptor */
     static ERL_NIF_TERM
 nif_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int sockfd = -1;
-
 
     if (!enif_get_int(env, argv[0], &sockfd))
         return enif_make_badarg(env);
@@ -337,7 +390,6 @@ nif_recvfrom(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return enif_make_tuple3(env, atom_ok, enif_make_binary(env, &buf),
              enif_make_binary(env, &sa));
 }
-
 
 /* 0: socket, 1: buffer, 2: flags, 3: struct sockaddr */
     static ERL_NIF_TERM
@@ -1203,6 +1255,7 @@ nif_set_sock_nonblock(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 static ErlNifFunc nif_funcs[] = {
     {"fdrecv", 1, nif_fdrecv},
 
+    {"open_nif", 2, nif_open},
     {"close", 1, nif_close},
 
     {"accept", 2, nif_accept},
@@ -1218,6 +1271,7 @@ static ErlNifFunc nif_funcs[] = {
     {"ioctl", 3, nif_ioctl},
     {"socket_nif", 3, nif_socket},
     {"setns", 2, nif_setns},
+    {"setns_by_fd", 2, nif_setns_by_fd},
     {"recvmsg_nif", 5, nif_recvmsg},
     {"sendmsg_nif", 5, nif_sendmsg},
 

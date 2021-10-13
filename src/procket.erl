@@ -33,14 +33,14 @@
 -include_lib("kernel/include/file.hrl").
 
 -export([
-        open/1,open/2,
-        dev/1,
+        open/1, open/2,
+        dev/1, dev/2,
         socket/3,
-        listen/1,listen/2,
+        listen/1, listen/2,
         connect/2,
-        accept/1,accept/2,
+        accept/1, accept/2,
         close/1,
-        recv/2,recvfrom/2,recvfrom/4,
+        recv/2, recvfrom/2, recvfrom/4,
         sendto/2, sendto/3, sendto/4,
         read/2,
         write/2, writev/2,
@@ -52,10 +52,10 @@
 
         recvmsg/4, recvmsg/5,
         sendmsg/4, sendmsg/5,
+        family/1,
 
         setns/1, setns/2,
-
-        family/1,
+        setns_by_fd/1, setns_by_fd/2,
 
         alloc/1,
         buf/1,
@@ -67,8 +67,8 @@
         socket_protocol/0, socket_protocol/1,
 
         errno_id/1,
-        
-        set_sock_nonblock/1
+        set_sock_nonblock/1,
+        open_nif/2
     ]).
 -export([
         unix_path_max/0,
@@ -91,6 +91,15 @@ on_load() ->
 %%--------------------------------------------------------------------
 %%% NIF Stubs
 %%--------------------------------------------------------------------
+open_nif(Path, read) ->
+    open_nif(Path, 0);
+open_nif(Path, write) ->
+    open_nif(Path, 1);
+open_nif(Path, read_write) ->
+    open_nif(Path, 2);
+open_nif(_, _) ->
+    erlang:nif_error(not_implemented).
+
 close(_) ->
     erlang:nif_error(not_implemented).
 
@@ -139,6 +148,11 @@ socket_nif(_,_,_) ->
 setns(NS) ->
     setns(NS, 0).
 setns(_, _) ->
+    erlang:nif_error(not_implemented).
+
+setns_by_fd(FD) ->
+    setns_by_fd(FD, 0).
+setns_by_fd(_, _) ->
     erlang:nif_error(not_implemented).
 
 ioctl(_,_,_) ->
@@ -311,6 +325,9 @@ socket_constant_foreach(Constant, [Fun|Funs]) ->
 %%--------------------------------------------------------------------
 dev(Dev) when is_list(Dev) ->
     open(0, [{dev, Dev}]).
+
+dev(Dev, Opt) when is_list(Dev) andalso is_list(Opt) ->
+    open(0, [{dev, Dev} | Opt]).
 
 open(Port) ->
     open(Port, []).
