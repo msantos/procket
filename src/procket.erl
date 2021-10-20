@@ -34,13 +34,13 @@
 
 -export([
         open/1,open/2,
-        dev/1,
+        dev/1, dev/2,
         socket/3,
-        listen/1,listen/2,
+        listen/1, listen/2,
         connect/2,
-        accept/1,accept/2,
+        accept/1, accept/2,
         close/1,
-        recv/2,recvfrom/2,recvfrom/4,
+        recv/2, recvfrom/2, recvfrom/4,
         sendto/2, sendto/3, sendto/4,
         read/2,
         write/2, writev/2,
@@ -311,6 +311,9 @@ socket_constant_foreach(Constant, [Fun|Funs]) ->
 %%--------------------------------------------------------------------
 dev(Dev) when is_list(Dev) ->
     open(0, [{dev, Dev}]).
+
+dev(Dev, Opts) when is_list(Dev), is_list(Opts) ->
+    open(0, [{dev, Dev} | Opts]).
 
 open(Port) ->
     open(Port, []).
