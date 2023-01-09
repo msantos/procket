@@ -40,6 +40,7 @@ ifeq ($(UNAME_ARCH), x86_64)
 else ifeq ($(UNAME_ARCH), arm64)
 	PROCKET_CFLAGS += -m$(ERLANG_ARCH)
 	CFLAGS += -m$(ERLANG_ARCH)
+	LDFLAGS += -undefined dynamic_lookup
 else ifeq ($(UNAME_ARCH), i686)
 	PROCKET_CFLAGS += -m$(ERLANG_ARCH)
 	CFLAGS += -m$(ERLANG_ARCH)
