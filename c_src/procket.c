@@ -175,7 +175,7 @@ nif_setns(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 #endif
 }
 
-/*  0: procotol, 1: type, 2: family */
+/*  0: protocol, 1: type, 2: family */
     static ERL_NIF_TERM
 nif_socket(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
