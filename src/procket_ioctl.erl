@@ -30,13 +30,18 @@
 -module(procket_ioctl).
 
 -export([
-        in/0, out/0, void/0,
-        in/1, out/1, void/1,
-        ioc/4,
-        io/2, ior/3,
-        iow/3, iowr/3
-    ]).
-
+    in/0,
+    out/0,
+    void/0,
+    in/1,
+    out/1,
+    void/1,
+    ioc/4,
+    io/2,
+    ior/3,
+    iow/3,
+    iowr/3
+]).
 
 %%
 %% Calculate the values of the ioctl request macros at runtime.
@@ -97,31 +102,35 @@ void(linux) -> 0.
 
 -define(IOCPARM_MASK, 16#1fff).
 
-ioc(Inout,Group,Num,Len) ->
-    Size = case os() of
-        bsd -> Len band ?IOCPARM_MASK;
-        linux -> Len
-    end,
+ioc(Inout, Group, Num, Len) ->
+    Size =
+        case os() of
+            bsd -> Len band ?IOCPARM_MASK;
+            linux -> Len
+        end,
     Inout bor (Size bsl 16) bor (Group bsl 8) bor Num.
 
-io(Type,NR) ->
+io(Type, NR) ->
     ioc(void(), Type, NR, 0).
 
-ior(Type,NR,Size) ->
+ior(Type, NR, Size) ->
     ioc(out(), Type, NR, Size).
 
-iow(Type,NR,Size) ->
+iow(Type, NR, Size) ->
     ioc(in(), Type, NR, Size).
 
-iowr(Type,NR,Size) ->
+iowr(Type, NR, Size) ->
     ioc(in() bor out(), Type, NR, Size).
-
 
 os() ->
     case os:type() of
-        {unix, linux} -> linux;
-        {unix,BSD} when BSD == darwin;
+        {unix, linux} ->
+            linux;
+        {unix, BSD} when
+            BSD == darwin;
             BSD == openbsd;
             BSD == netbsd;
-            BSD == freebsd -> bsd
+            BSD == freebsd
+        ->
+            bsd
     end.

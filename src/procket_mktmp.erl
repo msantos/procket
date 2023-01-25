@@ -35,21 +35,24 @@
 %%
 -module(procket_mktmp).
 
--export([dirname/0,name/1,template/2,make_dir/1,close/1]).
+-export([dirname/0, name/1, template/2, make_dir/1, close/1]).
 
 -include_lib("kernel/include/file.hrl").
 
 -define(TEMPLATE, "erlang-XXXXXXXXXXXX").
 -define(S_IRWXU, 8#00400 bor 8#00200 bor 8#00100).
--define(ALPHANUM, "0123456789"
+-define(ALPHANUM,
+    "0123456789"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz").
+    "abcdefghijklmnopqrstuvwxyz"
+).
 
 dirname() ->
-    TMP = case os:getenv("TMPDIR") of
-        false -> "/tmp";
-        Dir -> Dir
-    end,
+    TMP =
+        case os:getenv("TMPDIR") of
+            false -> "/tmp";
+            Dir -> Dir
+        end,
     name(TMP ++ "/" ++ ?TEMPLATE).
 
 name(Template) ->
@@ -57,10 +60,12 @@ name(Template) ->
 
 template(Name, Chars) ->
     template(lists:reverse(Name), [], Chars).
-template([$X|Rest], Acc, Chars) ->
-    template(Rest,
-        [lists:nth(rand:uniform(length(Chars)), Chars)|Acc],
-        Chars);
+template([$X | Rest], Acc, Chars) ->
+    template(
+        Rest,
+        [lists:nth(rand:uniform(length(Chars)), Chars) | Acc],
+        Chars
+    );
 template(Name, Rand, _) when length(Rand) >= 6 ->
     lists:reverse(Name) ++ Rand.
 
