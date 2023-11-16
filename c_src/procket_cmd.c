@@ -202,15 +202,8 @@ int procket_open_fd(PROCKET_STATE *ps) {
 }
 
 int procket_check_devname(char *dev, size_t len) {
-  char *p = NULL;
-
   if (strlen(dev) >= len)
     return -1;
-
-  for (p = dev; *p; p++) {
-    if (!isascii(*p) && !isalnum(*p) && *p != '/')
-      return -1;
-  }
 
   return 0;
 }

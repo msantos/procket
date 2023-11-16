@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2010-2023, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,6 @@
 #include <sys/ioctl.h>
 
 #include <sys/stat.h>
-#include <ctype.h>
 
 #include <sys/uio.h>
 
