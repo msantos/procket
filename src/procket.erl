@@ -524,7 +524,10 @@ family(inet6) ->
         {unix, sunos} -> 26
     end;
 family(netlink) ->
-    16;
+    case os:type() of
+        {unix, linux} -> 16;
+        {unix, freebsd} -> 38
+    end;
 family(packet) ->
     17;
 family(Proto) when Proto == local; Proto == unix; Proto == file -> 1.
