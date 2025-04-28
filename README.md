@@ -438,7 +438,7 @@ root and make it setuid.
 
 ## USING IT
 
-```
+```erlang
 $ erl -pa ebin
 Erlang R13B03 (erts-5.7.4) [source] [rq:1] [async-threads:0] [hipe] [kernel-poll:false]
 
@@ -466,20 +466,20 @@ make examples
 
 ### Simple echo server
 
-```
+```erlang
 $ erl -pa ebin
 1> echo:start(53, [{protocol, tcp}, {type, stream}, {family, inet6}]).
 ```
 
 ### ICMP ping
 
-```
+```erlang
 1> icmp:ping("www.yahoo.com").
 ```
 
 ### Sniff the network
 
-```
+```erlang
 1> {ok, S} = procket:open(0, [{protocol, 16#0008}, {type, raw}, {family, packet}]).
 {ok,12}
 2> procket:recvfrom(S, 2048).
@@ -493,7 +493,7 @@ Shell got {#Port<0.1343>,
 
 ### Bind to one or more interfaces
 
-```
+```erlang
 1> procket:open(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br0"}]).
 {ok,9}
 2> procket:open(53, [{progname, "sudo priv/procket"},{protocol, udp},{type,dgram},{interface, "br1"}]).
@@ -508,9 +508,7 @@ passes the file descriptor back to Erlang over the Unix socket.
 
 procket uses libancillary for passing file descriptors between processes:
 
-```
 http://www.normalesup.org/~george/comp/libancillary/
-```
 
 ## TODO
 
