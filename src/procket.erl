@@ -325,8 +325,30 @@ dev(Dev) when is_list(Dev) ->
 dev(Dev, Opts) when is_list(Dev), is_list(Opts) ->
     open(0, [{dev, Dev} | Opts]).
 
+-doc """
+Open a socket or device using the procket setuid helper. The
+file descriptor is passed back over a Unix socket.
+""".
 open(Port) ->
     open(Port, []).
+-doc """
+Open a socket or device using the procket setuid helper. The
+file descriptor is passed back over a Unix socket.
+
+The default behaviour of open/1,2 is to attempt to open the
+socket twice: first by running the procket setuid helper and, if this
+fails because the process does not have the appropriate permissions,
+running the setuid helper again using "sudo". The default behaviour
+can be changed by using the 'exec' option:
+
+```
+procket:open(Port, [{exec, ["", "sudo"]}]).
+```
+
+Linux only: the `{namespace, string()}` option causes the procket
+setuid helper to open the socket in a pre-configured namespace. By
+default, all namespaces are joined by the helper.
+""".
 open(Port, Options) when is_integer(Port), is_list(Options) ->
     {Tmpdir, Pipe} = make_unix_socket_path(Options),
     {ok, FD} = fdopen(Pipe),
