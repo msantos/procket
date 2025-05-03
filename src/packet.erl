@@ -74,7 +74,7 @@ arplookup({A1, A2, A3, A4}) ->
 arplookup(IPaddr) when is_list(IPaddr) ->
     {ok, FH} = file:open("/proc/net/arp", [read, raw]),
     MAC = arplookup_iter(FH, IPaddr),
-    file:close(FH),
+    _ = file:close(FH),
     MAC.
 
 arplookup_iter(FH, IPaddr) ->
@@ -110,7 +110,7 @@ gateway_res_1(MAC, IP) -> {ok, MAC, IP}.
 gateway_addr(Dev) ->
     {ok, FH} = file:open("/proc/net/route", [read, raw]),
     IP = gateway_addr_iter(FH, Dev),
-    file:close(FH),
+    _ = file:close(FH),
     IP.
 
 gateway_addr_iter(FH, Dev) ->
