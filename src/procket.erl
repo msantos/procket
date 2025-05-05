@@ -83,6 +83,162 @@
     progname/0
 ]).
 
+-type uint16_t() :: 0..16#ffff.
+-type int32_t() :: -16#7fffffff..16#7fffffff.
+
+-type fd() :: int32_t().
+-type posix() ::
+    e2big
+    | eacces
+    | eaddrinuse
+    | eaddrnotavail
+    | eadv
+    | eafnosupport
+    | eagain
+    | ealign
+    | ealready
+    | ebade
+    | ebadf
+    | ebadfd
+    | ebadmsg
+    | ebadr
+    | ebadrpc
+    | ebadrqc
+    | ebadslt
+    | ebfont
+    | ebusy
+    | ecapmode
+    | echild
+    | echrng
+    | ecomm
+    | econnaborted
+    | econnrefused
+    | econnreset
+    | edeadlk
+    | edeadlock
+    | edestaddrreq
+    | edirty
+    | edom
+    | edotdot
+    | edquot
+    | eduppkg
+    | eexist
+    | efault
+    | efbig
+    | ehostdown
+    | ehostunreach
+    | eidrm
+    | einit
+    | einprogress
+    | eintr
+    | einval
+    | eio
+    | eisconn
+    | eisdir
+    | eisnam
+    | el2hlt
+    | el2nsync
+    | el3hlt
+    | el3rst
+    | elbin
+    | elibacc
+    | elibbad
+    | elibexec
+    | elibmax
+    | elibscn
+    | elnrng
+    | eloop
+    | emfile
+    | emlink
+    | emsgsize
+    | emultihop
+    | enametoolong
+    | enavail
+    | enet
+    | enetdown
+    | enetreset
+    | enetunreach
+    | enfile
+    | enoano
+    | enobufs
+    | enocsi
+    | enodata
+    | enodev
+    | enoent
+    | enoexec
+    | enolck
+    | enolink
+    | enomem
+    | enomsg
+    | enonet
+    | enopkg
+    | enoprotoopt
+    | enospc
+    | enosr
+    | enostr
+    | enosym
+    | enosys
+    | enotblk
+    | enotcapable
+    | enotconn
+    | enotdir
+    | enotempty
+    | enotnam
+    | enotrecoverable
+    | enotsock
+    | enotsup
+    | enotty
+    | enotuniq
+    | enxio
+    | eopnotsupp
+    | eoverflow
+    | eownerdead
+    | eperm
+    | epfnosupport
+    | epipe
+    | eproclim
+    | eprocunavail
+    | eprogmismatch
+    | eprogunavail
+    | eproto
+    | eprotonosupport
+    | eprototype
+    | erange
+    | erefused
+    | eremchg
+    | eremdev
+    | eremote
+    | eremoteio
+    | eremoterelease
+    | erofs
+    | erpcmismatch
+    | erremote
+    | eshutdown
+    | esocktnosupport
+    | espipe
+    | esrch
+    | esrmnt
+    | estale
+    | esuccess
+    | etime
+    | etimedout
+    | etoomanyrefs
+    | etxtbsy
+    | euclean
+    | eunatch
+    | eusers
+    | eversion
+    | ewouldblock
+    | exdev
+    | exfull.
+
+-export_type([
+              uint16_t/0,
+              int32_t/0,
+              fd/0,
+              posix/0
+             ]).
+
 -on_load(on_load/0).
 
 on_load() ->
@@ -325,6 +481,7 @@ dev(Dev) when is_list(Dev) ->
 dev(Dev, Opts) when is_list(Dev), is_list(Opts) ->
     open(0, [{dev, Dev} | Opts]).
 
+-spec open(Port :: uint16_t()) -> {ok, fd()} | {error, posix()}.
 open(Port) ->
     open(Port, []).
 open(Port, Options) when is_integer(Port), is_list(Options) ->
