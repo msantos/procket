@@ -232,12 +232,34 @@
     | exdev
     | exfull.
 
+-type protocol() :: ip | icmp | tcp | udp | 'ipv6-icmp' | raw.
+-type type() :: stream | dgram | raw | seqpacket.
+-type family() :: unspec | inet | inet6 | netlink | packet | local | unix | file.
+
+-type open_opt() ::
+    {protocol, protocol() | integer()}
+    | {type, type() | integer()}
+    | {family, family() | integer()}
+    | {ip, inet:ip_address()}
+    | {dev, string()}
+    | {exec, [string()]}
+    | {progname, string()}
+    | {interface, string()}
+    | {pipe, string()}
+    | {namespace, string()}.
+
 -export_type([
-              uint16_t/0,
-              int32_t/0,
-              fd/0,
-              posix/0
-             ]).
+    uint16_t/0,
+    int32_t/0,
+    fd/0,
+    posix/0,
+
+    protocol/0,
+    type/0,
+    family/0,
+
+    open_opt/0
+]).
 
 -on_load(on_load/0).
 
@@ -484,6 +506,8 @@ dev(Dev, Opts) when is_list(Dev), is_list(Opts) ->
 -spec open(Port :: uint16_t()) -> {ok, fd()} | {error, posix()}.
 open(Port) ->
     open(Port, []).
+
+-spec open(Port :: uint16_t(), [open_opt()]) -> {ok, fd()} | {error, posix()}.
 open(Port, Options) when is_integer(Port), is_list(Options) ->
     {Tmpdir, Pipe} = make_unix_socket_path(Options),
     {ok, FD} = fdopen(Pipe),
