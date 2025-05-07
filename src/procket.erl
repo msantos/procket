@@ -497,9 +497,11 @@ socket_constant_foreach(Constant, [Fun | Funs]) ->
 %%--------------------------------------------------------------------
 %%% Setuid helper
 %%--------------------------------------------------------------------
+-spec dev(Dev :: string()) -> {ok, fd()} | {error, posix()}.
 dev(Dev) when is_list(Dev) ->
     open(0, [{dev, Dev}]).
 
+-spec dev(Dev :: string(), [open_opt()]) -> {ok, fd()} | {error, posix()}.
 dev(Dev, Opts) when is_list(Dev), is_list(Opts) ->
     open(0, [{dev, Dev} | Opts]).
 
