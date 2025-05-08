@@ -307,6 +307,9 @@ recvfrom(_, _, _, _) ->
 read(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec socket(
+    Family :: family() | integer(), Type :: type() | integer(), Protocol :: protocol() | integer()
+) -> {ok, fd()} | {error, posix()}.
 socket(Family, Type, Protocol) ->
     socket_nif(
         maybe_atom(family, Family),
