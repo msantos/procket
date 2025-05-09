@@ -289,8 +289,11 @@ bind(_, _) ->
 connect(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec listen(Socket :: integer()) -> ok | {error, posix()}.
 listen(Socket) when is_integer(Socket) ->
     listen(Socket, ?BACKLOG).
+
+-spec listen(Socket :: integer(), Backlog :: integer()) -> ok | {error, posix()}.
 listen(_, _) ->
     erlang:nif_error(not_implemented).
 
