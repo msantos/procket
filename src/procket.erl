@@ -275,11 +275,14 @@ close(_) ->
 fdrecv(_) ->
     erlang:nif_error(not_implemented).
 
+-spec accept(Socket :: integer()) -> {ok, fd()} | {error, posix()}.
 accept(Socket) ->
     case accept(Socket, 0) of
         {ok, FD, <<>>} -> {ok, FD};
         Error -> Error
     end.
+
+-spec accept(Socket :: integer(), Salen :: integer()) -> {ok, fd(), binary()} | {error, posix()}.
 accept(_, _) ->
     erlang:nif_error(not_implemented).
 
