@@ -278,7 +278,7 @@ fdrecv(_) ->
 -spec accept(Socket :: integer()) -> {ok, fd()} | {error, posix()}.
 accept(Socket) ->
     case accept(Socket, 0) of
-        {ok, FD, <<>>} -> {ok, FD};
+        {ok, FD, _} -> {ok, FD};
         Error -> Error
     end.
 
