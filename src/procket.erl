@@ -269,6 +269,8 @@ on_load() ->
 %%--------------------------------------------------------------------
 %%% NIF Stubs
 %%--------------------------------------------------------------------
+
+-spec close(Socket :: integer()) -> ok | {error, posix()}.
 close(_) ->
     erlang:nif_error(not_implemented).
 
@@ -532,7 +534,7 @@ open(Port, Options) when is_integer(Port), is_list(Options) ->
     ),
 
     Socket = exec(FD, Cmd),
-    close(FD),
+    _ = close(FD),
 
     cleanup_unix_socket(Tmpdir, Pipe),
     Socket.

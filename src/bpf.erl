@@ -67,7 +67,7 @@ open(Dev) ->
             {ok, Socket, Len}
     catch
         error:_ ->
-            procket:close(Socket),
+            _ = procket:close(Socket),
             {error, enxio}
     end.
 
