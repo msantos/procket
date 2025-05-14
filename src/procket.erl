@@ -84,7 +84,10 @@
 ]).
 
 -type uint16_t() :: 0..16#ffff.
+-type uint64_t() :: 0..16#ffffffffffffffff.
 -type int32_t() :: -16#7fffffff..16#7fffffff.
+
+-type size_t() :: uint64_t().
 
 -type fd() :: int32_t().
 -type posix() ::
@@ -250,7 +253,9 @@
 
 -export_type([
     uint16_t/0,
+    uint64_t/0,
     int32_t/0,
+    size_t/0,
     fd/0,
     posix/0,
 
@@ -303,6 +308,7 @@ listen(Socket) when is_integer(Socket) ->
 listen(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec recv(Socket :: integer(), Size :: size_t()) -> {ok, binary()} | {error, posix()}.
 recv(Socket, Size) ->
     recvfrom(Socket, Size).
 recvfrom(Socket, Size) ->
