@@ -131,12 +131,12 @@ close(Socket) -> ok | {error, posix()}
 
 recv(Socket, Size) -> {ok, Buf} | {error, posix()}
 recvfrom(Socket, Size) -> {ok, Buf} | {error, posix()}
-recvfrom(Socket, Size, Flags, Salen) -> {ok, Buf, Sockaddr}
+recvfrom(Socket, Size, Flags, Salen) -> {ok, Buf, Sockaddr} | {error, posix()}
 
     Types   Socket = integer()
-            Size = ulong()
+            Size = size_t()
             Flags = integer()
-            Salen = 0 | ulong()
+            Salen = 0 | size_t()
             Buf = binary()
             Sockaddr = binary()
 
