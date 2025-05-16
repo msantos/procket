@@ -311,11 +311,16 @@ listen(_, _) ->
 -spec recv(Socket :: integer(), Size :: size_t()) -> {ok, binary()} | {error, posix()}.
 recv(Socket, Size) ->
     recvfrom(Socket, Size).
+
+-spec recvfrom(Socket :: integer(), Size :: size_t()) -> {ok, binary()} | {error, posix()}.
 recvfrom(Socket, Size) ->
     case recvfrom(Socket, Size, 0, 0) of
         {ok, Buf, <<>>} -> {ok, Buf};
         Error -> Error
     end.
+
+-spec recvfrom(Socket :: integer(), Size :: size_t(), Flags :: integer(), Salen :: size_t()) ->
+    {ok, binary(), binary()} | {error, posix()}.
 recvfrom(_, _, _, _) ->
     erlang:nif_error(not_implemented).
 
