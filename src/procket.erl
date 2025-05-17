@@ -315,7 +315,7 @@ recv(Socket, Size) ->
 -spec recvfrom(Socket :: integer(), Size :: size_t()) -> {ok, binary()} | {error, posix()}.
 recvfrom(Socket, Size) ->
     case recvfrom(Socket, Size, 0, 0) of
-        {ok, Buf, <<>>} -> {ok, Buf};
+        {ok, Buf, _} -> {ok, Buf};
         Error -> Error
     end.
 
