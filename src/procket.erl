@@ -403,6 +403,7 @@ writev(FD, Buf) ->
 writev_nif(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec recvmsg(Socket :: integer(), Size :: size_t(), Flags :: integer(), CtrlDataSize :: size_t()) -> {ok, binary(), integer(), [{integer(), integer(), binary()}]} | {error, posix()}.
 recvmsg(Socket, Size, Flags, CtrlDataSize) ->
     case recvmsg(Socket, Size, Flags, CtrlDataSize, 0) of
         {ok, Buf, Flags, CtrlData, <<>>} ->
@@ -410,6 +411,8 @@ recvmsg(Socket, Size, Flags, CtrlDataSize) ->
         {error, _} = Error ->
             Error
     end.
+
+-spec recvmsg(Socket :: integer(), Size :: size_t(), Flags :: integer(), CtrlDataSize :: size_t(), SockaddrSize :: size_t()) -> {ok, binary(), integer(), [{integer(), integer(), binary()}], binary()} | {error, posix()}.
 recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) ->
     case recvmsg_nif(Socket, Size, Flags, CtrlDataSize, SockaddrSize) of
         {ok, Buf, Flags, CtrlData, Sockaddr} ->
@@ -417,6 +420,7 @@ recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) ->
         N ->
             N
     end.
+
 recvmsg_nif(_, _, _, _, _) ->
     erlang:nif_error(not_implemented).
 
