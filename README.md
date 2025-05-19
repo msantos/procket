@@ -148,9 +148,9 @@ recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) -> {ok, Buf, Flags, Ctr
                                               {error, posix()}
 
     Types   Socket = integer()
-            Size = ulong()
-            CtrlDataSize = ulong()
-            SockaddrSize = ulong()
+            Size = size_t()
+            CtrlDataSize = size_t()
+            SockaddrSize = size_t()
             Flags = integer()
             Buf = binary()
             Sockaddr = binary()
