@@ -361,10 +361,15 @@ alloc(Struct) ->
 alloc_nif(_) ->
     erlang:nif_error(not_implemented).
 
+-spec sendto(Socket :: integer(), Buf :: binary()) -> ok | {error, posix()}.
 sendto(Socket, Buf) ->
     sendto(Socket, Buf, 0, <<>>).
+
+-spec sendto(Socket ::integer(), Buf :: binary(), Flags :: integer()) -> ok | {error, posix()}.
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
+
+-spec sendto(Socket :: integer(), Buf :: binary(), Flags :: integer(), Sockaddr :: binary()) -> ok | {ok, size_t()} | {error, posix()}.
 sendto(Socket, Buf, Flags, Sockaddr) ->
     Size = byte_size(Buf),
     case sendto_nif(Socket, Buf, Flags, Sockaddr) of
