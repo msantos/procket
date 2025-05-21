@@ -169,7 +169,7 @@ sendto(Socket, Buf, Flags, Sockaddr) -> ok | {ok, Size} | {error, posix()}
             Flags = integer()
             Buf = binary()
             Sockaddr = binary()
-            Size = non_neg_integer()
+            Size = size_t()
 
     See sendto(2).
 
