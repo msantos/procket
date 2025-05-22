@@ -429,8 +429,11 @@ recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) ->
 recvmsg_nif(_, _, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+-spec sendmsg(Socket :: integer(), Buf :: binary(), Flags :: integer(), CtrlData :: [{integer(), integer(), binary()}]) -> ok | {error, posix()}.
 sendmsg(Socket, Buf, Flags, CtrlData) ->
     sendmsg(Socket, Buf, Flags, CtrlData, <<>>).
+
+-spec sendmsg(Socket :: integer(), Buf :: binary(), Flags :: integer(), CtrlData :: [{integer(), integer(), binary()}], Sockaddr :: binary()) -> ok | {ok, size_t()} | {error, posix()}.
 sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) ->
     Size = byte_size(Buf),
     case sendmsg_nif(Socket, Buf, Flags, CtrlData, Sockaddr) of
