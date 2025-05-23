@@ -324,6 +324,7 @@ recvfrom(Socket, Size) ->
 recvfrom(_, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+-spec read(FD :: integer(), Length :: size_t()) -> {ok, binary()} | {error, posix()}.
 read(_, _) ->
     erlang:nif_error(not_implemented).
 
