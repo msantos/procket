@@ -184,7 +184,7 @@ sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) -> ok | {ok, Size} | {error, pos
             Flags = integer()
             CtrlData = [{integer(), integer(), binary()}]
             Sockaddr = binary()
-            Size = non_neg_integer()
+            Size = size_t()
 
     See sendmsg(2) and cmsg(3).
 
@@ -197,7 +197,7 @@ sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) -> ok | {ok, Size} | {error, pos
 read(FD, Length) -> {ok, Buf} | {error, posix()}
 
     Types   FD = integer()
-            Length = ulong()
+            Length = size_t()
             Buf = binary()
 
     See read(2).
