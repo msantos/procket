@@ -383,6 +383,7 @@ sendto(Socket, Buf, Flags, Sockaddr) ->
 sendto_nif(_, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+-spec write(FD :: integer(), Buf :: binary() | [binary()]) -> ok | {ok, size_t()} | {error, posix()}.
 write(FD, Buf) when is_binary(Buf) ->
     Size = byte_size(Buf),
     case write_nif(FD, Buf) of
