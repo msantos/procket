@@ -366,11 +366,12 @@ alloc_nif(_) ->
 sendto(Socket, Buf) ->
     sendto(Socket, Buf, 0, <<>>).
 
--spec sendto(Socket ::integer(), Buf :: binary(), Flags :: integer()) -> ok | {error, posix()}.
+-spec sendto(Socket :: integer(), Buf :: binary(), Flags :: integer()) -> ok | {error, posix()}.
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
 
--spec sendto(Socket :: integer(), Buf :: binary(), Flags :: integer(), Sockaddr :: binary()) -> ok | {ok, size_t()} | {error, posix()}.
+-spec sendto(Socket :: integer(), Buf :: binary(), Flags :: integer(), Sockaddr :: binary()) ->
+    ok | {ok, size_t()} | {error, posix()}.
 sendto(Socket, Buf, Flags, Sockaddr) ->
     Size = byte_size(Buf),
     case sendto_nif(Socket, Buf, Flags, Sockaddr) of
@@ -383,7 +384,8 @@ sendto(Socket, Buf, Flags, Sockaddr) ->
 sendto_nif(_, _, _, _) ->
     erlang:nif_error(not_implemented).
 
--spec write(FD :: integer(), Buf :: binary() | [binary()]) -> ok | {ok, size_t()} | {error, posix()}.
+-spec write(FD :: integer(), Buf :: binary() | [binary()]) ->
+    ok | {ok, size_t()} | {error, posix()}.
 write(FD, Buf) when is_binary(Buf) ->
     Size = byte_size(Buf),
     case write_nif(FD, Buf) of
@@ -410,7 +412,8 @@ writev(FD, Buf) ->
 writev_nif(_, _) ->
     erlang:nif_error(not_implemented).
 
--spec recvmsg(Socket :: integer(), Size :: size_t(), Flags :: integer(), CtrlDataSize :: size_t()) -> {ok, binary(), integer(), [{integer(), integer(), binary()}]} | {error, posix()}.
+-spec recvmsg(Socket :: integer(), Size :: size_t(), Flags :: integer(), CtrlDataSize :: size_t()) ->
+    {ok, binary(), integer(), [{integer(), integer(), binary()}]} | {error, posix()}.
 recvmsg(Socket, Size, Flags, CtrlDataSize) ->
     case recvmsg(Socket, Size, Flags, CtrlDataSize, 0) of
         {ok, Buf, Flags, CtrlData, <<>>} ->
@@ -419,7 +422,13 @@ recvmsg(Socket, Size, Flags, CtrlDataSize) ->
             Error
     end.
 
--spec recvmsg(Socket :: integer(), Size :: size_t(), Flags :: integer(), CtrlDataSize :: size_t(), SockaddrSize :: size_t()) -> {ok, binary(), integer(), [{integer(), integer(), binary()}], binary()} | {error, posix()}.
+-spec recvmsg(
+    Socket :: integer(),
+    Size :: size_t(),
+    Flags :: integer(),
+    CtrlDataSize :: size_t(),
+    SockaddrSize :: size_t()
+) -> {ok, binary(), integer(), [{integer(), integer(), binary()}], binary()} | {error, posix()}.
 recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) ->
     case recvmsg_nif(Socket, Size, Flags, CtrlDataSize, SockaddrSize) of
         {ok, Buf, Flags, CtrlData, Sockaddr} ->
@@ -431,11 +440,22 @@ recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) ->
 recvmsg_nif(_, _, _, _, _) ->
     erlang:nif_error(not_implemented).
 
--spec sendmsg(Socket :: integer(), Buf :: binary(), Flags :: integer(), CtrlData :: [{integer(), integer(), binary()}]) -> ok | {error, posix()}.
+-spec sendmsg(
+    Socket :: integer(),
+    Buf :: binary(),
+    Flags :: integer(),
+    CtrlData :: [{integer(), integer(), binary()}]
+) -> ok | {error, posix()}.
 sendmsg(Socket, Buf, Flags, CtrlData) ->
     sendmsg(Socket, Buf, Flags, CtrlData, <<>>).
 
--spec sendmsg(Socket :: integer(), Buf :: binary(), Flags :: integer(), CtrlData :: [{integer(), integer(), binary()}], Sockaddr :: binary()) -> ok | {ok, size_t()} | {error, posix()}.
+-spec sendmsg(
+    Socket :: integer(),
+    Buf :: binary(),
+    Flags :: integer(),
+    CtrlData :: [{integer(), integer(), binary()}],
+    Sockaddr :: binary()
+) -> ok | {ok, size_t()} | {error, posix()}.
 sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) ->
     Size = byte_size(Buf),
     case sendmsg_nif(Socket, Buf, Flags, CtrlData, Sockaddr) of
