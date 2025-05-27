@@ -400,6 +400,7 @@ write(FD, Buf) when is_list(Buf) ->
 write_nif(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec writev(FD :: integer(), Bufs :: [binary()]) -> ok | {ok, size_t()} | {error, posix()}.
 writev(FD, Buf) ->
     Size = iolist_size(Buf),
     case writev_nif(FD, Buf) of
