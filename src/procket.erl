@@ -293,6 +293,7 @@ accept(Socket) ->
 accept(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec bind(Socket :: integer(), Sockaddr :: binary()) -> ok | {error, posix()}.
 bind(_, _) ->
     erlang:nif_error(not_implemented).
 
