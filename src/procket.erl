@@ -470,6 +470,7 @@ sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) ->
 sendmsg_nif(_, _, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+-spec setsockopt(Socket :: integer(), Level :: integer() | atom(), Optname :: integer() | atom(), Optval :: binary()) -> ok | {error, posix() | unsupported}.
 setsockopt(Socket, Level, Optname, Optval) when is_atom(Level) ->
     case
         socket_constant_foreach(
