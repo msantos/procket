@@ -346,6 +346,8 @@ setns(NS) ->
 setns(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec ioctl(FD :: integer(), Request :: uint64_t(), Arg :: binary() | integer()) ->
+    {ok, binary()} | {error, posix()}.
 ioctl(_, _, _) ->
     erlang:nif_error(not_implemented).
 buf(_) ->
