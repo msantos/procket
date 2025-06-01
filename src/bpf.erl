@@ -154,7 +154,7 @@ ctl(_Socket, _Request) ->
 %%
 ctl(Socket, blen, Len) ->
     case procket:ioctl(Socket, ?BIOCSBLEN, <<Len:32/native>>) of
-        {ok, Len} -> {ok, procket:ntohl(Len)};
+        {ok, N} -> {ok, procket:ntohl(N)};
         Error -> Error
     end;
 ctl(Socket, dlt, DLT) ->
