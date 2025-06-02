@@ -355,6 +355,8 @@ buf(_) ->
 memcpy(_, _) ->
     erlang:nif_error(not_implemented).
 
+-spec alloc([binary() | {ptr, size_t()} | {ptr, binary()}]) ->
+    {ok, binary(), [reference()]} | {error, posix()}.
 alloc(Struct) ->
     case alloc_nif(Struct) of
         {ok, Bin, Res} ->
