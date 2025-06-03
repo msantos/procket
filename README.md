@@ -305,7 +305,7 @@ alloc(Struct) -> {ok, Arg, Resource} | {error, posix()}
     Types   Struct = [ binary | {ptr, Length} | {ptr, binary()} ]
             Arg = binary()
             Length = ulong()
-            Resource = [resource()]
+            Resource = [reference()]
 
     Create a structure containing pointers to memory that can be
     passed as the third argument to ioctl/3.
