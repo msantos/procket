@@ -350,8 +350,11 @@ setns(_, _) ->
     {ok, binary()} | {error, posix()}.
 ioctl(_, _, _) ->
     erlang:nif_error(not_implemented).
+
+-spec buf(reference()) -> {ok, binary()} | {error, enomem}.
 buf(_) ->
     erlang:nif_error(not_implemented).
+
 memcpy(_, _) ->
     erlang:nif_error(not_implemented).
 
