@@ -362,7 +362,7 @@ alloc(Struct) -> {ok, Arg, Resource} | {error, posix()}
 
 buf(Resource) -> {ok, Buf} | {error, enomem}
 
-    Types   Resource = resource()
+    Types   Resource = reference()
             Buf = binary()
 
     Returns the contents of memory allocated using alloc/1. See the
