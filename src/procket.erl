@@ -351,7 +351,7 @@ setns(_, _) ->
 ioctl(_, _, _) ->
     erlang:nif_error(not_implemented).
 
--spec buf(reference()) -> {ok, binary()} | {error, enomem}.
+-spec buf(Resource :: reference()) -> {ok, binary()} | {error, enomem}.
 buf(_) ->
     erlang:nif_error(not_implemented).
 
@@ -616,7 +616,7 @@ open(Port) ->
 % == Examples ==
 %
 % ```
-% 4> procket:open(9019, [{exec, [""]}]).
+% 1> procket:open(9019, [{exec, [""]}]).
 % {ok,24}
 % '''
 -spec open(Port :: uint16_t(), [open_opt()]) -> {ok, fd()} | {error, posix()}.
