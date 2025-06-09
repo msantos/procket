@@ -329,6 +329,14 @@ recvfrom(_, _, _, _) ->
 read(_, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc socket(2): returns a file descriptor for a communication endpoint
+%
+% == Examples ==
+%
+% ```
+% 1> procket:socket(inet, stream, 0).
+% {ok,20}
+% '''
 -spec socket(
     Family :: family() | integer(), Type :: type() | integer(), Protocol :: protocol() | integer()
 ) -> {ok, fd()} | {error, posix()}.
