@@ -587,11 +587,31 @@ socket_constant_foreach(Constant, [Fun | Funs]) ->
 % @doc Open a character device such as bpf, tun or tap devices.
 %
 % Wrapper around open/2.
+%
+% == Examples ==
+%
+% ```
+% 1> procket:dev("net/tun").
+% {ok,22}
+% '''
+%
+% @see open/2
 -spec dev(Dev :: string()) -> {ok, fd()} | {error, posix()}.
 dev(Dev) when is_list(Dev) ->
     open(0, [{dev, Dev}]).
 
-% @private
+% @doc Open a character device such as bpf, tun or tap devices with options.
+%
+% == Examples ==
+%
+% ```
+% # ip netns add foo
+% '''
+%
+% ```
+% 1> procket:dev("net/tun", [{namespace, "/var/run/netns/foo"}]).
+% {ok,22}
+% '''
 -spec dev(Dev :: string(), [open_opt()]) -> {ok, fd()} | {error, posix()}.
 dev(Dev, Opts) when is_list(Dev), is_list(Opts) ->
     open(0, [{dev, Dev} | Opts]).
