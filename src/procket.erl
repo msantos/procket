@@ -297,6 +297,11 @@ accept(_, _) ->
 bind(_, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc connect(2): initiate a connection on a socket
+%
+% Sockaddr is a struct sockaddr whose layout is dependent on
+% platform. If Sockaddr is an empty binary, connect(2) will be
+% called with NULL as the second option.
 -spec connect(Socket :: integer(), Sockaddr :: binary()) -> ok | {error, posix()}.
 connect(_, _) ->
     erlang:nif_error(not_implemented).
