@@ -302,6 +302,23 @@ bind(_, _) ->
 % Sockaddr is a struct sockaddr whose layout is dependent on
 % platform. If Sockaddr is an empty binary, connect(2) will be
 % called with NULL as the second option.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                22:16,          % Port
+%                127,0,0,1,      % IPv4 loopback
+%                0:64
+%                >>.
+% <<2,0,0,22,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:connect(S, Sockaddr).
+% {error,einprogress}
+% 4> procket:connect(S, Sockaddr).
+% {error,econnrefused}
+% '''
 -spec connect(Socket :: integer(), Sockaddr :: binary()) -> ok | {error, posix()}.
 connect(_, _) ->
     erlang:nif_error(not_implemented).
