@@ -282,6 +282,9 @@ close(_) ->
 fdrecv(_) ->
     erlang:nif_error(not_implemented).
 
+% @doc accept(2): accept a connection on a socket
+%
+% accept/1 returns the file descriptor associated with the new connection.
 -spec accept(Socket :: integer()) -> {ok, fd()} | {error, posix()}.
 accept(Socket) ->
     case accept(Socket, 0) of
@@ -289,6 +292,11 @@ accept(Socket) ->
         Error -> Error
     end.
 
+% @doc accept(2): accept a connection on a socket
+%
+% accept/2 will allocate a struct sockaddr of size Salen bytes that will
+% hold the peer address. If the size is too small, the returned binary
+% will be zero padded to indicate the size required.
 -spec accept(Socket :: integer(), Salen :: integer()) -> {ok, fd(), binary()} | {error, posix()}.
 accept(_, _) ->
     erlang:nif_error(not_implemented).
