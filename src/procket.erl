@@ -285,6 +285,29 @@ fdrecv(_) ->
 % @doc accept(2): accept a connection on a socket
 %
 % accept/1 returns the file descriptor associated with the new connection.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:bind(S, Sockaddr).
+% ok
+% 4> procket:listen(S).
+% ok
+% 5> procket:accept(S).
+% {error,eagain}
+%
+% % Connect: nc localhost 10022
+% 6> procket:accept(S).
+% {ok,21}
+% '''
 -spec accept(Socket :: integer()) -> {ok, fd()} | {error, posix()}.
 accept(Socket) ->
     case accept(Socket, 0) of
@@ -297,6 +320,29 @@ accept(Socket) ->
 % accept/2 will allocate a struct sockaddr of size Salen bytes that will
 % hold the peer address. If the size is too small, the returned binary
 % will be zero padded to indicate the size required.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:bind(S, Sockaddr).
+% ok
+% 4> procket:listen(S).
+% ok
+% 5> procket:accept(S, 16).
+% {error,eagain}
+%
+% % Connect: nc localhost 10022
+% 6> procket:accept(S, 16).
+% {ok,22,<<2,0,207,110,127,0,0,1,0,0,0,0,0,0,0,0>>}
+% '''
 -spec accept(Socket :: integer(), Salen :: integer()) -> {ok, fd(), binary()} | {error, posix()}.
 accept(_, _) ->
     erlang:nif_error(not_implemented).
