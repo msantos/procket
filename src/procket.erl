@@ -347,6 +347,22 @@ accept(Socket) ->
 accept(_, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc bind(2): bind a name to a socket
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:bind(S, Sockaddr).
+% ok
+% '''
 -spec bind(Socket :: integer(), Sockaddr :: binary()) -> ok | {error, posix()}.
 bind(_, _) ->
     erlang:nif_error(not_implemented).
