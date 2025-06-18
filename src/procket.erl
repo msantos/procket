@@ -599,6 +599,15 @@ sendmsg(Socket, Buf, Flags, CtrlData, Sockaddr) ->
 sendmsg_nif(_, _, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc setsockopt(2): set options on sockets
+%
+% Level and Optname can either be an integer or an atom with the
+% same name as the definitions in the system header files, e.g.,
+% 'IPPROTO_IPIP', 'SO_REUSEPORT'. Note these are uppercase atoms
+% and so must be quoted.
+%
+% If an atom is used as an argument and is not supported by the OS,
+% setsockopt/4 will return {error,unsupported}.
 -spec setsockopt(
     Socket :: integer(),
     Level :: integer() | atom(),
