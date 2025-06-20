@@ -608,6 +608,21 @@ sendmsg_nif(_, _, _, _, _) ->
 %
 % If an atom is used as an argument and is not supported by the OS,
 % setsockopt/4 will return {error,unsupported}.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, FD} = procket:open(0, [{protocol, 'ipv6-icmp'}, {type, raw}, {family, inet6}]).
+% {ok,28}
+%
+% % IPPROTO_V6 = 41, Linux: IPV6_UNICAST_HOPS = 16 set to 255
+% 2> procket:setsockopt(FD, 41, 16, <<255:4/native-unsigned-integer-unit:8>>).
+% ok
+%
+% % : IPPROTO_V6 = 41, Linux: IPV6_MULTICAST_HOPS = 16 set to 255
+% 3> procket:setsockopt(FD, 41, 18, <<255:4/native-unsigned-integer-unit:8>>).
+% ok
+% '''
 -spec setsockopt(
     Socket :: integer(),
     Level :: integer() | atom(),
