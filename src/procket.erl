@@ -651,6 +651,28 @@ setsockopt(Socket, Level, Optname, Optval) when is_atom(Optname) ->
 setsockopt(Socket, Level, Optname, Optval) ->
     setsockopt_nif(Socket, Level, Optname, Optval).
 
+% @doc getsockopt(2): get options on sockets
+%
+% Similar to inet:getopts/2 but can be used with file descriptors.
+%
+% Retrieve a socket option for a file descriptor. Use an empty binary
+% to indicate no option value is supplied or will be returned.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, FD} = procket:open(0, [{protocol, 'ipv6-icmp'}, {type, raw}, {family, inet6}]).
+% {ok,28}
+%
+% % IPPROTO_V6 = 41, Linux: IPV6_UNICAST_HOPS = 16 set to 255
+% 2> procket:setsockopt(FD, 41, 16, <<255:4/native-unsigned-integer-unit:8>>).
+% ok
+%
+% 3> procket:getsockopt(FD, 41, 16, <<0:32>>).
+% {ok,<<255,0,0,0>>}
+% '''
+%
+% @see setsockopt/4
 -spec getsockopt(
     Socket :: integer(),
     Level :: integer() | atom(),
