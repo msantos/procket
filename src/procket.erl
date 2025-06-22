@@ -468,6 +468,31 @@ setns(NS) ->
 setns(_, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc ioctl(2): control device
+%
+% Be careful with this function.
+%
+% Request is an integer with the direction of the request encoded
+% into it (IN, OUT, IN/OUT). Result is a binary holding the result.
+% If the ioctl is IN only, the Result will be the same as Arg.
+%
+% Arg is a structure dependent on the request.
+%
+% See procket_ioctl.erl for some helper functions for dealing
+% with ioctl.
+%
+% Caveats:
+%
+% * Request is an integer on Linux and an unsigned long on OS X
+%
+% * some ioctl requests require a structure with a pointer to
+%   memory. Use alloc/1 to create these structures and buf/1 to
+%   retrieve the data from them.
+%
+% * some ioctl requests use an integer instead of a pointer to
+%   a structure. This means that it's possible to pass in an
+%   arbitrary pointer (an integer) as an argument to an ioctl
+%   expecting a structure. Don't do this.
 -spec ioctl(FD :: integer(), Request :: uint64_t(), Arg :: binary() | integer()) ->
     {ok, binary()} | {error, posix()}.
 ioctl(_, _, _) ->
