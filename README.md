@@ -295,7 +295,7 @@ ioctl(FD, Request, Arg) -> {ok, Result} | {error, posix()}
           memory. Use alloc/1 to create these structures and buf/1 to
           retrieve the data from them.
 
-        * some ioctl requests use an integer rather a pointer to
+        * some ioctl requests use an integer instead of a pointer to
           a structure. This means that it's possible to pass in an
           arbitrary pointer (an integer) as an argument to an ioctl
           expecting a structure. Don't do this.
