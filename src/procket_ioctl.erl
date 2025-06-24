@@ -27,6 +27,50 @@
 %%% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+%% @doc Calculate the values of the ioctl request macros at runtime.
+%%
+%% On BSD systems, the top 3 bits indicate the direction of the request:
+%%
+%%     8 : ioctl parameter will be copied from user space into the kernel
+%%
+%%     4 : ioctl parameter will be copied into the user supplied buffer from
+%%         the kernel
+%%
+%%     2 : no parameters are used
+%%
+%% The remaining 13 bits are used to indicate the size of the parameter.
+%%
+%% On Linux systems, only the top 2 bits are used. Setting both bits to 0
+%% indicates a void parameter. The meaning of the bits is reversed:
+%%
+%%     8 : ioctl parameter will be copied into the user supplied buffer from
+%%         the kernel
+%%
+%%     4 : ioctl parameter will be copied from user space into the kernel
+%%
+%% The remaining 14 bits is used to hold the length of the parameter.
+%%
+%% BSD: `<<IN:1, OUT:1, VOID:1, Length:13, Group:8, Command:8>>'
+%%
+%% _IOC_OUT = 0x40000000
+%%
+%% _IOC_IN  = 0x80000000
+%%
+%% #define _IOR(g,n,t) _IOC(IOC_OUT, (g), (n), sizeof(t))
+%%
+%% #define _IOW(g,n,t) _IOC(IOC_IN, (g), (n), sizeof(t))
+%%
+%% Linux: `<<OUT:1, IN:1, Length:14, Group:8, Command:8>>'
+%%
+%% _IOC_OUT = 0x80000000
+%%
+%% _IOC_IN  = 0x40000000
+%%
+%% #define _IOR(g,n,t) _IOC(_IOC_READ,(g),(n),(t))
+%%
+%% #define _IOW(g,n,t) _IOC(_IOC_WRITE,(g),(n),(t))
+%%
 -module(procket_ioctl).
 
 -export([
@@ -42,45 +86,6 @@
     iow/3,
     iowr/3
 ]).
-
-%%
-%% Calculate the values of the ioctl request macros at runtime.
-%%
-
-%% On BSD systems, the top 3 bits indicate the direction of the request:
-%%
-%%     8 : ioctl parameter will be copied from user space into the kernel
-%%     4 : ioctl parameter will be copied into the user supplied buffer from
-%%         the kernel
-%%     2 : no parameters are used
-%%
-%% The remaining 13 bits are used to indicate the size of the parameter.
-%%
-%% On Linux systems, only the top 2 bits are used. Setting both bits to 0
-%% indicates a void parameter. The meaning of the bits is reversed:
-%%
-%%     8 : ioctl parameter will be copied into the user supplied buffer from
-%%         the kernel
-%%     4 : ioctl parameter will be copied from user space into the kernel
-%%
-%% The remaining 14 bits is used to hold the length of the parameter.
-%%
-%% BSD: <<IN:1, OUT:1, VOID:1, Length:13, Group:8, Command:8>>
-%%
-%% _IOC_OUT = 0x40000000
-%% _IOC_IN  = 0x80000000
-%%
-%% #define _IOR(g,n,t) _IOC(IOC_OUT, (g), (n), sizeof(t))
-%% #define _IOW(g,n,t) _IOC(IOC_IN, (g), (n), sizeof(t))
-%%
-%% Linux: <<OUT:1, IN:1, Length:14, Group:8, Command:8>>
-%%
-%% _IOC_OUT = 0x80000000
-%% _IOC_IN  = 0x40000000
-%%
-%% #define _IOR(g,n,t) _IOC(_IOC_READ,(g),(n),(t))
-%% #define _IOW(g,n,t) _IOC(_IOC_WRITE,(g),(n),(t))
-%%
 
 %% BSD: _IOC_IN
 %% Linux: _IOC_WRITE << _IOC_DIRSHIFT (16)
