@@ -87,20 +87,23 @@
     iowr/3
 ]).
 
-%% BSD: _IOC_IN
-%% Linux: _IOC_WRITE << _IOC_DIRSHIFT (16)
+% @doc BSD: _IOC_IN
+%
+% Linux: `_IOC_WRITE << _IOC_DIRSHIFT (16)'
 in() -> in(os()).
 in(bsd) -> 16#80000000;
 in(linux) -> 16#40000000.
 
-%% BSD: _IOC_OUT
-%% Linux: _IOC_READ << _IOC_DIRSHIFT (16)
+% @doc BSD: _IOC_OUT
+%
+% Linux: `_IOC_READ << _IOC_DIRSHIFT (16)'
 out() -> out(os()).
 out(bsd) -> 16#40000000;
 out(linux) -> 16#80000000.
 
-%% BSD: _IOC_VOID
-%% Linux: _IOC_NONE
+% @doc BSD: _IOC_VOID
+%
+% Linux: `_IOC_NONE'
 void() -> void(os()).
 void(bsd) -> 16#20000000;
 void(linux) -> 0.
