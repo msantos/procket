@@ -1,4 +1,4 @@
-%%% @copyright 2011-2023 Michael Santos <michael.santos@gmail.com>
+%%% @copyright 2011-2025 Michael Santos <michael.santos@gmail.com>
 %%% All rights reserved.
 %%%
 %%% Redistribution and use in source and binary forms, with or without
