@@ -493,6 +493,22 @@ setns(_, _) ->
 %   a structure. This means that it's possible to pass in an
 %   arbitrary pointer (an integer) as an argument to an ioctl
 %   expecting a structure. Don't do this.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+%
+% % SIOCGIFINDEX = 16#8933
+% 2> {ok, <<Ifname:16/bytes, Ifr:32/native, _/binary>>} = procket:ioctl(S, 16#8933, <<"eth0", 0:224>>).
+%       {ok,<<101,116,104,48,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,
+%             0,0,0,0,0,...>>}
+% 4> Ifname.
+% <<101,116,104,48,0,0,0,0,0,0,0,0,0,0,0,0>>
+% 5> Ifr.
+% 7
+% '''
 -spec ioctl(FD :: integer(), Request :: uint64_t(), Arg :: binary() | integer()) ->
     {ok, binary()} | {error, posix()}.
 ioctl(_, _, _) ->
