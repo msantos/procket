@@ -521,6 +521,70 @@ buf(_) ->
 memcpy(_, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc Allocate structure for ioctl/3.
+%
+% Create a structure containing pointers to memory that can be
+% passed as the third argument to ioctl/3.
+%
+% The size of the allocated memory can be indicated by either
+% using an integer or passing in a binary of the appropriate size.
+% If an integer is used, the contents are zero'ed. If a binary is
+% used, the memory is initialized to the contents of the binary.
+%
+% Resource is a list of NIF resources (one for each piece of
+% allocated memory) requested in the struct. The memory will
+% automatically be freed by the resource.
+%
+% It is up to the caller to ensure the structure has the proper
+% endianness and alignment for the platform.
+%
+% == Examples ==
+%
+% For example, a struct bpf_program is used to set a filter on a
+% bpf character device:
+%
+% ```
+% struct bpf_program {
+%     u_int bf_len;
+%     struct bpf_insn *bf_insns;
+% };
+%
+% struct bpf_insn {
+%     u_short     code;
+%     u_char      jt;
+%     u_char      jf;
+%     bpf_u_int32 k;
+% };
+% '''
+%
+% To allocate a binary in Erlang:
+%
+% ```
+% Insn = [
+%     ?BPF_STMT(?BPF_LD+?BPF_H+?BPF_ABS, 12),                     % offset = Ethernet Type
+%     ?BPF_JUMP(?BPF_JMP+?BPF_JEQ+?BPF_K, ?ETHERTYPE_IP, 0, 1),   % type = IP
+%
+%     ?BPF_STMT(?BPF_RET+?BPF_K, 16#FFFFFFFF),                    % return: entire packet
+%     ?BPF_STMT(?BPF_RET+?BPF_K, 0)                               % return: drop packet
+% ],
+% {ok, Code, [Res]} = procket:alloc([
+%     <<(length(Insn)):4/native-unsigned-integer-unit:8>>,
+%     {ptr, list_to_binary(Insn)}
+% ]).
+% '''
+%
+% To use the ioctl and return the contents of the memory:
+%
+% ```
+% case procket:ioctl(Socket, ?BIOCSETF, Code) of
+%     {ok, _} ->
+%         procket:buf(Res);
+%     Error ->
+%         Error
+% end.
+% '''
+%
+% @see ioctl/3
 -spec alloc([binary() | {ptr, size_t()} | {ptr, binary()}]) ->
     {ok, binary(), [reference()]} | {error, posix()}.
 alloc(Struct) ->
