@@ -514,6 +514,9 @@ setns(_, _) ->
 ioctl(_, _, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc Return the contents of memory allocated using alloc/1.
+%
+% @see alloc/1
 -spec buf(Resource :: reference()) -> {ok, binary()} | {error, enomem}.
 buf(_) ->
     erlang:nif_error(not_implemented).
