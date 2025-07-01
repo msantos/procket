@@ -27,6 +27,93 @@
 %%% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+%% @doc procket is an Erlang library for socket creation and manipulation.
+%%
+%% procket can use a setuid helper so actions like binding low ports and
+%% requesting some sockets types can be done while Erlang is running as an
+%% unprivileged user.
+%%
+%% ## FEATURES
+%%
+%% Other features include:
+%%
+%% * low level socket manipulation using socket/3, ioctl/3, setsockopt/4, ...
+%%
+%% * support any protocols supported by the socket interface: ICMP, Unix
+%%   sockets, ...
+%%
+%% * support for the BSD raw socket interface
+%%
+%% * generate and snoop packets using PF_PACKET sockets on Linux
+%%
+%% * generate and snoop packets using the BPF interface on BSDs like Mac OS X
+%%
+%% * support for creating and reading/writing from character devices like
+%%   TUN/TAP interfaces
+%%
+%% ## SETUID vs SUDO vs Capabilities
+%%
+%% The procket helper executable needs root privileges. Either allow your
+%% user to run procket using sudo or copy procket to somewhere owned by
+%% root and make it setuid.
+%%
+%% * for sudo
+%%
+%% ```
+%% sudo visudo
+%% youruser ALL=NOPASSWD: /path/to/procket/priv/procket
+%%
+%% # if sudoers has enabled "Default requiretty", you will need to set
+%% # one of these options too:
+%%
+%% Defaults!/path/to/procket/priv/procket !requiretty
+%% Defaults:youruser !requiretty
+%% '''
+%%
+%% * to make it setuid
+%%
+%% ```
+%% # Default location
+%% sudo chown root priv/procket
+%% sudo chmod 4750 priv/procket
+%% '''
+%%
+%% The procket setuid helper can also be placed in a system directory:
+%%
+%% ```
+%% # System directory
+%% sudo cp priv/procket /usr/local/bin
+%% sudo chown root:yourgroup /usr/local/bin/procket
+%% sudo chmod 4750 /usr/local/bin/procket
+%% '''
+%%
+%% Then pass the progname argument to open/2:
+%%
+%% ```
+%% {ok, FD} = procket:open(53, [{progname, "/usr/local/bin/procket"},
+%%         {protocol, udp},{type, dgram},{family, inet}]).
+%% '''
+%%
+%% * use Linux capabilities: beam or the user running beam can be
+%%   given whatever socket privileges are needed. For example, using file
+%%   capabilities:
+%%
+%% ```
+%% setcap cap_net_raw=ep /usr/local/lib/erlang/erts-5.8.3/bin/beam.smp
+%% '''
+%%
+%% To see the capabilities:
+%%
+%% ```
+%% getcap /usr/local/lib/erlang/erts-5.8.3/bin/beam.smp
+%% '''
+%%
+%% To remove the capabilities:
+%%
+%% ```
+%% setcap -r /usr/local/lib/erlang/erts-5.8.3/bin/beam.smp
+%% '''
 -module(procket).
 -include("procket.hrl").
 -include_lib("kernel/include/file.hrl").
