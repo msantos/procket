@@ -362,6 +362,17 @@ on_load() ->
 %%% NIF Stubs
 %%--------------------------------------------------------------------
 
+% @doc close(2): close a file descriptor
+%
+% == Examples ==
+%
+% ```
+% 1> procket:open(8080).
+% {ok,22}
+%
+% 2> procket:close(22)
+% ok
+% '''
 -spec close(Socket :: integer()) -> ok | {error, posix()}.
 close(_) ->
     erlang:nif_error(not_implemented).
