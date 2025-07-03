@@ -12,3 +12,4 @@ c_src/*.d
 _build/
 .rebar3/
 deps/
+doc/
