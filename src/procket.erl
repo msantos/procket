@@ -930,6 +930,14 @@ socket_protocol() ->
 socket_protocol(_) ->
     erlang:nif_error(not_implemented).
 
+% @doc Return atom describing error number.
+%
+% == Examples ==
+%
+% ```
+% 1> procket:errno_id(1).
+% eperm
+% '''
 -spec errno_id(int32_t()) -> posix().
 errno_id(_) ->
     erlang:nif_error(not_implemented).
