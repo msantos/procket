@@ -28,10 +28,8 @@
 %%% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%%
-%% Functions for dealing with PF_PACKET sockets and other Linux
+%% @doc Functions for dealing with PF_PACKET sockets and other Linux
 %% specific interfaces.
-%%
 -module(packet).
 -include("packet.hrl").
 -export([
