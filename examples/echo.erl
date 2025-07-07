@@ -32,7 +32,7 @@
 %% procket test client
 -module(echo).
 
--export([start/0,start/1,start/2]).
+-export([start/0, start/1, start/2]).
 
 -define(PORT, 54).
 
