@@ -1211,6 +1211,7 @@ progname() ->
     end.
 
 %% Protocol family (aka domain)
+-spec family(Protocol :: family()) -> 0 | 1 | 2 | 10 | 16 | 17 | 24 | 26 | 28 | 30 | 38.
 family(unspec) ->
     0;
 family(inet) ->
