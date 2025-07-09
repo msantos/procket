@@ -1210,7 +1210,7 @@ progname() ->
         _ -> progname_priv()
     end.
 
-%% Protocol family (aka domain)
+% @doc Convert protocol family (aka domain) to OS defined constant.
 -spec family(Protocol :: family()) -> 0 | 1 | 2 | 10 | 16 | 17 | 24 | 26 | 28 | 30 | 38.
 family(unspec) ->
     0;
