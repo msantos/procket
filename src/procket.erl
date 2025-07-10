@@ -1108,6 +1108,7 @@ fdget(Socket) ->
     {ok, S} = accept(Socket),
     fdrecv(S).
 
+% @private
 % Construct the cli arguments for the helper
 getopts(Options) ->
     Exec = proplists:get_value(exec, Options, ["", "sudo"]),
