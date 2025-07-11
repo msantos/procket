@@ -912,6 +912,27 @@ setsockopt_nif(_, _, _, _) ->
 getsockopt_nif(_, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc getsockname(2): get socket name
+%
+% If the input binary is too small to hold the socket address structure,
+% the returned binary is zero padded to indicate the size required.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:bind(S, Sockaddr).
+% ok
+% 4> procket:getsockname(S, <<0:(byte_size(Sockaddr)*8)>>).
+% {ok,<<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>}
+% '''
 getsockname(_, _) ->
     erlang:nif_error(not_implemented).
 
