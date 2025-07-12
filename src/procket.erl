@@ -933,6 +933,7 @@ getsockopt_nif(_, _, _, _) ->
 % 4> procket:getsockname(S, <<0:(byte_size(Sockaddr)*8)>>).
 % {ok,<<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>}
 % '''
+-spec getsockname(Socket :: integer(), Sockaddr :: binary()) -> {ok, binary()} | {error, posix()}.
 getsockname(_, _) ->
     erlang:nif_error(not_implemented).
 
