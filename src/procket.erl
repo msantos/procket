@@ -619,6 +619,7 @@ ioctl(_, _, _) ->
 buf(_) ->
     erlang:nif_error(not_implemented).
 
+-spec memcpy(Dest :: reference(), Src :: binary()) -> ok.
 memcpy(_, _) ->
     erlang:nif_error(not_implemented).
 
