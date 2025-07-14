@@ -619,6 +619,22 @@ ioctl(_, _, _) ->
 buf(_) ->
     erlang:nif_error(not_implemented).
 
+% @doc Write data to memory allocated using alloc/1.
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, Buf, [Ref]} = procket:alloc([{ptr, 1024}]).
+% {ok,<<112,125,4,72,127,0,0,0>>,
+%     [#Ref<0.4091636758.1194983426.105614>]}
+% 2> procket:memcpy(Ref, <<1,2,3,4,5,6,7,8,9>>).
+% ok
+% 3> procket:buf(Ref).
+% {ok,<<1,2,3,4,5,6,7,8,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+%      0,0,...>>}
+% '''
+%
+% @see alloc/1
 -spec memcpy(Dest :: reference(), Src :: binary()) -> ok.
 memcpy(_, _) ->
     erlang:nif_error(not_implemented).
