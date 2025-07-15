@@ -172,6 +172,7 @@
 
 -type uint16_t() :: 0..16#ffff.
 -type uint64_t() :: 0..16#ffffffffffffffff.
+-type uint32_t() :: 0..16#ffffffff.
 -type int32_t() :: -16#7fffffff..16#7fffffff.
 
 -type size_t() :: uint64_t().
@@ -1342,6 +1343,7 @@ unix_path_max() ->
             108
     end.
 
+-spec ntohl(Net :: binary() | uint32_t()) -> uint32_t().
 ntohl(<<I:32>>) ->
     ntohl(I);
 ntohl(I) when is_integer(I) ->
