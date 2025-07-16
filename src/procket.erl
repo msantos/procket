@@ -1343,6 +1343,14 @@ unix_path_max() ->
             108
     end.
 
+% @doc Convert unsigned integer from network byte order to host byte order.
+%
+% == Examples ==
+%
+% ```
+% 1> procket:ntohl(<<1:32>>).
+% 16777216
+% '''
 -spec ntohl(Net :: binary() | uint32_t()) -> uint32_t().
 ntohl(<<I:32>>) ->
     ntohl(I);
