@@ -1343,7 +1343,7 @@ unix_path_max() ->
             108
     end.
 
-% @doc Convert unsigned integer from network byte order to host byte order.
+% @doc Convert a long unsigned integer from network byte order to host byte order.
 %
 % == Examples ==
 %
@@ -1357,6 +1357,15 @@ ntohl(<<I:32>>) ->
 ntohl(I) when is_integer(I) ->
     <<N:32>> = <<I:32/native>>,
     N.
+
+% @doc Convert a short unsigned integer from network byte order to host byte order.
+%
+% == Examples ==
+%
+% ```
+% 1> procket:ntohs(<<1:32>>).
+% 256
+% '''
 ntohs(<<I:32>>) ->
     ntohs(I);
 ntohs(I) when is_integer(I) ->
