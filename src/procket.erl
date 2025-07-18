@@ -1351,7 +1351,7 @@ unix_path_max() ->
 % 1> procket:ntohl(<<1:32>>).
 % 16777216
 % '''
--spec ntohl(Net :: binary() | uint32_t()) -> uint32_t().
+-spec ntohl(Int :: binary() | uint32_t()) -> uint32_t().
 ntohl(<<I:32>>) ->
     ntohl(I);
 ntohl(I) when is_integer(I) ->
@@ -1366,6 +1366,7 @@ ntohl(I) when is_integer(I) ->
 % 1> procket:ntohs(<<1:32>>).
 % 256
 % '''
+-spec ntohs(Int :: binary() | uint16_t()) -> uint16_t().
 ntohs(<<I:32>>) ->
     ntohs(I);
 ntohs(I) when is_integer(I) ->
