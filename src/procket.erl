@@ -1244,6 +1244,7 @@ progname_priv() ->
             ])
     end.
 
+% @private
 progname() ->
     % Is there a proper way of getting App-Name in this context?
     case code:priv_dir(?MODULE) of
