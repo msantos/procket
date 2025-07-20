@@ -538,6 +538,31 @@ recvfrom(Socket, Size) ->
 recvfrom(_, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc read(2): read bytes from a file descriptor
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, stream, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:bind(S, Sockaddr).
+% ok
+% 4> procket:listen(S).
+% ok
+%
+% % echo "test test 123" | nc localhost 10022
+% 5> {ok, FD, _} = procket:accept(S, 16).
+% {ok,21,<<2,0,207,110,127,0,0,1,0,0,0,0,0,0,0,0>>}
+%
+% 6> procket:read(FD, 1024).
+% {ok,<<"test test 123\n">>}
+% '''
 -spec read(FD :: integer(), Length :: size_t()) -> {ok, binary()} | {error, posix()}.
 read(_, _) ->
     erlang:nif_error(not_implemented).
