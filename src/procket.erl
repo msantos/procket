@@ -522,6 +522,7 @@ listen(Socket) when is_integer(Socket) ->
 listen(_, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc recv(2): receive a message from a socket
 -spec recv(Socket :: integer(), Size :: size_t()) -> {ok, binary()} | {error, posix()}.
 recv(Socket, Size) ->
     recvfrom(Socket, Size).
