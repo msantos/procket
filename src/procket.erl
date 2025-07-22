@@ -527,6 +527,7 @@ listen(_, _) ->
 recv(Socket, Size) ->
     recvfrom(Socket, Size).
 
+% @doc recvfrom(2): receive a message from a socket
 -spec recvfrom(Socket :: integer(), Size :: size_t()) -> {ok, binary()} | {error, posix()}.
 recvfrom(Socket, Size) ->
     case recvfrom(Socket, Size, 0, 0) of
