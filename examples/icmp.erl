@@ -32,21 +32,29 @@
 -export([ping/1, ping/2]).
 
 -record(icmp, {
-        valid,
-        type, code, checksum,
-        id, sequence,
-        gateway,
-        un,
-        mtu
-    }).
+    valid,
+    type,
+    code,
+    checksum,
+    id,
+    sequence,
+    gateway,
+    un,
+    mtu
+}).
 
 -record(state, {
-        s,          % socket
-        id,         % ping ID
-        seq = 0,    % ping sequence number
-        ip,         % IP Address
-        n           % Number of pings
-    }).
+    % socket
+    s,
+    % ping ID
+    id,
+    % ping sequence number
+    seq = 0,
+    % IP Address
+    ip,
+    % Number of pings
+    n
+}).
 
 -define(ICMP_ECHO_REPLY, 0).
 -define(ICMP_ECHO, 8).
@@ -58,11 +66,11 @@ ping(IP, N) ->
     {ok, FD} = procket:open(0, [{protocol, icmp}, {type, raw}, {family, inet}]),
     {ok, S} = gen_udp:open(0, [binary, {fd, FD}]),
     loop(#state{
-            s = S,
-            id = Id,
-            ip = IP,
-            n = N
-        }).
+        s = S,
+        id = Id,
+        ip = IP,
+        n = N
+    }).
 
 loop(#state{n = N, seq = Seq}) when Seq >= N ->
     ok;
@@ -74,18 +82,20 @@ loop(#state{s = S, id = Id, seq = Seq, ip = IP, n = N} = State) ->
             Seq1 = filter(Seq, icmp(Data)),
             sleep(N, Seq1),
             loop(State#state{seq = Seq1})
-    after
-        5000 ->
-            error_logger:error_report([{noresponse, Packet}])
+    after 5000 ->
+        error_logger:error_report([{noresponse, Packet}])
     end.
 
-filter(Seq, {#icmp{
+filter(Seq, {
+    #icmp{
         type = ?ICMP_ECHO_REPLY,
         code = Code,
         checksum = Checksum,
         id = Id,
         sequence = Sequence
-        }, <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>}) ->
+    },
+    <<Mega:32/integer, Sec:32/integer, Micro:32/integer, Payload/binary>>
+}) ->
     error_logger:info_report([
         {type, ?ICMP_ECHO_REPLY},
         {code, Code},
@@ -100,43 +110,64 @@ filter(Seq, _) ->
     Seq.
 
 make_packet(Id, Seq) ->
-    {Mega,Sec,USec} = erlang:now(),
+    {Mega, Sec, USec} = erlang:now(),
 
     % Pad packet to 64 bytes
     Payload = list_to_binary(lists:seq($\s, $K)),
 
-    CS = makesum(<<?ICMP_ECHO:8, 0:8, 0:16, Id:16, Seq:16, Mega:32, Sec:32, USec:32, Payload/binary>>),
+    CS = makesum(
+        <<?ICMP_ECHO:8, 0:8, 0:16, Id:16, Seq:16, Mega:32, Sec:32, USec:32, Payload/binary>>
+    ),
     <<
-    8:8,    % Type
-    0:8,    % Code
-    CS:16,  % Checksum
-    Id:16,  % Id
-    Seq:16, % Sequence
+        % Type
+        8:8,
+        % Code
+        0:8,
+        % Checksum
+        CS:16,
+        % Id
+        Id:16,
+        % Sequence
+        Seq:16,
 
-    Mega:32, Sec:32, USec:32,   % Payload: time
-    Payload/binary
+        % Payload: time
+        Mega:32,
+        Sec:32,
+        USec:32,
+        Payload/binary
     >>.
-
 
 makesum(Hdr) -> 16#FFFF - checksum(Hdr).
 
 checksum(Hdr) ->
-    lists:foldl(fun compl/2, 0, [ W || <<W:16>> <= Hdr ]).
+    lists:foldl(fun compl/2, 0, [W || <<W:16>> <= Hdr]).
 
 compl(N) when N =< 16#FFFF -> N;
 compl(N) -> (N band 16#FFFF) + (N bsr 16).
-compl(N,S) -> compl(N+S).
+compl(N, S) -> compl(N + S).
 
 icmp(<<?ICMP_ECHO_REPLY:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
-    {#icmp{
-            type = ?ICMP_ECHO_REPLY, code = 0, checksum = Checksum, id = Id,
+    {
+        #icmp{
+            type = ?ICMP_ECHO_REPLY,
+            code = 0,
+            checksum = Checksum,
+            id = Id,
             sequence = Sequence
-        }, Payload};
+        },
+        Payload
+    };
 icmp(<<?ICMP_ECHO:8, 0:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
-    {#icmp{
-            type = ?ICMP_ECHO, code = 0, checksum = Checksum, id = Id,
+    {
+        #icmp{
+            type = ?ICMP_ECHO,
+            code = 0,
+            checksum = Checksum,
+            id = Id,
             sequence = Sequence
-        }, Payload}.
+        },
+        Payload
+    }.
 
-sleep(N,N) -> ok;
-sleep(_,_) -> timer:sleep(1000).
+sleep(N, N) -> ok;
+sleep(_, _) -> timer:sleep(1000).
