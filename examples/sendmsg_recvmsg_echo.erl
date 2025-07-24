@@ -41,17 +41,20 @@
 start() ->
     {ok, FD} = procket:socket(inet6, dgram, udp),
     %% set IPV6_RECVPKTINFO
-    RecvPktInfo = case os:type() of
-        {unix, linux} -> 49;
-        {unix, sunos} -> 18;
-        {unix, _} -> 36
-    end,
+    RecvPktInfo =
+        case os:type() of
+            {unix, linux} -> 49;
+            {unix, sunos} -> 18;
+            {unix, _} -> 36
+        end,
     ok = procket:setsockopt(FD, 41, RecvPktInfo, <<1:32>>),
     Family = procket:family(inet6),
     io:format("inet family ~p~n", [Family]),
     %% bind to :: on port ?PORT
-    SA = list_to_binary([procket:sockaddr_common(inet6, ?SIZEOF_SOCKADDR),
-            <<?PORT:16/integer-unsigned-big, 0:((?SIZEOF_SOCKADDR - (2+2))*8)>>]),
+    SA = list_to_binary([
+        procket:sockaddr_common(inet6, ?SIZEOF_SOCKADDR),
+        <<?PORT:16/integer-unsigned-big, 0:((?SIZEOF_SOCKADDR - (2 + 2)) * 8)>>
+    ]),
     ok = procket:bind(FD, SA),
     loop(FD).
 
@@ -62,10 +65,12 @@ loop(FD) ->
         {error, eagain} ->
             loop(FD);
         {ok, Buf, Flags, CtrlData, From} ->
-            io:format("Buffer ~p, From ~p, Ctrldata ~p Flags ~p~n", [Buf,
-                                                                     From,
-                                                                     CtrlData,
-                                                                     Flags]),
+            io:format("Buffer ~p, From ~p, Ctrldata ~p Flags ~p~n", [
+                Buf,
+                From,
+                CtrlData,
+                Flags
+            ]),
             %% echo the packet back, but set the destination address to the
             %% 'from' of the previous packet, and send the previous message's
             %% control data so that the source address is set to the
@@ -76,6 +81,6 @@ loop(FD) ->
 
 sizeof(sockaddr) ->
     case os:type() of
-        {unix,sunos} -> 32;
-        {unix,_} -> 28
+        {unix, sunos} -> 32;
+        {unix, _} -> 28
     end.
