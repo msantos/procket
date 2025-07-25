@@ -52,13 +52,17 @@
 -export([start/0]).
 
 start() ->
-	spawn(fun() -> start_sniff_on("/var/run/netns/blue", "veth1") end),
-	spawn(fun() -> start_sniff_on("/var/run/netns/red",  "veth3") end).
+    spawn(fun() -> start_sniff_on("/var/run/netns/blue", "veth1") end),
+    spawn(fun() -> start_sniff_on("/var/run/netns/red", "veth3") end).
 
 start_sniff_on(Ns, IfName) ->
-    {ok, Fd} = procket:open(0, [{namespace,Ns},
-            {protocol, 16#0008}, {type, raw}, {family, packet}]),
-    ok = packet:bind(Fd, packet:ifindex(Fd,IfName)),
+    {ok, Fd} = procket:open(0, [
+        {namespace, Ns},
+        {protocol, 16#0008},
+        {type, raw},
+        {family, packet}
+    ]),
+    ok = packet:bind(Fd, packet:ifindex(Fd, IfName)),
     erlang:open_port({fd, Fd, Fd}, [binary, stream]),
     loop().
 
@@ -67,12 +71,11 @@ loop() ->
         Data ->
             filter(Data),
             loop()
-    after
-        5000 ->
-            loop()
+    after 5000 ->
+        loop()
     end.
 
-filter({_,{data,Data}}) ->
+filter({_, {data, Data}}) ->
     error_logger:info_msg("~p: Data ~p", [self(), Data]),
     Data;
 filter(Data) ->
