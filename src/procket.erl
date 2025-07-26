@@ -535,6 +535,7 @@ recvfrom(Socket, Size) ->
         Error -> Error
     end.
 
+% @doc recvfrom(2): receive a message from a socket
 -spec recvfrom(Socket :: integer(), Size :: size_t(), Flags :: integer(), Salen :: size_t()) ->
     {ok, binary(), binary()} | {error, posix()}.
 recvfrom(_, _, _, _) ->
