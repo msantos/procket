@@ -560,6 +560,26 @@ recvfrom(Socket, Size) ->
     end.
 
 % @doc recvfrom(2): receive a message from a socket
+%
+% == Examples ==
+%
+% ```
+% 1> {ok, S} = procket:socket(inet, dgram, 0).
+% {ok,20}
+% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% 3> procket:bind(S, Sockaddr).
+% ok
+%
+% % echo "test test 123" | nc -u localhost 10022
+% 4> procket:recvfrom(S, 1024, 0, byte_size(Sockaddr)).
+% {ok,<<"test test 123\n">>,
+%     <<2,0,173,123,127,0,0,1,0,0,0,0,0,0,0,0>>}
+% '''
 -spec recvfrom(Socket :: integer(), Size :: size_t(), Flags :: integer(), Salen :: size_t()) ->
     {ok, binary(), binary()} | {error, posix()}.
 recvfrom(_, _, _, _) ->
