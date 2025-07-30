@@ -839,7 +839,7 @@ writev(FD, Buf) ->
 writev_nif(_, _) ->
     erlang:nif_error(not_implemented).
 
-% @doc recvfrom(2): receive a message from a socket
+% @doc recvmsg(2): receive a message from a socket
 -spec recvmsg(Socket :: integer(), Size :: size_t(), Flags :: integer(), CtrlDataSize :: size_t()) ->
     {ok, binary(), integer(), [{integer(), integer(), binary()}]} | {error, posix()}.
 recvmsg(Socket, Size, Flags, CtrlDataSize) ->
@@ -850,6 +850,7 @@ recvmsg(Socket, Size, Flags, CtrlDataSize) ->
             Error
     end.
 
+% @doc recvmsg(2): receive a message from a socket
 -spec recvmsg(
     Socket :: integer(),
     Size :: size_t(),
