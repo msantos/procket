@@ -1448,7 +1448,9 @@ ntohs(I) when is_integer(I) ->
     <<N:16>> = <<I:16/native>>,
     N.
 
+% @private
 wordalign(Offset) ->
     wordalign(Offset, erlang:system_info({wordsize, external})).
+% @private
 wordalign(Offset, Align) ->
     (Align - (Offset rem Align)) rem Align.
