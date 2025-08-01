@@ -869,6 +869,7 @@ recvmsg(Socket, Size, Flags, CtrlDataSize, SockaddrSize) ->
 recvmsg_nif(_, _, _, _, _) ->
     erlang:nif_error(not_implemented).
 
+% @doc sendmsg(2): send a message on a socket
 -spec sendmsg(
     Socket :: integer(),
     Buf :: binary(),
