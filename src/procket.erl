@@ -879,6 +879,7 @@ recvmsg_nif(_, _, _, _, _) ->
 sendmsg(Socket, Buf, Flags, CtrlData) ->
     sendmsg(Socket, Buf, Flags, CtrlData, <<>>).
 
+% @doc sendmsg(2): send a message on a socket
 -spec sendmsg(
     Socket :: integer(),
     Buf :: binary(),
