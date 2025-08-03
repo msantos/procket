@@ -788,6 +788,7 @@ alloc(Struct) ->
 alloc_nif(_) ->
     erlang:nif_error(not_implemented).
 
+% @doc sendto(2): send a message on a socket
 -spec sendto(Socket :: integer(), Buf :: binary()) -> ok | {error, posix()}.
 sendto(Socket, Buf) ->
     sendto(Socket, Buf, 0, <<>>).
