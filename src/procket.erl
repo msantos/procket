@@ -793,6 +793,7 @@ alloc_nif(_) ->
 sendto(Socket, Buf) ->
     sendto(Socket, Buf, 0, <<>>).
 
+% @doc sendto(2): send a message on a socket
 -spec sendto(Socket :: integer(), Buf :: binary(), Flags :: integer()) -> ok | {error, posix()}.
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
