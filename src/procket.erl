@@ -798,6 +798,7 @@ sendto(Socket, Buf) ->
 sendto(Socket, Buf, Flags) ->
     sendto(Socket, Buf, Flags, <<>>).
 
+% @doc sendto(2): send a message on a socket
 -spec sendto(Socket :: integer(), Buf :: binary(), Flags :: integer(), Sockaddr :: binary()) ->
     ok | {ok, size_t()} | {error, posix()}.
 sendto(Socket, Buf, Flags, Sockaddr) ->
