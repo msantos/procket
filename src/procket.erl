@@ -1061,6 +1061,9 @@ socket_protocol(_) ->
 errno_id(_) ->
     erlang:nif_error(not_implemented).
 
+% @doc Set O_NONBLOCK status flag on socket.
+%
+% Note: file descriptors opened by procket are opened in non-blocking mode.
 set_sock_nonblock(_) ->
     erlang:nif_error(not_implemented).
 
