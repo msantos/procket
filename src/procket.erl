@@ -635,8 +635,8 @@ socket_nif(_, _, _) ->
     erlang:nif_error(not_implemented).
 
 % @doc setns(2): reassociate thread with a namespace, joining any namespace.
-setns(NS) ->
-    setns(NS, 0).
+setns(ProcPath) ->
+    setns(ProcPath, 0).
 setns(_, _) ->
     erlang:nif_error(not_implemented).
 
