@@ -638,6 +638,7 @@ socket_nif(_, _, _) ->
 -spec setns(ProcPath :: iolist()) -> ok | {error, posix()}.
 setns(ProcPath) ->
     setns(ProcPath, 0).
+-spec setns(ProcPath :: iolist(), NSType :: integer()) -> ok | {error, posix()}.
 setns(_, _) ->
     erlang:nif_error(not_implemented).
 
