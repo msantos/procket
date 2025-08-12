@@ -634,10 +634,11 @@ socket(Family, Type, Protocol) ->
 socket_nif(_, _, _) ->
     erlang:nif_error(not_implemented).
 
-% @doc setns(2): reassociate thread with a namespace, joining any namespace.
+% @doc setns(2): reassociate thread with a namespace, joining any namespace type.
 -spec setns(ProcPath :: iolist()) -> ok | {error, posix()}.
 setns(ProcPath) ->
     setns(ProcPath, 0).
+% @doc setns(2): reassociate thread with a namespace, joining the specified namespace type.
 -spec setns(ProcPath :: iolist(), NSType :: integer()) -> ok | {error, posix()}.
 setns(_, _) ->
     erlang:nif_error(not_implemented).
