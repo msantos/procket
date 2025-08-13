@@ -635,6 +635,15 @@ socket_nif(_, _, _) ->
     erlang:nif_error(not_implemented).
 
 % @doc setns(2): reassociate thread with a namespace, joining any namespace type.
+%
+% Note: the beam process must have root privileges to call this function.
+%
+% == Examples ==
+%
+% ```
+% 1> procket:setns("/proc/self/ns/net").
+% ok
+% '''
 -spec setns(ProcPath :: iolist()) -> ok | {error, posix()}.
 setns(ProcPath) ->
     setns(ProcPath, 0).
