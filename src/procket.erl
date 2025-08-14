@@ -648,6 +648,42 @@ socket_nif(_, _, _) ->
 setns(ProcPath) ->
     setns(ProcPath, 0).
 % @doc setns(2): reassociate thread with a namespace, joining the specified namespace type.
+%
+% Note: the beam process must have root privileges to call this function.
+%
+% The constants are defined in linux/sched.h:
+%
+% ```
+% 0      Allow any type of namespace to be joined.
+%
+% CLONE_NEWCGROUP (since Linux 4.6)
+%        fd must refer to a cgroup namespace.
+%
+% CLONE_NEWIPC (since Linux 3.0)
+%        fd must refer to an IPC namespace.
+%
+% CLONE_NEWNET (since Linux 3.0)
+%        fd must refer to a network namespace.
+%
+% CLONE_NEWNS (since Linux 3.8)
+%        fd must refer to a mount namespace.
+%
+% CLONE_NEWPID (since Linux 3.8)
+%        fd must refer to a descendant PID namespace.
+%
+% CLONE_NEWUSER (since Linux 3.8)
+%        fd must refer to a user namespace.
+%
+% CLONE_NEWUTS (since Linux 3.0)
+%       fd must refer to a UTS namespace.
+% '''
+%
+% == Examples ==
+%
+% ```
+% 1> procket:setns("/proc/self/ns/net", 16#40000000).
+% ok
+% '''
 -spec setns(ProcPath :: iolist(), NSType :: integer()) -> ok | {error, posix()}.
 setns(_, _) ->
     erlang:nif_error(not_implemented).
