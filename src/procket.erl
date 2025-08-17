@@ -170,6 +170,7 @@
     progname/0
 ]).
 
+-type uint8_t() :: 0..16#ff.
 -type uint16_t() :: 0..16#ffff.
 -type uint64_t() :: 0..16#ffffffffffffffff.
 -type uint32_t() :: 0..16#ffffffff.
@@ -647,6 +648,7 @@ socket_nif(_, _, _) ->
 -spec setns(ProcPath :: iolist()) -> ok | {error, posix()}.
 setns(ProcPath) ->
     setns(ProcPath, 0).
+
 % @doc setns(2): reassociate thread with a namespace, joining the specified namespace type.
 %
 % Note: the beam process must have root privileges to call this function.
@@ -1448,6 +1450,7 @@ maybe_atom(protocol, Value) -> protocol(Value).
 %%
 
 % struct sockaddr
+-spec sockaddr_common(Family :: family() | integer(), Length :: uint8_t()) -> <<_:16>>.
 sockaddr_common(Family0, Length) ->
     Family = maybe_atom(family, Family0),
     case erlang:system_info(os_type) of
