@@ -1,7 +1,7 @@
 TMPDIR = os:getenv("TMPDIR", "/tmp"),
 
 Compile = fun(Name0, Prog) ->
-    Name = filename:join(TMPDIR, Name0),
+    Name = filename:join(TMPDIR, [os:getpid(), "-", Name0]),
     ok = file:write_file(Name, Prog, [write, exclusive]),
     Cmd = erlang:open_port({spawn, ["${CC-cc} -o /dev/null ", Name]},
             [stream, exit_status]),
