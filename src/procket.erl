@@ -391,7 +391,7 @@ fdrecv(_) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -426,7 +426,7 @@ accept(Socket) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -454,7 +454,7 @@ accept(_, _) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -478,7 +478,7 @@ bind(_, _) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                22:16,          % Port
 %                127,0,0,1,      % IPv4 loopback
 %                0:64
@@ -535,7 +535,7 @@ recv(Socket, Size) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -567,7 +567,7 @@ recvfrom(Socket, Size) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, dgram, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -593,7 +593,7 @@ recvfrom(_, _, _, _) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -1070,7 +1070,7 @@ getsockopt_nif(_, _, _, _) ->
 % ```
 % 1> {ok, S} = procket:socket(inet, stream, 0).
 % {ok,20}
-% 2> Sockaddr = <<(procket:sockaddr_common(procket:family(inet), 16))/binary,
+% 2> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
 %                   10022:16,       % Port
 %                   127,0,0,1,      % IPv4 loopback
 %                   0:64
@@ -1272,7 +1272,7 @@ fdopen(Path) when is_binary(Path), byte_size(Path) < ?UNIX_PATH_MAX ->
     {ok, Socket} = socket(family(local), type(stream), 0),
     Len = byte_size(Path),
     Sun = <<
-        (sockaddr_common(family(local), Len))/binary, Path/binary, 0:((unix_path_max() - Len) * 8)
+        (sockaddr_common(local, Len))/binary, Path/binary, 0:((unix_path_max() - Len) * 8)
     >>,
     ok = bind(Socket, Sun),
     ok = listen(Socket, 0),
