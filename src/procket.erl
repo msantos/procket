@@ -1449,7 +1449,7 @@ maybe_atom(protocol, Value) -> protocol(Value).
 %% Portability
 %%
 
-% struct sockaddr
+% @doc Return the family field of a struct sockaddr for BSD and Linux.
 -spec sockaddr_common(Family :: family() | integer(), Length :: uint8_t()) -> <<_:16>>.
 sockaddr_common(Family0, Length) ->
     Family = maybe_atom(family, Family0),
