@@ -1450,6 +1450,17 @@ maybe_atom(protocol, Value) -> protocol(Value).
 %%
 
 % @doc Return the family field of a struct sockaddr for BSD and Linux.
+%
+% == Examples ==
+%
+% ```
+% 1> Sockaddr = <<(procket:sockaddr_common(inet, 16))/binary,
+%                   10022:16,       % Port
+%                   127,0,0,1,      % IPv4 loopback
+%                   0:64
+%               >>.
+% <<2,0,39,38,127,0,0,1,0,0,0,0,0,0,0,0>>
+% '''
 -spec sockaddr_common(Family :: family() | integer(), Length :: uint8_t()) -> <<_:16>>.
 sockaddr_common(Family0, Length) ->
     Family = maybe_atom(family, Family0),
