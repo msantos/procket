@@ -29,7 +29,7 @@
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
 
--define(IO(Type,NR), procket_ioctl:io(Type,NR)).
--define(IOR(Type,NR,Size), procket_ioctl:ior(Type,NR,Size)).
--define(IOW(Type,NR,Size), procket_ioctl:iow(Type,NR,Size)).
--define(IOWR(Type,NR,Size), procket_ioctl:iowr(Type,NR,Size)).
+-define(IO(Type, NR), procket_ioctl:io(Type, NR)).
+-define(IOR(Type, NR, Size), procket_ioctl:ior(Type, NR, Size)).
+-define(IOW(Type, NR, Size), procket_ioctl:iow(Type, NR, Size)).
+-define(IOWR(Type, NR, Size), procket_ioctl:iowr(Type, NR, Size)).
