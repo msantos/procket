@@ -49,14 +49,16 @@
 %%         bpf_u_int32 k;
 %% };
 -define(SIZEOF_STRUCT_BPF_PROGRAM,
-    (2 + 1 + 1 + ?SIZEOF_U_INT)).
+    (2 + 1 + 1 + ?SIZEOF_U_INT)
+).
 
 %% struct bpf_stat {
 %%         u_int bs_recv;
 %%         u_int bs_drop;
 %% };
 -define(SIZEOF_STRUCT_BPF_STAT,
-    (?SIZEOF_U_INT + ?SIZEOF_U_INT)).
+    (?SIZEOF_U_INT + ?SIZEOF_U_INT)
+).
 
 %% struct bpf_version {
 %%         u_short bv_major;
@@ -72,7 +74,8 @@
 %%     } bfl_u;
 %% };
 -define(SIZEOF_STRUCT_BPF_DLTLIST,
-    (?SIZEOF_U_INT + ?SIZEOF_U_INT + 4)).
+    (?SIZEOF_U_INT + ?SIZEOF_U_INT + 4)
+).
 
 %% #define BPF_ALIGNMENT sizeof(int32_t)
 -define(BPF_ALIGNMENT, bpf:alignment()).
@@ -84,8 +87,8 @@
 -define(BIOCSETF, bpf:iow($B, 103, ?SIZEOF_STRUCT_BPF_PROGRAM)).
 -define(BIOCFLUSH, bpf:io($B, 104)).
 -define(BIOCPROMISC, bpf:io($B, 105)).
--define(BIOCGDLT, bpf:ior($B,106, ?SIZEOF_U_INT)).
--define(BIOCGETIF, bpf:ior($B,107, ?SIZEOF_STRUCT_IFREQ)).
+-define(BIOCGDLT, bpf:ior($B, 106, ?SIZEOF_U_INT)).
+-define(BIOCGETIF, bpf:ior($B, 107, ?SIZEOF_STRUCT_IFREQ)).
 -define(BIOCSETIF, bpf:iow($B, 108, ?SIZEOF_STRUCT_IFREQ)).
 -define(BIOCSRTIMEOUT, bpf:iow($B, 109, bpf:sizeof(timeval)).
 -define(BIOCGRTIMEOUT, bpf:ior($B, 110, bpf:sizeof(timeval)).
@@ -100,7 +103,6 @@
 -define(BIOCSSEESENT, bpf:iow($B, sseesent, ?SIZEOF_U_INT)).
 -define(BIOCSDLT, bpf:iow($B, 120, ?SIZEOF_U_INT)).
 -define(BIOCGDLTLIST, bpf:iowr($B, 121, ?SIZEOF_STRUCT_BPF_DLTLIST)).
-
 
 %%-------------------------------------------------------------------------
 %%% BPF Filter
@@ -168,11 +170,11 @@
 %% NOTE: the man page says k is a u_long,
 %% the header says u_int32_t.
 -record(insn, {
-        code = 0,
-        jt = 0,
-        jf = 0,
-        k = 0
-    }).
+    code = 0,
+    jt = 0,
+    jf = 0,
+    k = 0
+}).
 
 -define(BPF_STMT(Code, K), bpf:stmt(Code, K)).
 -define(BPF_JUMP(Code, K, JT, JF), bpf:jump(Code, K, JT, JF)).
