@@ -1,3 +1,6 @@
+[![Package Version](https://img.shields.io/hexpm/v/procket)](https://hex.pm/packages/procket)
+[![Hex Docs](https://img.shields.io/badge/hex-docs)](https://hexdocs.pm/procket/)
+
 procket is an Erlang library for socket creation and manipulation.
 
 procket can use a setuid helper so actions like binding low ports and
